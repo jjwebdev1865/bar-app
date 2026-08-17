@@ -55,5 +55,9 @@
   "createGroup": "Create group",
   "create": "Create",
   "groupName": "Group name",
-  "selectMembers": "Select members"
+  "selectMembers": "Select members",
+  "createLocation": "Create location",
+  "locationName": "Location name",
+  "latitude": "Latitude",
+  "longitude": "Longitude"
 }

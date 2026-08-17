@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { useSettings } from '../../../context/SettingsContext';
+import { CreateFooter } from '../../components/common';
+import { useSettings } from '../../context/SettingsContext';
 import { mockContacts } from '../../data/contacts';
 import { mockLocations, type BarLocation } from '../../data/locations';
+import { CreateLocationModal } from '../../components/_MyLocations';
 
 function favoriteCount(location: BarLocation) {
   return mockContacts.filter(
@@ -12,15 +15,23 @@ function favoriteCount(location: BarLocation) {
 
 export default function LocationsScreen() {
   const { colors, t } = useSettings();
+  const [locations, setLocations] = useState<BarLocation[]>(() => [
+    ...mockLocations,
+  ]);
+  const [createVisible, setCreateVisible] = useState(false);
+
+  function handleCreate(location: BarLocation) {
+    setLocations((current) => [...current, location]);
+  }
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <FlatList
-        data={mockLocations}
+        data={locations}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item, index }) => {
-          const isLast = index === mockLocations.length - 1;
+          const isLast = index === locations.length - 1;
           const fans = favoriteCount(item);
 
           return (
@@ -57,6 +68,20 @@ export default function LocationsScreen() {
             {t('noLocations')}
           </Text>
         }
+      />
+
+      <CreateFooter
+        label={t('createLocation')}
+        onPress={() => setCreateVisible(true)}
+        colors={colors}
+      />
+
+      <CreateLocationModal
+        visible={createVisible}
+        colors={colors}
+        t={t}
+        onClose={() => setCreateVisible(false)}
+        onCreate={handleCreate}
       />
     </View>
   );

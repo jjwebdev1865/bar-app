@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, SectionList, StyleSheet, Text, View } from "react-native";
 
-import { useSettings } from "../../../context/SettingsContext";
+import { useSettings } from "../../context/SettingsContext";
 import { mockContacts, type Contact } from "../../data/contacts";
 import { CreateFooter } from "../../components/common";
 import { ContactDetailModal, CreateContactModal } from "../../components/_MyContacts";

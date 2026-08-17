@@ -12,13 +12,13 @@ import i18n, {
   translate,
   type Language,
   type TranslationKey,
-} from '../src/i18n';
+} from '../i18n';
 import {
   defaultThemeMode,
   themes,
   type ColorTokens,
   type ThemeMode,
-} from '../src/theme/theme';
+} from '../theme/theme';
 
 type SettingsContextValue = {
   themeMode: ThemeMode;

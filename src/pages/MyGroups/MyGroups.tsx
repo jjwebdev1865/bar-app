@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 import { CreateFooter } from "../../components/common";
-import { useSettings } from "../../../context/SettingsContext";
+import { useSettings } from "../../context/SettingsContext";
 import { mockContacts } from "../../data/contacts";
 import { mockGroups, type Group } from "../../data/groups";
 import { CreateGroupModal } from "../../components/_MyGroups";
