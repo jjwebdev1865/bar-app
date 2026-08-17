@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { ColorTokens } from '../constants/theme';
+import type { ColorTokens } from '../../../constants/theme';
 
 type CreateFooterProps = {
   label: string;

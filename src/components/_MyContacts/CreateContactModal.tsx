@@ -9,11 +9,11 @@ import {
   View,
 } from 'react-native';
 
-import { Dropdown } from './Dropdown';
-import type { TranslationKey } from '../constants/i18n';
-import type { ColorTokens } from '../constants/theme';
-import type { Contact } from '../src/data/contacts';
-import { mockLocations } from '../src/data/locations';
+import type { TranslationKey } from '../../../constants/i18n';
+import type { ColorTokens } from '../../../constants/theme';
+import type { Contact } from '../../data/contacts';
+import { mockLocations } from '../../data/locations';
+import { Dropdown } from '../common/Dropdown';
 
 type CreateContactModalProps = {
   visible: boolean;

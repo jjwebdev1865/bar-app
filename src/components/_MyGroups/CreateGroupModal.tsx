@@ -9,10 +9,10 @@ import {
   View,
 } from 'react-native';
 
-import type { TranslationKey } from '../constants/i18n';
-import type { ColorTokens } from '../constants/theme';
-import type { Contact } from '../src/data/contacts';
-import type { Group } from '../src/data/groups';
+import type { TranslationKey } from '../../../constants/i18n';
+import type { ColorTokens } from '../../../constants/theme';
+import type { Contact } from '../../data/contacts';
+import type { Group } from '../../data/groups';
 
 type CreateGroupModalProps = {
   visible: boolean;
