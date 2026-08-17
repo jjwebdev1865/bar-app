@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { ColorTokens } from '../../../constants/theme';
+import type { ColorTokens } from '../../theme/theme';
 
 export type DropdownOption = {
   value: string;

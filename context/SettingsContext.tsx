@@ -1,23 +1,24 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
 
-import {
+import i18n, {
   defaultLanguage,
   translate,
   type Language,
   type TranslationKey,
-} from '../constants/i18n';
+} from '../src/i18n';
 import {
   defaultThemeMode,
   themes,
   type ColorTokens,
   type ThemeMode,
-} from '../constants/theme';
+} from '../src/theme/theme';
 
 type SettingsContextValue = {
   themeMode: ThemeMode;
@@ -33,6 +34,10 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(defaultThemeMode);
   const [language, setLanguage] = useState<Language>(defaultLanguage);
+
+  useEffect(() => {
+    i18n.changeLanguage(language);
+  }, [language]);
 
   const value = useMemo<SettingsContextValue>(
     () => ({

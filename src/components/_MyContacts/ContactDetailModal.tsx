@@ -9,8 +9,8 @@ import {
   View,
 } from 'react-native';
 
-import type { TranslationKey } from '../../../constants/i18n';
-import type { ColorTokens } from '../../../constants/theme';
+import type { TranslationKey } from '../../i18n';
+import type { ColorTokens } from '../../theme/theme';
 import type { Contact } from '../../data/contacts';
 import { mockLocations } from '../../data/locations';
 import { Dropdown } from '../common/Dropdown';

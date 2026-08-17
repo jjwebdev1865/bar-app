@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import type { TranslationKey } from "../../../constants/i18n";
+import type { TranslationKey } from "../../i18n";
 import { useSettings } from "../../../context/SettingsContext";
 import type { Contact } from "../../data/contacts";
 import { mockGroups } from "../../data/groups";

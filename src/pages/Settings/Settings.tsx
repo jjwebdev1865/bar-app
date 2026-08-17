@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
-import { languageOptions, type Language } from '../../../constants/i18n';
+import { languageOptions, type Language } from '../../i18n';
 import { useSettings } from '../../../context/SettingsContext';
 
 export default function SettingsScreen() {
