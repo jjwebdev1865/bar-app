@@ -1,0 +1,52 @@
+export type ThemeMode = 'dark' | 'light';
+
+export type ColorTokens = {
+  background: string;
+  panel: string;
+  text: string;
+  textSecondary: string;
+  textMuted: string;
+  accent: string;
+  accentMuted: string;
+  onAccent: string;
+  border: string;
+  stool: string;
+  overlay: string;
+  white: string;
+};
+
+export const themes: Record<ThemeMode, ColorTokens> = {
+  dark: {
+    background: '#0B0B0D',
+    panel: '#141418',
+    text: '#FFFFFF',
+    textSecondary: '#C4A000',
+    textMuted: '#6B6B75',
+    accent: '#F5D000',
+    accentMuted: '#C4A000',
+    onAccent: '#0B0B0D',
+    border: '#2A2A30',
+    stool: '#1A1A1A',
+    overlay: 'rgba(0, 0, 0, 0.65)',
+    white: '#FFFFFF',
+  },
+  light: {
+    background: '#F7F5F0',
+    panel: '#FFFFFF',
+    text: '#121214',
+    textSecondary: '#8A7000',
+    textMuted: '#6B6B75',
+    accent: '#C4A000',
+    accentMuted: '#8A7000',
+    onAccent: '#FFFFFF',
+    border: '#D8D4CB',
+    stool: '#1A1A1A',
+    overlay: 'rgba(0, 0, 0, 0.35)',
+    white: '#FFFFFF',
+  },
+};
+
+export const defaultThemeMode: ThemeMode = 'dark';
+
+/** @deprecated Prefer useSettings().colors for theme-aware tokens */
+export const colors = themes.dark;
