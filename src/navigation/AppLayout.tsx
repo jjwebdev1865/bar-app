@@ -6,21 +6,21 @@ import {
   DrawerToggleButton,
   type DrawerContentComponentProps,
 } from 'expo-router/drawer';
+import { useMemo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
+import type { ColorTokens } from '../theme/theme';
 
 function DrawerMenu(props: DrawerContentComponentProps) {
   const { colors, t } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <DrawerContentScrollView
-      {...props}
-      style={{ backgroundColor: colors.panel }}
-    >
-      <Text style={[styles.brand, { color: colors.accent }]}>{t('appName')}</Text>
+    <DrawerContentScrollView {...props} style={styles.drawerScroll}>
+      <Text style={styles.brand}>{t('appName')}</Text>
       <DrawerItemList {...props} />
     </DrawerContentScrollView>
   );
@@ -28,6 +28,7 @@ function DrawerMenu(props: DrawerContentComponentProps) {
 
 function AppDrawer() {
   const { colors, themeMode, t } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <>
@@ -35,18 +36,18 @@ function AppDrawer() {
       <Drawer
         drawerContent={DrawerMenu}
         screenOptions={{
-          headerStyle: { backgroundColor: colors.background },
+          headerStyle: styles.header,
           headerTintColor: colors.accent,
-          headerTitleStyle: { color: colors.accent, fontWeight: '800' },
+          headerTitleStyle: styles.headerTitle,
           headerShadowVisible: false,
           headerLeft: () => <DrawerToggleButton tintColor={colors.accent} />,
-          drawerStyle: { backgroundColor: colors.panel },
+          drawerStyle: styles.drawer,
           drawerActiveTintColor: colors.onAccent,
           drawerActiveBackgroundColor: colors.accent,
           drawerInactiveTintColor: colors.accentMuted,
-          drawerLabelStyle: { fontWeight: '700', fontSize: 16 },
+          drawerLabelStyle: styles.drawerLabel,
           overlayColor: colors.overlay,
-          sceneStyle: { backgroundColor: colors.background },
+          sceneStyle: styles.scene,
         }}
       >
         <Drawer.Screen
@@ -93,7 +94,7 @@ function AppDrawer() {
 
 export default function AppLayout() {
   return (
-    <GestureHandlerRootView style={styles.root}>
+    <GestureHandlerRootView style={rootStyles.root}>
       <SafeAreaProvider>
         <SettingsProvider>
           <AppDrawer />
@@ -103,16 +104,42 @@ export default function AppLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+// Rendered above SettingsProvider, so no theme colors are available here.
+const rootStyles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  brand: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    paddingTop: 8,
-  },
 });
+
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    drawerScroll: {
+      backgroundColor: colors.panel,
+    },
+    brand: {
+      fontSize: 22,
+      fontWeight: '800',
+      letterSpacing: 1,
+      paddingHorizontal: 16,
+      paddingBottom: 20,
+      paddingTop: 8,
+      color: colors.accent,
+    },
+    header: {
+      backgroundColor: colors.background,
+    },
+    headerTitle: {
+      color: colors.accent,
+      fontWeight: '800',
+    },
+    drawer: {
+      backgroundColor: colors.panel,
+    },
+    drawerLabel: {
+      fontWeight: '700',
+      fontSize: 16,
+    },
+    scene: {
+      backgroundColor: colors.background,
+    },
+  });

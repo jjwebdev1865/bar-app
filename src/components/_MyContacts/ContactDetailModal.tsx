@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -14,6 +14,8 @@ import type { ColorTokens } from '../../theme/theme';
 import type { Contact } from '../../data/contacts';
 import { mockLocations } from '../../data/locations';
 import { Dropdown } from '../common/Dropdown';
+
+type ContactDetailStyles = ReturnType<typeof createStyles>;
 
 type ContactDetailModalProps = {
   contact: Contact | null;
@@ -33,6 +35,21 @@ type ContactDraft = {
   phone: string;
   address: string;
   favoriteBarId: string;
+};
+
+type ActionButtonVariant = 'primary' | 'secondary' | 'danger';
+
+type InfoRowProps = {
+  label: string;
+  value: string;
+  styles: ContactDetailStyles;
+};
+
+type ActionButtonProps = {
+  label: string;
+  onPress: () => void;
+  variant: ActionButtonVariant;
+  styles: ContactDetailStyles;
 };
 
 function toDraft(contact: Contact): ContactDraft {
@@ -62,6 +79,36 @@ function favoriteBarName(favoriteBarId: string) {
   );
 }
 
+function actionButtonStyle(
+  variant: ActionButtonVariant,
+  styles: ContactDetailStyles,
+) {
+  if (variant === 'primary') {
+    return styles.primaryActionButton;
+  }
+
+  if (variant === 'danger') {
+    return styles.dangerActionButton;
+  }
+
+  return styles.secondaryActionButton;
+}
+
+function actionLabelStyle(
+  variant: ActionButtonVariant,
+  styles: ContactDetailStyles,
+) {
+  if (variant === 'primary') {
+    return styles.primaryActionLabel;
+  }
+
+  if (variant === 'danger') {
+    return styles.dangerActionLabel;
+  }
+
+  return styles.secondaryActionLabel;
+}
+
 export function ContactDetailModal({
   contact,
   visible,
@@ -71,6 +118,7 @@ export function ContactDetailModal({
   onSave,
   onDelete,
 }: ContactDetailModalProps) {
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<ContactDraft | null>(null);
   const [barDropdownOpen, setBarDropdownOpen] = useState(false);
@@ -143,15 +191,10 @@ export function ContactDetailModal({
       animationType="fade"
       onRequestClose={handleClose}
     >
-      <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
-        <View
-          style={[
-            styles.sheet,
-            { backgroundColor: colors.panel, borderColor: colors.border },
-          ]}
-        >
+      <View style={styles.backdrop}>
+        <View style={styles.sheet}>
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.accent }]} numberOfLines={2}>
+            <Text style={styles.title} numberOfLines={2}>
               {isEditing ? t('editContact') : displayName(contact)}
             </Text>
             <Pressable
@@ -160,9 +203,7 @@ export function ContactDetailModal({
               onPress={handleClose}
               style={styles.closeButton}
             >
-              <Text style={[styles.closeLabel, { color: colors.textMuted }]}>
-                {t('close')}
-              </Text>
+              <Text style={styles.closeLabel}>{t('close')}</Text>
             </Pressable>
           </View>
 
@@ -175,22 +216,14 @@ export function ContactDetailModal({
               <>
                 {fields.map((field) => (
                   <View key={field.key} style={styles.field}>
-                    <Text style={[styles.fieldLabel, { color: colors.accentMuted }]}>
-                      {t(field.label)}
-                    </Text>
+                    <Text style={styles.fieldLabel}>{t(field.label)}</Text>
                     <TextInput
                       value={draft[field.key]}
                       onChangeText={(value) => updateField(field.key, value)}
                       multiline={field.multiline}
-                      style={[
-                        styles.input,
-                        field.multiline && styles.multilineInput,
-                        {
-                          color: colors.text,
-                          backgroundColor: colors.background,
-                          borderColor: colors.border,
-                        },
-                      ]}
+                      style={
+                        field.multiline ? styles.multilineInput : styles.input
+                      }
                       placeholderTextColor={colors.textMuted}
                     />
                   </View>
@@ -215,29 +248,29 @@ export function ContactDetailModal({
                 <InfoRow
                   label={t('firstName')}
                   value={contact.firstName}
-                  colors={colors}
+                  styles={styles}
                 />
                 <InfoRow
                   label={t('lastName')}
                   value={contact.lastName}
-                  colors={colors}
+                  styles={styles}
                 />
                 <InfoRow
                   label={t('nickname')}
                   value={contact.nickname ?? t('none')}
-                  colors={colors}
+                  styles={styles}
                 />
-                <InfoRow label={t('email')} value={contact.email} colors={colors} />
-                <InfoRow label={t('phone')} value={contact.phone} colors={colors} />
+                <InfoRow label={t('email')} value={contact.email} styles={styles} />
+                <InfoRow label={t('phone')} value={contact.phone} styles={styles} />
                 <InfoRow
                   label={t('address')}
                   value={contact.address}
-                  colors={colors}
+                  styles={styles}
                 />
                 <InfoRow
                   label={t('favoriteBar')}
                   value={favoriteBarName(contact.favoriteBarId)}
-                  colors={colors}
+                  styles={styles}
                 />
               </>
             )}
@@ -253,14 +286,14 @@ export function ContactDetailModal({
                     setIsEditing(false);
                     setBarDropdownOpen(false);
                   }}
-                  colors={colors}
                   variant="secondary"
+                  styles={styles}
                 />
                 <ActionButton
                   label={t('save')}
                   onPress={handleSave}
-                  colors={colors}
                   variant="primary"
+                  styles={styles}
                 />
               </>
             ) : (
@@ -268,14 +301,14 @@ export function ContactDetailModal({
                 <ActionButton
                   label={t('editContact')}
                   onPress={() => setIsEditing(true)}
-                  colors={colors}
                   variant="primary"
+                  styles={styles}
                 />
                 <ActionButton
                   label={t('deleteContact')}
                   onPress={handleDelete}
-                  colors={colors}
                   variant="danger"
+                  styles={styles}
                 />
               </>
             )}
@@ -286,143 +319,44 @@ export function ContactDetailModal({
   );
 }
 
-function InfoRow({
-  label,
-  value,
-  colors,
-}: {
-  label: string;
-  value: string;
-  colors: ColorTokens;
-}) {
+function InfoRow({ label, value, styles }: InfoRowProps) {
   return (
     <View style={styles.infoRow}>
-      <Text style={[styles.fieldLabel, { color: colors.accentMuted }]}>{label}</Text>
-      <Text style={[styles.infoValue, { color: colors.text }]}>{value}</Text>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
     </View>
   );
 }
 
-function ActionButton({
-  label,
-  onPress,
-  colors,
-  variant,
-}: {
-  label: string;
-  onPress: () => void;
-  colors: ColorTokens;
-  variant: 'primary' | 'secondary' | 'danger';
-}) {
-  const backgroundColor =
-    variant === 'primary'
-      ? colors.accent
-      : variant === 'danger'
-        ? '#8B1E1E'
-        : colors.background;
-  const textColor =
-    variant === 'primary'
-      ? colors.onAccent
-      : variant === 'danger'
-        ? colors.white
-        : colors.text;
-
+function ActionButton({ label, onPress, variant, styles }: ActionButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
-        styles.actionButton,
-        {
-          backgroundColor,
-          borderColor: colors.border,
-          opacity: pressed ? 0.8 : 1,
-        },
+        actionButtonStyle(variant, styles),
+        pressed && styles.actionButtonPressed,
       ]}
     >
-      <Text style={[styles.actionLabel, { color: textColor }]}>{label}</Text>
+      <Text style={actionLabelStyle(variant, styles)}>{label}</Text>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  sheet: {
-    maxHeight: '85%',
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 12,
-  },
-  title: {
-    flex: 1,
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  closeButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-  },
-  closeLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  body: {
-    flexGrow: 0,
-  },
-  bodyContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-    gap: 14,
-  },
-  field: {
-    gap: 6,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  input: {
+const createStyles = (colors: ColorTokens) => {
+  const input = {
     minHeight: 44,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-  },
-  multilineInput: {
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-  infoRow: {
-    gap: 4,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 18,
-  },
-  actionButton: {
+    color: colors.text,
+    backgroundColor: colors.background,
+    borderColor: colors.border,
+  } as const;
+
+  const actionButton = {
     flex: 1,
     minHeight: 44,
     borderRadius: 10,
@@ -430,9 +364,118 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
-  },
-  actionLabel: {
+    borderColor: colors.border,
+  } as const;
+
+  const actionLabel = {
     fontSize: 15,
     fontWeight: '700',
-  },
-});
+  } as const;
+
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+      backgroundColor: colors.overlay,
+    },
+    sheet: {
+      maxHeight: '85%',
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      overflow: 'hidden',
+      backgroundColor: colors.panel,
+      borderColor: colors.border,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: 12,
+    },
+    title: {
+      flex: 1,
+      fontSize: 22,
+      fontWeight: '800',
+      color: colors.accent,
+    },
+    closeButton: {
+      paddingVertical: 4,
+      paddingHorizontal: 4,
+    },
+    closeLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textMuted,
+    },
+    body: {
+      flexGrow: 0,
+    },
+    bodyContent: {
+      paddingHorizontal: 20,
+      paddingBottom: 8,
+      gap: 14,
+    },
+    field: {
+      gap: 6,
+    },
+    fieldLabel: {
+      fontSize: 12,
+      fontWeight: '800',
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      color: colors.accentMuted,
+    },
+    input,
+    multilineInput: {
+      ...input,
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+    infoRow: {
+      gap: 4,
+    },
+    infoValue: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 10,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 18,
+    },
+    primaryActionButton: {
+      ...actionButton,
+      backgroundColor: colors.accent,
+    },
+    secondaryActionButton: {
+      ...actionButton,
+      backgroundColor: colors.background,
+    },
+    dangerActionButton: {
+      ...actionButton,
+      backgroundColor: colors.danger,
+    },
+    actionButtonPressed: {
+      opacity: 0.8,
+    },
+    primaryActionLabel: {
+      ...actionLabel,
+      color: colors.onAccent,
+    },
+    secondaryActionLabel: {
+      ...actionLabel,
+      color: colors.text,
+    },
+    dangerActionLabel: {
+      ...actionLabel,
+      color: colors.white,
+    },
+  });
+};

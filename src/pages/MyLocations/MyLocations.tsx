@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,6 +8,7 @@ import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { mockContacts } from '../../data/contacts';
 import { mockLocations, type BarLocation } from '../../data/locations';
 import { CreateLocationModal } from '../../components/_MyLocations';
+import type { ColorTokens } from '../../theme/theme';
 
 function favoriteCount(location: BarLocation) {
   return mockContacts.filter(
@@ -17,6 +18,7 @@ function favoriteCount(location: BarLocation) {
 
 export default function LocationsScreen() {
   const { colors, t } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [locations, setLocations] = useState<BarLocation[]>(() => [
     ...mockLocations,
   ]);
@@ -27,10 +29,7 @@ export default function LocationsScreen() {
   }
 
   return (
-    <SafeAreaView
-      edges={HEADER_SCREEN_EDGES}
-      style={[styles.screen, { backgroundColor: colors.background }]}
-    >
+    <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.screen}>
       <FlatList
         data={locations}
         keyExtractor={(item) => item.id}
@@ -40,26 +39,13 @@ export default function LocationsScreen() {
           const fans = favoriteCount(item);
 
           return (
-            <View
-              style={[
-                styles.row,
-                { backgroundColor: colors.background },
-                !isLast && {
-                  borderBottomWidth: StyleSheet.hairlineWidth,
-                  borderBottomColor: colors.border,
-                },
-              ]}
-            >
-              <Text style={[styles.name, { color: colors.text }]}>
-                {item.name}
-              </Text>
-              <Text style={[styles.address, { color: colors.accentMuted }]}>
-                {item.address}
-              </Text>
-              <Text style={[styles.coords, { color: colors.textMuted }]}>
+            <View style={[styles.row, !isLast && styles.rowDivider]}>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.address}>{item.address}</Text>
+              <Text style={styles.coords}>
                 {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
               </Text>
-              <Text style={[styles.meta, { color: colors.accent }]}>
+              <Text style={styles.meta}>
                 {t('favoriteOf', {
                   count: fans,
                   contacts: fans === 1 ? t('contact') : t('contacts'),
@@ -69,9 +55,7 @@ export default function LocationsScreen() {
           );
         }}
         ListEmptyComponent={
-          <Text style={[styles.empty, { color: colors.accentMuted }]}>
-            {t('noLocations')}
-          </Text>
+          <Text style={styles.empty}>{t('noLocations')}</Text>
         }
       />
 
@@ -92,37 +76,49 @@ export default function LocationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: 24,
-  },
-  row: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  address: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  coords: {
-    fontSize: 13,
-    marginBottom: 6,
-  },
-  meta: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  empty: {
-    textAlign: 'center',
-    marginTop: 48,
-    fontSize: 16,
-  },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    listContent: {
+      paddingBottom: 24,
+    },
+    row: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: colors.background,
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    name: {
+      fontSize: 18,
+      fontWeight: '700',
+      marginBottom: 6,
+      color: colors.text,
+    },
+    address: {
+      fontSize: 14,
+      marginBottom: 4,
+      color: colors.accentMuted,
+    },
+    coords: {
+      fontSize: 13,
+      marginBottom: 6,
+      color: colors.textMuted,
+    },
+    meta: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.accent,
+    },
+    empty: {
+      textAlign: 'center',
+      marginTop: 48,
+      fontSize: 16,
+      color: colors.accentMuted,
+    },
+  });

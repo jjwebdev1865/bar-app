@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { TranslationKey } from '../../i18n';
@@ -43,6 +43,7 @@ export function CreateContactModal({
   onClose,
   onCreate,
 }: CreateContactModalProps) {
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [draft, setDraft] = useState<ContactDraft>(emptyDraft);
   const [barDropdownOpen, setBarDropdownOpen] = useState(false);
 
@@ -118,22 +119,12 @@ export function CreateContactModal({
     >
       {fields.map((field) => (
         <View key={field.key} style={styles.field}>
-          <Text style={[styles.fieldLabel, { color: colors.accentMuted }]}>
-            {t(field.label)}
-          </Text>
+          <Text style={styles.fieldLabel}>{t(field.label)}</Text>
           <TextInput
             value={draft[field.key]}
             onChangeText={(value) => updateField(field.key, value)}
             multiline={field.multiline}
-            style={[
-              styles.input,
-              field.multiline && styles.multilineInput,
-              {
-                color: colors.text,
-                backgroundColor: colors.background,
-                borderColor: colors.border,
-              },
-            ]}
+            style={field.multiline ? styles.multilineInput : styles.input}
             placeholderTextColor={colors.textMuted}
           />
         </View>
@@ -156,26 +147,35 @@ export function CreateContactModal({
   );
 }
 
-const styles = StyleSheet.create({
-  field: {
-    gap: 6,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  input: {
+const createStyles = (colors: ColorTokens) => {
+  const input = {
     minHeight: 44,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-  },
-  multilineInput: {
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-});
+    color: colors.text,
+    backgroundColor: colors.background,
+    borderColor: colors.border,
+  } as const;
+
+  return StyleSheet.create({
+    field: {
+      gap: 6,
+    },
+    fieldLabel: {
+      fontSize: 12,
+      fontWeight: '800',
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      color: colors.accentMuted,
+    },
+    input,
+    multilineInput: {
+      ...input,
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+  });
+};

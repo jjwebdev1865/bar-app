@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   Modal,
   Pressable,
@@ -35,6 +35,8 @@ export function CreateModal({
   onCreate,
   children,
 }: CreateModalProps) {
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Modal
       visible={visible}
@@ -42,25 +44,16 @@ export function CreateModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
-        <View
-          style={[
-            styles.sheet,
-            { backgroundColor: colors.panel, borderColor: colors.border },
-          ]}
-        >
+      <View style={styles.backdrop}>
+        <View style={styles.sheet}>
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.accent }]}>
-              {title}
-            </Text>
+            <Text style={styles.title}>{title}</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={closeLabel}
               onPress={onClose}
             >
-              <Text style={[styles.closeLabel, { color: colors.textMuted }]}>
-                {closeLabel}
-              </Text>
+              <Text style={styles.closeLabel}>{closeLabel}</Text>
             </Pressable>
           </View>
 
@@ -77,34 +70,24 @@ export function CreateModal({
               accessibilityRole="button"
               onPress={onClose}
               style={({ pressed }) => [
-                styles.actionButton,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  opacity: pressed ? 0.8 : 1,
-                },
+                styles.cancelButton,
+                pressed && styles.actionButtonPressed,
               ]}
             >
-              <Text style={[styles.actionLabel, { color: colors.text }]}>
-                {cancelLabel}
-              </Text>
+              <Text style={styles.cancelActionLabel}>{cancelLabel}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
               disabled={!canCreate}
               onPress={onCreate}
               style={({ pressed }) => [
-                styles.actionButton,
-                {
-                  backgroundColor: colors.accent,
-                  borderColor: colors.border,
-                  opacity: !canCreate ? 0.45 : pressed ? 0.8 : 1,
-                },
+                styles.createButton,
+                !canCreate
+                  ? styles.actionButtonDisabled
+                  : pressed && styles.actionButtonPressed,
               ]}
             >
-              <Text style={[styles.actionLabel, { color: colors.onAccent }]}>
-                {createLabel}
-              </Text>
+              <Text style={styles.createActionLabel}>{createLabel}</Text>
             </Pressable>
           </View>
         </View>
@@ -113,52 +96,8 @@ export function CreateModal({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  sheet: {
-    maxHeight: '85%',
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 12,
-  },
-  title: {
-    flex: 1,
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  closeLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  body: {
-    flexGrow: 0,
-  },
-  bodyContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-    gap: 14,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 18,
-  },
-  actionButton: {
+const createStyles = (colors: ColorTokens) => {
+  const actionButton = {
     flex: 1,
     minHeight: 44,
     borderRadius: 10,
@@ -166,9 +105,85 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
-  },
-  actionLabel: {
+    borderColor: colors.border,
+  } as const;
+
+  const actionLabel = {
     fontSize: 15,
     fontWeight: '700',
-  },
-});
+  } as const;
+
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+      backgroundColor: colors.overlay,
+    },
+    sheet: {
+      maxHeight: '85%',
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      overflow: 'hidden',
+      backgroundColor: colors.panel,
+      borderColor: colors.border,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: 12,
+    },
+    title: {
+      flex: 1,
+      fontSize: 22,
+      fontWeight: '800',
+      color: colors.accent,
+    },
+    closeLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textMuted,
+    },
+    body: {
+      flexGrow: 0,
+    },
+    bodyContent: {
+      paddingHorizontal: 20,
+      paddingBottom: 8,
+      gap: 14,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 10,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 18,
+    },
+    cancelButton: {
+      ...actionButton,
+      backgroundColor: colors.background,
+    },
+    createButton: {
+      ...actionButton,
+      backgroundColor: colors.accent,
+    },
+    actionButtonPressed: {
+      opacity: 0.8,
+    },
+    actionButtonDisabled: {
+      opacity: 0.45,
+    },
+    cancelActionLabel: {
+      ...actionLabel,
+      color: colors.text,
+    },
+    createActionLabel: {
+      ...actionLabel,
+      color: colors.onAccent,
+    },
+  });
+};

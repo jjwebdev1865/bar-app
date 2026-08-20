@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { TranslationKey } from '../../i18n';
@@ -32,6 +32,7 @@ export function CreateGroupModal({
   onClose,
   onCreate,
 }: CreateGroupModalProps) {
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [name, setName] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -85,27 +86,16 @@ export function CreateGroupModal({
       onCreate={handleCreate}
     >
       <View style={styles.field}>
-        <Text style={[styles.fieldLabel, { color: colors.accentMuted }]}>
-          {t('groupName')}
-        </Text>
+        <Text style={styles.fieldLabel}>{t('groupName')}</Text>
         <TextInput
           value={name}
           onChangeText={setName}
-          style={[
-            styles.input,
-            {
-              color: colors.text,
-              backgroundColor: colors.background,
-              borderColor: colors.border,
-            },
-          ]}
+          style={styles.input}
           placeholderTextColor={colors.textMuted}
         />
       </View>
 
-      <Text style={[styles.fieldLabel, { color: colors.accentMuted }]}>
-        {t('selectMembers')}
-      </Text>
+      <Text style={styles.fieldLabel}>{t('selectMembers')}</Text>
 
       {availableContacts.map((contact, index) => {
         const selected = selectedIds.includes(contact.id);
@@ -117,35 +107,15 @@ export function CreateGroupModal({
             accessibilityRole="checkbox"
             accessibilityState={{ checked: selected }}
             onPress={() => toggleContact(contact.id)}
-            style={[
-              styles.memberRow,
-              {
-                backgroundColor: colors.background,
-                borderColor: colors.border,
-              },
-              !isLast && styles.memberRowSpacing,
-            ]}
+            style={[styles.memberRow, !isLast && styles.memberRowSpacing]}
           >
-            <Text
-              style={[styles.memberName, { color: colors.text }]}
-              numberOfLines={1}
-            >
+            <Text style={styles.memberName} numberOfLines={1}>
               {contactDisplayName(contact)}
             </Text>
             <View
-              style={[
-                styles.checkbox,
-                {
-                  borderColor: selected ? colors.accent : colors.border,
-                  backgroundColor: selected ? colors.accent : 'transparent',
-                },
-              ]}
+              style={selected ? styles.checkboxSelected : styles.checkboxDefault}
             >
-              {selected ? (
-                <Text style={[styles.checkmark, { color: colors.onAccent }]}>
-                  ✓
-                </Text>
-              ) : null}
+              {selected ? <Text style={styles.checkmark}>✓</Text> : null}
             </View>
           </Pressable>
         );
@@ -154,53 +124,74 @@ export function CreateGroupModal({
   );
 }
 
-const styles = StyleSheet.create({
-  field: {
-    gap: 6,
-    marginBottom: 6,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  input: {
-    minHeight: 44,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-  },
-  memberRow: {
-    minHeight: 48,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  memberRowSpacing: {
-    marginBottom: 0,
-  },
-  memberName: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  checkbox: {
+const createStyles = (colors: ColorTokens) => {
+  const checkbox = {
     width: 22,
     height: 22,
     borderRadius: 6,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  checkmark: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-});
+  } as const;
+
+  return StyleSheet.create({
+    field: {
+      gap: 6,
+      marginBottom: 6,
+    },
+    fieldLabel: {
+      fontSize: 12,
+      fontWeight: '800',
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      color: colors.accentMuted,
+    },
+    input: {
+      minHeight: 44,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+    },
+    memberRow: {
+      minHeight: 48,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+    },
+    memberRowSpacing: {
+      marginBottom: 0,
+    },
+    memberName: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    checkboxSelected: {
+      ...checkbox,
+      borderColor: colors.accent,
+      backgroundColor: colors.accent,
+    },
+    checkboxDefault: {
+      ...checkbox,
+      borderColor: colors.border,
+      backgroundColor: 'transparent',
+    },
+    checkmark: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.onAccent,
+    },
+  });
+};

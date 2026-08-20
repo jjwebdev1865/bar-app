@@ -7,6 +7,7 @@ import { HEADER_SCREEN_EDGES } from "../../constants/safeAreaEdges";
 import { mockContacts, type Contact } from "../../data/contacts";
 import { CreateFooter } from "../../components/common";
 import { ContactDetailModal, CreateContactModal } from "../../components/_MyContacts";
+import type { ColorTokens } from "../../theme/theme";
 
 type ContactSection = {
   title: string;
@@ -48,6 +49,7 @@ function buildSections(contacts: Contact[]): ContactSection[] {
 
 export default function ContactsScreen() {
   const { colors, t } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [contacts, setContacts] = useState<Contact[]>(() => [...mockContacts]);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(
     null,
@@ -77,22 +79,15 @@ export default function ContactsScreen() {
   }
 
   return (
-    <SafeAreaView
-      edges={HEADER_SCREEN_EDGES}
-      style={[styles.screen, { backgroundColor: colors.background }]}
-    >
+    <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.screen}>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
         stickySectionHeadersEnabled
         contentContainerStyle={styles.listContent}
         renderSectionHeader={({ section }) => (
-          <View
-            style={[styles.sectionHeader, { backgroundColor: colors.panel }]}
-          >
-            <Text style={[styles.sectionLetter, { color: colors.accent }]}>
-              {section.title}
-            </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLetter}>{section.title}</Text>
           </View>
         )}
         renderItem={({ item, index, section }) => {
@@ -104,29 +99,17 @@ export default function ContactsScreen() {
               onPress={() => setSelectedContactId(item.id)}
               style={({ pressed }) => [
                 styles.row,
-                {
-                  backgroundColor: colors.background,
-                  opacity: pressed ? 0.7 : 1,
-                },
-                !isLast && {
-                  borderBottomWidth: StyleSheet.hairlineWidth,
-                  borderBottomColor: colors.border,
-                },
+                pressed && styles.rowPressed,
+                !isLast && styles.rowDivider,
               ]}
             >
-              <Text style={[styles.name, { color: colors.text }]}>
-                {displayName(item)}
-              </Text>
-              <Text style={[styles.phone, { color: colors.accentMuted }]}>
-                {item.phone}
-              </Text>
+              <Text style={styles.name}>{displayName(item)}</Text>
+              <Text style={styles.phone}>{item.phone}</Text>
             </Pressable>
           );
         }}
         ListEmptyComponent={
-          <Text style={[styles.empty, { color: colors.accentMuted }]}>
-            {t("noContacts")}
-          </Text>
+          <Text style={styles.empty}>{t("noContacts")}</Text>
         }
       />
 
@@ -157,36 +140,51 @@ export default function ContactsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: 16,
-  },
-  sectionHeader: {
-    paddingHorizontal: 20,
-    paddingVertical: 6,
-  },
-  sectionLetter: {
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  row: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
-  name: {
-    fontSize: 17,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  phone: {
-    fontSize: 14,
-  },
-  empty: {
-    textAlign: "center",
-    marginTop: 48,
-    fontSize: 16,
-  },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    listContent: {
+      paddingBottom: 16,
+    },
+    sectionHeader: {
+      paddingHorizontal: 20,
+      paddingVertical: 6,
+      backgroundColor: colors.panel,
+    },
+    sectionLetter: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.accent,
+    },
+    row: {
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      backgroundColor: colors.background,
+    },
+    rowPressed: {
+      opacity: 0.7,
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    name: {
+      fontSize: 17,
+      fontWeight: "600",
+      marginBottom: 4,
+      color: colors.text,
+    },
+    phone: {
+      fontSize: 14,
+      color: colors.accentMuted,
+    },
+    empty: {
+      textAlign: "center",
+      marginTop: 48,
+      fontSize: 16,
+      color: colors.accentMuted,
+    },
+  });

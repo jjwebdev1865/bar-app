@@ -15,6 +15,13 @@ import type { Contact } from "../../data/contacts";
 import { mockGroups } from "../../data/groups";
 import { mockLocations } from "../../data/locations";
 import { Dropdown } from "../../components/common";
+import type { ColorTokens } from "../../theme/theme";
+
+type HomeStyles = ReturnType<typeof createStyles>;
+
+type BarStoolProps = {
+  styles: HomeStyles;
+};
 
 function formatElapsedTime(
   totalSeconds: number,
@@ -45,6 +52,7 @@ function contactDisplayName(contact: Contact) {
 
 export default function HomeScreen() {
   const { colors, t } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
     null,
@@ -115,45 +123,30 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
-      <Text style={[styles.welcome, { color: colors.accentMuted }]}>
-        {t("welcomeTo")}
-      </Text>
-      <Text style={[styles.title, { color: colors.accent }]}>
-        {t("appName")}
-      </Text>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.welcome}>{t("welcomeTo")}</Text>
+      <Text style={styles.title}>{t("appName")}</Text>
 
       {signalActive ? (
         <View style={styles.activeSignal}>
           <View style={styles.timerBlock}>
             {selectedGroup && selectedLocation ? (
-              <Text style={[styles.headingTo, { color: colors.accentMuted }]}>
+              <Text style={styles.headingTo}>
                 {t("headingTo", {
                   group: selectedGroup.name,
                   location: selectedLocation.name,
                 })}
               </Text>
             ) : null}
-            <Text style={[styles.timerLabel, { color: colors.accentMuted }]}>
-              {t("travelTimer")}
-            </Text>
-            <Text style={[styles.timerValue, { color: colors.accent }]}>
+            <Text style={styles.timerLabel}>{t("travelTimer")}</Text>
+            <Text style={styles.timerValue}>
               {formatElapsedTime(elapsedSeconds, t)}
             </Text>
           </View>
 
           {selectedGroup ? (
-            <View
-              style={[
-                styles.membersCard,
-                { backgroundColor: colors.panel, borderColor: colors.border },
-              ]}
-            >
-              <Text style={[styles.membersTitle, { color: colors.accent }]}>
-                {t("whoIsComing")}
-              </Text>
+            <View style={styles.membersCard}>
+              <Text style={styles.membersTitle}>{t("whoIsComing")}</Text>
               <ScrollView
                 style={styles.membersList}
                 contentContainerStyle={styles.membersListContent}
@@ -166,23 +159,13 @@ export default function HomeScreen() {
                       key={contact.id}
                       style={[
                         styles.memberRow,
-                        !isLast && {
-                          borderBottomWidth: StyleSheet.hairlineWidth,
-                          borderBottomColor: colors.border,
-                        },
+                        !isLast && styles.memberRowDivider,
                       ]}
                     >
-                      <Text
-                        style={[styles.memberName, { color: colors.text }]}
-                        numberOfLines={1}
-                      >
+                      <Text style={styles.memberName} numberOfLines={1}>
                         {contactDisplayName(contact)}
                       </Text>
-                      <Text
-                        style={[styles.memberStatus, { color: colors.accent }]}
-                      >
-                        {t("onTheWay")}
-                      </Text>
+                      <Text style={styles.memberStatus}>{t("onTheWay")}</Text>
                     </View>
                   );
                 })}
@@ -196,16 +179,10 @@ export default function HomeScreen() {
             onPress={requestCancelSignal}
             style={({ pressed }) => [
               styles.cancelButton,
-              {
-                backgroundColor: colors.panel,
-                borderColor: colors.border,
-                opacity: pressed ? 0.8 : 1,
-              },
+              pressed && styles.cancelButtonPressed,
             ]}
           >
-            <Text style={[styles.cancelLabel, { color: colors.text }]}>
-              {t("cancel")}
-            </Text>
+            <Text style={styles.cancelLabel}>{t("cancel")}</Text>
           </Pressable>
         </View>
       ) : (
@@ -240,14 +217,10 @@ export default function HomeScreen() {
             onPress={activateSignal}
             style={({ pressed }) => [
               styles.signalButton,
-              {
-                borderColor: colors.white,
-                backgroundColor: colors.accent,
-              },
               pressed && styles.signalButtonPressed,
             ]}
           >
-            <BarStool stoolColor={colors.stool} />
+            <BarStool styles={styles} />
           </Pressable>
         </>
       )}
@@ -258,57 +231,32 @@ export default function HomeScreen() {
         animationType="fade"
         onRequestClose={dismissCancelConfirmation}
       >
-        <View
-          style={[styles.modalBackdrop, { backgroundColor: colors.overlay }]}
-        >
-          <View
-            style={[
-              styles.modalSheet,
-              { backgroundColor: colors.panel, borderColor: colors.border },
-            ]}
-          >
-            <Text style={[styles.modalTitle, { color: colors.accent }]}>
-              {t("cancelSignalTitle")}
-            </Text>
-            <Text style={[styles.modalMessage, { color: colors.text }]}>
-              {t("cancelSignalMessage")}
-            </Text>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>{t("cancelSignalTitle")}</Text>
+            <Text style={styles.modalMessage}>{t("cancelSignalMessage")}</Text>
 
             <View style={styles.modalActions}>
               <Pressable
                 accessibilityRole="button"
                 onPress={dismissCancelConfirmation}
                 style={({ pressed }) => [
-                  styles.modalButton,
-                  {
-                    backgroundColor: colors.background,
-                    borderColor: colors.border,
-                    opacity: pressed ? 0.8 : 1,
-                  },
+                  styles.modalKeepButton,
+                  pressed && styles.modalButtonPressed,
                 ]}
               >
-                <Text style={[styles.modalButtonLabel, { color: colors.text }]}>
-                  {t("keepSignal")}
-                </Text>
+                <Text style={styles.modalKeepLabel}>{t("keepSignal")}</Text>
               </Pressable>
 
               <Pressable
                 accessibilityRole="button"
                 onPress={confirmCancelSignal}
                 style={({ pressed }) => [
-                  styles.modalButton,
-                  {
-                    backgroundColor: "#8B1E1E",
-                    borderColor: colors.border,
-                    opacity: pressed ? 0.8 : 1,
-                  },
+                  styles.modalStopButton,
+                  pressed && styles.modalButtonPressed,
                 ]}
               >
-                <Text
-                  style={[styles.modalButtonLabel, { color: colors.white }]}
-                >
-                  {t("stopSignal")}
-                </Text>
+                <Text style={styles.modalStopLabel}>{t("stopSignal")}</Text>
               </Pressable>
             </View>
           </View>
@@ -318,154 +266,22 @@ export default function HomeScreen() {
   );
 }
 
-function BarStool({ stoolColor }: { stoolColor: string }) {
+function BarStool({ styles }: BarStoolProps) {
   return (
     <View style={styles.stool}>
-      <View style={[styles.seatTop, { backgroundColor: stoolColor }]} />
-      <View style={[styles.seat, { backgroundColor: stoolColor }]} />
-      <View style={[styles.pole, { backgroundColor: stoolColor }]} />
-      <View style={[styles.footrest, { backgroundColor: stoolColor }]} />
-      <View style={[styles.base, { backgroundColor: stoolColor }]} />
+      <View style={styles.seatTop} />
+      <View style={styles.seat} />
+      <View style={styles.pole} />
+      <View style={styles.footrest} />
+      <View style={styles.base} />
     </View>
   );
 }
 
 const SIGNAL_SIZE = 220;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  welcome: {
-    fontSize: 18,
-    letterSpacing: 4,
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: "800",
-    letterSpacing: 1,
-    marginBottom: 28,
-    textAlign: "center",
-  },
-  selectors: {
-    width: "100%",
-    maxWidth: 360,
-    gap: 16,
-    marginBottom: 36,
-    zIndex: 1,
-  },
-  activeSignal: {
-    width: "100%",
-    maxWidth: 360,
-    alignItems: "center",
-    gap: 20,
-  },
-  timerBlock: {
-    width: "100%",
-    alignItems: "center",
-    gap: 8,
-  },
-  headingTo: {
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  timerLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-  },
-  timerValue: {
-    fontSize: 32,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  membersCard: {
-    width: "100%",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    paddingTop: 14,
-    paddingBottom: 4,
-    maxHeight: 260,
-  },
-  membersTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  membersList: {
-    width: "100%",
-  },
-  membersListContent: {
-    paddingBottom: 8,
-  },
-  memberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  memberName: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  memberStatus: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  cancelButton: {
-    minHeight: 48,
-    minWidth: 180,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  cancelLabel: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  modalSheet: {
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 18,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 10,
-  },
-  modalMessage: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 20,
-  },
-  modalActions: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  modalButton: {
+const createStyles = (colors: ColorTokens) => {
+  const modalButton = {
     flex: 1,
     minHeight: 44,
     borderRadius: 10,
@@ -473,57 +289,246 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 12,
-  },
-  modalButtonLabel: {
+    borderColor: colors.border,
+  } as const;
+
+  const modalButtonLabel = {
     fontSize: 15,
     fontWeight: "700",
     textAlign: "center",
-  },
-  signalButton: {
-    width: SIGNAL_SIZE,
-    height: SIGNAL_SIZE,
-    borderRadius: SIGNAL_SIZE / 2,
-    borderWidth: 6,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  signalButtonPressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.97 }],
-  },
-  stool: {
-    width: 88,
-    height: 128,
-    alignItems: "center",
-  },
-  seatTop: {
-    width: 64,
-    height: 10,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-  },
-  seat: {
-    width: 72,
-    height: 14,
-    borderRadius: 6,
-    marginTop: -2,
-  },
-  pole: {
-    width: 10,
-    flex: 1,
-    marginTop: -1,
-    marginBottom: -1,
-  },
-  footrest: {
-    position: "absolute",
-    top: 70,
-    width: 52,
-    height: 10,
-    borderRadius: 5,
-  },
-  base: {
-    width: 64,
-    height: 12,
-    borderRadius: 6,
-  },
-});
+  } as const;
+
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 24,
+      backgroundColor: colors.background,
+    },
+    welcome: {
+      fontSize: 18,
+      letterSpacing: 4,
+      textTransform: "uppercase",
+      marginBottom: 8,
+      color: colors.accentMuted,
+    },
+    title: {
+      fontSize: 36,
+      fontWeight: "800",
+      letterSpacing: 1,
+      marginBottom: 28,
+      textAlign: "center",
+      color: colors.accent,
+    },
+    selectors: {
+      width: "100%",
+      maxWidth: 360,
+      gap: 16,
+      marginBottom: 36,
+      zIndex: 1,
+    },
+    activeSignal: {
+      width: "100%",
+      maxWidth: 360,
+      alignItems: "center",
+      gap: 20,
+    },
+    timerBlock: {
+      width: "100%",
+      alignItems: "center",
+      gap: 8,
+    },
+    headingTo: {
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
+      marginBottom: 4,
+      color: colors.accentMuted,
+    },
+    timerLabel: {
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 1.5,
+      textTransform: "uppercase",
+      color: colors.accentMuted,
+    },
+    timerValue: {
+      fontSize: 32,
+      fontWeight: "800",
+      textAlign: "center",
+      color: colors.accent,
+    },
+    membersCard: {
+      width: "100%",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 12,
+      paddingTop: 14,
+      paddingBottom: 4,
+      maxHeight: 260,
+      backgroundColor: colors.panel,
+      borderColor: colors.border,
+    },
+    membersTitle: {
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 1.5,
+      textTransform: "uppercase",
+      paddingHorizontal: 16,
+      marginBottom: 8,
+      color: colors.accent,
+    },
+    membersList: {
+      width: "100%",
+    },
+    membersListContent: {
+      paddingBottom: 8,
+    },
+    memberRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    memberRowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    memberName: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    memberStatus: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.accent,
+    },
+    cancelButton: {
+      minHeight: 48,
+      minWidth: 180,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 24,
+      backgroundColor: colors.panel,
+      borderColor: colors.border,
+    },
+    cancelButtonPressed: {
+      opacity: 0.8,
+    },
+    cancelLabel: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    modalBackdrop: {
+      flex: 1,
+      justifyContent: "center",
+      paddingHorizontal: 24,
+      backgroundColor: colors.overlay,
+    },
+    modalSheet: {
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 18,
+      backgroundColor: colors.panel,
+      borderColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "800",
+      marginBottom: 10,
+      color: colors.accent,
+    },
+    modalMessage: {
+      fontSize: 15,
+      lineHeight: 22,
+      marginBottom: 20,
+      color: colors.text,
+    },
+    modalActions: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    modalKeepButton: {
+      ...modalButton,
+      backgroundColor: colors.background,
+    },
+    modalStopButton: {
+      ...modalButton,
+      backgroundColor: colors.danger,
+    },
+    modalButtonPressed: {
+      opacity: 0.8,
+    },
+    modalKeepLabel: {
+      ...modalButtonLabel,
+      color: colors.text,
+    },
+    modalStopLabel: {
+      ...modalButtonLabel,
+      color: colors.white,
+    },
+    signalButton: {
+      width: SIGNAL_SIZE,
+      height: SIGNAL_SIZE,
+      borderRadius: SIGNAL_SIZE / 2,
+      borderWidth: 6,
+      alignItems: "center",
+      justifyContent: "center",
+      borderColor: colors.white,
+      backgroundColor: colors.accent,
+    },
+    signalButtonPressed: {
+      opacity: 0.75,
+      transform: [{ scale: 0.97 }],
+    },
+    stool: {
+      width: 88,
+      height: 128,
+      alignItems: "center",
+    },
+    seatTop: {
+      width: 64,
+      height: 10,
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      backgroundColor: colors.stool,
+    },
+    seat: {
+      width: 72,
+      height: 14,
+      borderRadius: 6,
+      marginTop: -2,
+      backgroundColor: colors.stool,
+    },
+    pole: {
+      width: 10,
+      flex: 1,
+      marginTop: -1,
+      marginBottom: -1,
+      backgroundColor: colors.stool,
+    },
+    footrest: {
+      position: "absolute",
+      top: 70,
+      width: 52,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.stool,
+    },
+    base: {
+      width: 64,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: colors.stool,
+    },
+  });
+};

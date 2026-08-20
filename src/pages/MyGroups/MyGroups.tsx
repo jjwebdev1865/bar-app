@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -8,6 +8,7 @@ import { HEADER_SCREEN_EDGES } from "../../constants/safeAreaEdges";
 import { mockContacts } from "../../data/contacts";
 import { mockGroups, type Group } from "../../data/groups";
 import { CreateGroupModal } from "../../components/_MyGroups";
+import type { ColorTokens } from "../../theme/theme";
 
 function memberPreview(group: Group) {
   return group.contacts.map((contact) => contact.firstName).join(", ");
@@ -15,6 +16,7 @@ function memberPreview(group: Group) {
 
 export default function GroupsScreen() {
   const { colors, t } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [groups, setGroups] = useState<Group[]>(() => [...mockGroups]);
   const [createVisible, setCreateVisible] = useState(false);
 
@@ -23,10 +25,7 @@ export default function GroupsScreen() {
   }
 
   return (
-    <SafeAreaView
-      edges={HEADER_SCREEN_EDGES}
-      style={[styles.screen, { backgroundColor: colors.background }]}
-    >
+    <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.screen}>
       <FlatList
         data={groups}
         keyExtractor={(item) => item.id}
@@ -35,39 +34,15 @@ export default function GroupsScreen() {
           const isLast = index === groups.length - 1;
 
           return (
-            <View
-              style={[
-                styles.row,
-                { backgroundColor: colors.background },
-                !isLast && {
-                  borderBottomWidth: StyleSheet.hairlineWidth,
-                  borderBottomColor: colors.border,
-                },
-              ]}
-            >
+            <View style={[styles.row, !isLast && styles.rowDivider]}>
               <View style={styles.rowTop}>
-                <Text style={[styles.name, { color: colors.text }]}>
-                  {item.name}
-                </Text>
-                <Text
-                  style={[
-                    styles.count,
-                    {
-                      color: colors.onAccent,
-                      backgroundColor: colors.accent,
-                    },
-                  ]}
-                >
-                  {item.contacts.length}
-                </Text>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.count}>{item.contacts.length}</Text>
               </View>
-              <Text
-                style={[styles.members, { color: colors.accentMuted }]}
-                numberOfLines={1}
-              >
+              <Text style={styles.members} numberOfLines={1}>
                 {memberPreview(item)}
               </Text>
-              <Text style={[styles.meta, { color: colors.textMuted }]}>
+              <Text style={styles.meta}>
                 {t("calledTimes", {
                   count: item.timesCalled,
                   times: item.timesCalled === 1 ? t("time") : t("times"),
@@ -77,9 +52,7 @@ export default function GroupsScreen() {
           );
         }}
         ListEmptyComponent={
-          <Text style={[styles.empty, { color: colors.accentMuted }]}>
-            {t("noGroups")}
-          </Text>
+          <Text style={styles.empty}>{t("noGroups")}</Text>
         }
       />
 
@@ -101,49 +74,62 @@ export default function GroupsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: 16,
-  },
-  row: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  rowTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: "700",
-    flex: 1,
-    marginRight: 12,
-  },
-  count: {
-    overflow: "hidden",
-    minWidth: 28,
-    textAlign: "center",
-    fontSize: 13,
-    fontWeight: "800",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  members: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  meta: {
-    fontSize: 13,
-  },
-  empty: {
-    textAlign: "center",
-    marginTop: 48,
-    fontSize: 16,
-  },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    listContent: {
+      paddingBottom: 16,
+    },
+    row: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: colors.background,
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    rowTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 6,
+    },
+    name: {
+      fontSize: 18,
+      fontWeight: "700",
+      flex: 1,
+      marginRight: 12,
+      color: colors.text,
+    },
+    count: {
+      overflow: "hidden",
+      minWidth: 28,
+      textAlign: "center",
+      fontSize: 13,
+      fontWeight: "800",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 999,
+      color: colors.onAccent,
+      backgroundColor: colors.accent,
+    },
+    members: {
+      fontSize: 14,
+      marginBottom: 4,
+      color: colors.accentMuted,
+    },
+    meta: {
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    empty: {
+      textAlign: "center",
+      marginTop: 48,
+      fontSize: 16,
+      color: colors.accentMuted,
+    },
+  });

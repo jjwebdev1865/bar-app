@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ColorTokens } from '../../theme/theme';
@@ -28,49 +29,32 @@ export function Dropdown({
   onChange,
   colors,
 }: DropdownProps) {
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const selectedLabel =
     options.find((option) => option.value === value)?.label ?? placeholder;
 
   return (
     <View style={styles.wrapper}>
-      <Text style={[styles.label, { color: colors.accent }]}>{label}</Text>
+      <Text style={styles.label}>{label}</Text>
 
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
         onPress={() => onOpenChange(!open)}
-        style={[
-          styles.trigger,
-          {
-            backgroundColor: colors.panel,
-            borderColor: colors.border,
-          },
-        ]}
+        style={styles.trigger}
       >
         <Text
-          style={[
-            styles.value,
-            { color: value ? colors.text : colors.textMuted },
-          ]}
+          style={value ? styles.valueSelected : styles.valuePlaceholder}
           numberOfLines={1}
         >
           {selectedLabel}
         </Text>
-        <Text style={[styles.chevron, { color: colors.accentMuted }]}>
-          {open ? '▴' : '▾'}
-        </Text>
+        <Text style={styles.chevron}>{open ? '▴' : '▾'}</Text>
       </Pressable>
 
       {open ? (
-        <View
-          style={[
-            styles.menu,
-            {
-              backgroundColor: colors.panel,
-              borderColor: colors.border,
-            },
-          ]}
-        >
+        <View style={styles.menu}>
           {options.map((option, index) => {
             const selected = option.value === value;
             const isLast = index === options.length - 1;
@@ -82,22 +66,14 @@ export function Dropdown({
                   onChange(option.value);
                   onOpenChange(false);
                 }}
-                style={[
-                  styles.option,
-                  !isLast && {
-                    borderBottomWidth: StyleSheet.hairlineWidth,
-                    borderBottomColor: colors.border,
-                  },
-                ]}
+                style={[styles.option, !isLast && styles.optionDivider]}
               >
                 <Text
-                  style={[
-                    styles.optionLabel,
-                    {
-                      color: selected ? colors.accent : colors.text,
-                      fontWeight: selected ? '700' : '500',
-                    },
-                  ]}
+                  style={
+                    selected
+                      ? styles.optionLabelSelected
+                      : styles.optionLabelDefault
+                  }
                 >
                   {option.label}
                 </Text>
@@ -110,46 +86,72 @@ export function Dropdown({
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    width: '100%',
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  trigger: {
-    minHeight: 48,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  value: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    marginRight: 12,
-  },
-  chevron: {
-    fontSize: 16,
-  },
-  menu: {
-    marginTop: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  option: {
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  optionLabel: {
-    fontSize: 16,
-  },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    wrapper: {
+      width: '100%',
+    },
+    label: {
+      fontSize: 12,
+      fontWeight: '800',
+      letterSpacing: 1.5,
+      textTransform: 'uppercase',
+      marginBottom: 8,
+      color: colors.accent,
+    },
+    trigger: {
+      minHeight: 48,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.panel,
+      borderColor: colors.border,
+    },
+    valueSelected: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '600',
+      marginRight: 12,
+      color: colors.text,
+    },
+    valuePlaceholder: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '600',
+      marginRight: 12,
+      color: colors.textMuted,
+    },
+    chevron: {
+      fontSize: 16,
+      color: colors.accentMuted,
+    },
+    menu: {
+      marginTop: 8,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 10,
+      overflow: 'hidden',
+      backgroundColor: colors.panel,
+      borderColor: colors.border,
+    },
+    option: {
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+    },
+    optionDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    optionLabelSelected: {
+      fontSize: 16,
+      color: colors.accent,
+      fontWeight: '700',
+    },
+    optionLabelDefault: {
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: '500',
+    },
+  });

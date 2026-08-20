@@ -17,6 +17,7 @@ export type ColorTokens = {
   stool: string;
   overlay: string;
   white: string;
+  danger: string;
 };
 
 export const themes: Record<ThemeMode, ColorTokens> = {
@@ -33,6 +34,7 @@ export const themes: Record<ThemeMode, ColorTokens> = {
     stool: "#1A1A1A",
     overlay: "rgba(0, 0, 0, 0.65)",
     white: "#FFFFFF",
+    danger: "#8B1E1E",
   },
   light: {
     background: "#F7F5F0",
@@ -47,6 +49,7 @@ export const themes: Record<ThemeMode, ColorTokens> = {
     stool: "#1A1A1A",
     overlay: "rgba(0, 0, 0, 0.35)",
     white: "#FFFFFF",
+    danger: "#8B1E1E",
   },
 };
 

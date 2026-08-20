@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { languageOptions, type Language } from "../../i18n";
 import { useSettings } from "../../context/SettingsContext";
 import { HEADER_SCREEN_EDGES } from "../../constants/safeAreaEdges";
-import { EThemeModeOptions } from "../../theme/theme";
+import { EThemeModeOptions, type ColorTokens } from "../../theme/theme";
 import { Dropdown } from "../../components/common";
 
 export default function SettingsScreen() {
   const { colors, themeMode, setThemeMode, language, setLanguage, t } =
     useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [languageOpen, setLanguageOpen] = useState(false);
 
   const isDark = themeMode === EThemeModeOptions.DARK;
@@ -21,28 +22,16 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView
-      edges={HEADER_SCREEN_EDGES}
-      style={[styles.screen, { backgroundColor: colors.background }]}
-    >
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.panel, borderColor: colors.border },
-        ]}
-      >
-        <Text style={[styles.sectionTitle, { color: colors.accent }]}>
-          {t("appearance")}
-        </Text>
+    <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.screen}>
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>{t("appearance")}</Text>
 
         <View style={styles.row}>
           <View style={styles.rowCopy}>
-            <Text style={[styles.rowLabel, { color: colors.text }]}>
+            <Text style={styles.rowLabel}>
               {isDark ? t("darkMode") : t("lightMode")}
             </Text>
-            <Text style={[styles.hint, { color: colors.textMuted }]}>
-              {t("themeHint")}
-            </Text>
+            <Text style={styles.hint}>{t("themeHint")}</Text>
           </View>
           <Switch
             value={isDark}
@@ -58,12 +47,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.panel, borderColor: colors.border },
-        ]}
-      >
+      <View style={styles.card}>
         <Dropdown
           label={t("language")}
           placeholder={t("language")}
@@ -75,13 +59,7 @@ export default function SettingsScreen() {
           colors={colors}
         />
 
-        <Text
-          style={[
-            styles.hint,
-            styles.languageHint,
-            { color: colors.textMuted },
-          ]}
-        >
+        <Text style={[styles.hint, styles.languageHint]}>
           {t("languageHint")}
         </Text>
       </View>
@@ -89,43 +67,50 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    gap: 16,
-  },
-  card: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-    marginBottom: 14,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  rowCopy: {
-    flex: 1,
-  },
-  rowLabel: {
-    fontSize: 17,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  hint: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  languageHint: {
-    marginTop: 12,
-  },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      gap: 16,
+      backgroundColor: colors.background,
+    },
+    card: {
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 12,
+      padding: 16,
+      backgroundColor: colors.panel,
+      borderColor: colors.border,
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: "800",
+      letterSpacing: 1.5,
+      textTransform: "uppercase",
+      marginBottom: 14,
+      color: colors.accent,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 16,
+    },
+    rowCopy: {
+      flex: 1,
+    },
+    rowLabel: {
+      fontSize: 17,
+      fontWeight: "600",
+      marginBottom: 4,
+      color: colors.text,
+    },
+    hint: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textMuted,
+    },
+    languageHint: {
+      marginTop: 12,
+    },
+  });
