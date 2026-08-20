@@ -182,14 +182,11 @@ needed. Rules without `paths:` frontmatter load at launch; rules with `paths:`
 load on demand when a matching file is read. The nine PFA rules split into three
 tiers.
 
-**Tier 1 — shared via symlink (done 2026-08-20).** Generic React Native + TS
-conventions with nothing project-specific in them. Single source of truth at
-`~/claude-rules/react-native/`, symlinked into both repos as
-`.claude/rules/shared`:
-
-```bash
-ln -s /Users/jamesjiracek/claude-rules/react-native .claude/rules/shared
-```
+**Tier 1 — copied in, checked into this repo (done 2026-08-20).** Generic React
+Native + TS conventions with nothing project-specific in them. These originally
+lived in a shared `~/claude-rules/react-native/` directory symlinked in as
+`.claude/rules/shared`; that indirection is gone — the files now live directly
+in `.claude/rules/` and are versioned with the app:
 
 - [x] `code-style.md`
 - [x] `no-inline-styles.md`
@@ -197,9 +194,10 @@ ln -s /Users/jamesjiracek/claude-rules/react-native .claude/rules/shared
 - [x] `safe-area-wrapper.md`
 - [x] `accessibility.md`
 
-Edit these once in `~/claude-rules/react-native/` and both apps pick up the
-change. Deliberately *not* placed in `~/.claude/rules/`, which would apply
-`safe-area-wrapper.md` to every project on the machine including `jims-site`.
+Each repo owns its own copy, so bar-app's rules can drift from PFA's as the
+projects diverge. Deliberately *not* placed in `~/.claude/rules/`, which would
+apply `safe-area-wrapper.md` to every project on the machine including
+`jims-site`.
 
 **Tier 2 — copy and adapt.** These encode PFA-specific architecture and would be
 wrong in bar-app verbatim:

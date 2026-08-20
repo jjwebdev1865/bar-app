@@ -8,6 +8,7 @@ import type { Edge } from 'react-native-safe-area-context';
  * a visible gap under the header.
  *
  * Screens with `headerTransparent: true` (currently only Home) render behind
- * the header and should use the default all-edges behaviour instead.
+ * the header, so they also skip the top inset — but must add their own
+ * `useHeaderHeight()` padding, which already includes that inset.
  */
 export const HEADER_SCREEN_EDGES: readonly Edge[] = ['left', 'right', 'bottom'];

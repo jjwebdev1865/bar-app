@@ -8,8 +8,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 
 import { useSettings } from '../../context/SettingsContext';
+import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { MOCK_GROUPS } from '../../data/groups';
 import { MOCK_LOCATIONS } from '../../data/locations';
 import { Dropdown } from '../../components/common';
@@ -65,7 +67,11 @@ function BarStool({ styles }: IBarStoolProps) {
 
 export default function HomeScreen() {
   const { colors, t } = useSettings();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const headerHeight = useHeaderHeight();
+  const styles = useMemo(
+    () => createStyles(colors, headerHeight),
+    [colors, headerHeight],
+  );
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
     null,
@@ -152,109 +158,115 @@ export default function HomeScreen() {
     .join('. ');
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.welcome}>{t('welcomeTo')}</Text>
-      <Text style={styles.title}>{t('appName')}</Text>
+    <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.welcome}>{t('welcomeTo')}</Text>
+        <Text style={styles.title}>{t('appName')}</Text>
+      </View>
 
-      {signalActive ? (
-        <View style={styles.activeSignal}>
-          <View
-            accessible
-            accessibilityLabel={timerAccessibilityLabel}
-            style={styles.timerBlock}
-          >
-            {headingToLabel ? (
-              <Text style={styles.headingTo}>{headingToLabel}</Text>
-            ) : null}
-            <Text style={styles.timerLabel}>{t('travelTimer')}</Text>
-            <Text style={styles.timerValue}>{elapsedLabel}</Text>
-          </View>
-
-          {selectedGroup ? (
-            <View style={styles.membersCard}>
-              <Text style={styles.membersTitle}>{t('whoIsComing')}</Text>
-              <ScrollView
-                style={styles.membersList}
-                contentContainerStyle={styles.membersListContent}
-              >
-                {selectedGroup.contacts.map((contact, index) => {
-                  const isLast = index === selectedGroup.contacts.length - 1;
-                  const memberLabel = `${contactDisplayName(contact)}: ${t(
-                    'onTheWay',
-                  )}`;
-
-                  return (
-                    <View
-                      key={contact.id}
-                      accessible
-                      accessibilityLabel={memberLabel}
-                      style={[
-                        styles.memberRow,
-                        !isLast && styles.memberRowDivider,
-                      ]}
-                    >
-                      <Text style={styles.memberName} numberOfLines={1}>
-                        {contactDisplayName(contact)}
-                      </Text>
-                      <Text style={styles.memberStatus}>{t('onTheWay')}</Text>
-                    </View>
-                  );
-                })}
-              </ScrollView>
+      <View style={styles.content}>
+        {signalActive ? (
+          <View style={styles.activeSignal}>
+            <View
+              accessible
+              accessibilityLabel={timerAccessibilityLabel}
+              style={styles.timerBlock}
+            >
+              {headingToLabel ? (
+                <Text style={styles.headingTo}>{headingToLabel}</Text>
+              ) : null}
+              <Text style={styles.timerLabel}>{t('travelTimer')}</Text>
+              <Text style={styles.timerValue}>{elapsedLabel}</Text>
             </View>
-          ) : null}
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('cancel')}
-            onPress={requestCancelSignal}
-            style={({ pressed }) => [
-              styles.cancelButton,
-              pressed && styles.cancelButtonPressed,
-            ]}
-          >
-            <Text style={styles.cancelLabel}>{t('cancel')}</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <>
-          <View style={styles.selectors}>
-            <Dropdown
-              label={t('selectGroup')}
-              placeholder={t('chooseGroup')}
-              options={groupOptions}
-              value={selectedGroupId}
-              open={openDropdown === 'group'}
-              onOpenChange={(open) => setOpenDropdown(open ? 'group' : null)}
-              onChange={setSelectedGroupId}
-              colors={colors}
-            />
+            {selectedGroup ? (
+              <View style={styles.membersCard}>
+                <Text style={styles.membersTitle}>{t('whoIsComing')}</Text>
+                <ScrollView
+                  style={styles.membersList}
+                  contentContainerStyle={styles.membersListContent}
+                >
+                  {selectedGroup.contacts.map((contact, index) => {
+                    const isLast = index === selectedGroup.contacts.length - 1;
+                    const memberLabel = `${contactDisplayName(contact)}: ${t(
+                      'onTheWay',
+                    )}`;
 
-            <Dropdown
-              label={t('selectLocation')}
-              placeholder={t('chooseLocation')}
-              options={locationOptions}
-              value={selectedLocationId}
-              open={openDropdown === 'location'}
-              onOpenChange={(open) => setOpenDropdown(open ? 'location' : null)}
-              onChange={setSelectedLocationId}
-              colors={colors}
-            />
+                    return (
+                      <View
+                        key={contact.id}
+                        accessible
+                        accessibilityLabel={memberLabel}
+                        style={[
+                          styles.memberRow,
+                          !isLast && styles.memberRowDivider,
+                        ]}
+                      >
+                        <Text style={styles.memberName} numberOfLines={1}>
+                          {contactDisplayName(contact)}
+                        </Text>
+                        <Text style={styles.memberStatus}>{t('onTheWay')}</Text>
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('cancel')}
+              onPress={requestCancelSignal}
+              style={({ pressed }) => [
+                styles.cancelButton,
+                pressed && styles.cancelButtonPressed,
+              ]}
+            >
+              <Text style={styles.cancelLabel}>{t('cancel')}</Text>
+            </Pressable>
           </View>
+        ) : (
+          <>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('activateBarSignal')}
+              onPress={activateSignal}
+              style={({ pressed }) => [
+                styles.signalButton,
+                pressed && styles.signalButtonPressed,
+              ]}
+            >
+              <BarStool styles={styles} />
+            </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('activateBarSignal')}
-            onPress={activateSignal}
-            style={({ pressed }) => [
-              styles.signalButton,
-              pressed && styles.signalButtonPressed,
-            ]}
-          >
-            <BarStool styles={styles} />
-          </Pressable>
-        </>
-      )}
+            <View style={styles.selectors}>
+              <Dropdown
+                label={t('selectGroup')}
+                placeholder={t('chooseGroup')}
+                options={groupOptions}
+                value={selectedGroupId}
+                open={openDropdown === 'group'}
+                onOpenChange={(open) => setOpenDropdown(open ? 'group' : null)}
+                onChange={setSelectedGroupId}
+                colors={colors}
+              />
+
+              <Dropdown
+                label={t('selectLocation')}
+                placeholder={t('chooseLocation')}
+                options={locationOptions}
+                value={selectedLocationId}
+                open={openDropdown === 'location'}
+                onOpenChange={(open) =>
+                  setOpenDropdown(open ? 'location' : null)
+                }
+                onChange={setSelectedLocationId}
+                colors={colors}
+              />
+            </View>
+          </>
+        )}
+      </View>
 
       <Modal
         visible={confirmCancelVisible}
@@ -297,7 +309,7 @@ export default function HomeScreen() {
   );
 }
 
-const createStyles = (colors: TColorTokens) => {
+const createStyles = (colors: TColorTokens, headerHeight: number) => {
   const modalButton = {
     flex: 1,
     minHeight: 44,
@@ -319,9 +331,21 @@ const createStyles = (colors: TColorTokens) => {
     container: {
       flex: 1,
       alignItems: 'center',
-      justifyContent: 'center',
       paddingHorizontal: 24,
       backgroundColor: colors.background,
+    },
+    // Home's drawer header is transparent, so the screen renders behind it —
+    // offset by its height to keep the heading clear of the hamburger button.
+    header: {
+      width: '100%',
+      alignItems: 'center',
+      paddingTop: headerHeight + 8,
+    },
+    content: {
+      flex: 1,
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     welcome: {
       fontSize: 18,
@@ -334,7 +358,6 @@ const createStyles = (colors: TColorTokens) => {
       fontSize: 36,
       fontWeight: '800',
       letterSpacing: 1,
-      marginBottom: 28,
       textAlign: 'center',
       color: colors.accent,
     },
@@ -342,7 +365,7 @@ const createStyles = (colors: TColorTokens) => {
       width: '100%',
       maxWidth: 360,
       gap: 16,
-      marginBottom: 36,
+      marginTop: 36,
       zIndex: 1,
     },
     activeSignal: {
