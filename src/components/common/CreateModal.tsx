@@ -45,7 +45,7 @@ export function CreateModal({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View accessibilityViewIsModal style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
             <Pressable

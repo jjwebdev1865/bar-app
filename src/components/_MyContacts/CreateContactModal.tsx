@@ -115,6 +115,7 @@ export function CreateContactModal({
         <View key={field.key} style={styles.field}>
           <Text style={styles.fieldLabel}>{t(field.label)}</Text>
           <TextInput
+            accessibilityLabel={t(field.label)}
             value={draft[field.key]}
             onChangeText={(value) => updateField(field.key, value)}
             multiline={field.multiline}

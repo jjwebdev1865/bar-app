@@ -8,12 +8,31 @@ import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { MOCK_CONTACTS } from '../../data/contacts';
 import { MOCK_LOCATIONS } from '../../data/locations';
 import { CreateLocationModal } from '../../components/_MyLocations';
-import type { TBarLocation, TColorTokens } from '../../types/common.types';
+import type {
+  TBarLocation,
+  TColorTokens,
+  TTranslate,
+} from '../../types/common.types';
 
 function favoriteCount(location: TBarLocation) {
   return MOCK_CONTACTS.filter(
     (contact) => contact.favoriteBarId === location.id,
   ).length;
+}
+
+function favoriteOfLabel(fans: number, t: TTranslate) {
+  return t('favoriteOf', {
+    count: fans,
+    contacts: fans === 1 ? t('contact') : t('contacts'),
+  });
+}
+
+function locationAccessibilityLabel(
+  location: TBarLocation,
+  fans: number,
+  t: TTranslate,
+) {
+  return `${location.name}. ${location.address}. ${favoriteOfLabel(fans, t)}`;
 }
 
 export default function LocationsScreen() {
@@ -39,18 +58,17 @@ export default function LocationsScreen() {
           const fans = favoriteCount(item);
 
           return (
-            <View style={[styles.row, !isLast && styles.rowDivider]}>
+            <View
+              accessible
+              accessibilityLabel={locationAccessibilityLabel(item, fans, t)}
+              style={[styles.row, !isLast && styles.rowDivider]}
+            >
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.address}>{item.address}</Text>
               <Text style={styles.coords}>
                 {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
               </Text>
-              <Text style={styles.meta}>
-                {t('favoriteOf', {
-                  count: fans,
-                  contacts: fans === 1 ? t('contact') : t('contacts'),
-                })}
-              </Text>
+              <Text style={styles.meta}>{favoriteOfLabel(fans, t)}</Text>
             </View>
           );
         }}

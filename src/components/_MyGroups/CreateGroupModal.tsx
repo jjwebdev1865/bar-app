@@ -90,6 +90,7 @@ export function CreateGroupModal({
       <View style={styles.field}>
         <Text style={styles.fieldLabel}>{t('groupName')}</Text>
         <TextInput
+          accessibilityLabel={t('groupName')}
           value={name}
           onChangeText={setName}
           style={styles.input}

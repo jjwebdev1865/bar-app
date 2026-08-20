@@ -41,6 +41,7 @@ export function Dropdown({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityState={{ expanded: open }}
         onPress={() => onOpenChange(!open)}
         style={styles.trigger}
       >
@@ -62,6 +63,8 @@ export function Dropdown({
             return (
               <Pressable
                 key={option.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
                 onPress={() => {
                   onChange(option.value);
                   onOpenChange(false);

@@ -8,10 +8,25 @@ import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { MOCK_CONTACTS } from '../../data/contacts';
 import { MOCK_GROUPS } from '../../data/groups';
 import { CreateGroupModal } from '../../components/_MyGroups';
-import type { TColorTokens, TGroup } from '../../types/common.types';
+import type {
+  TColorTokens,
+  TGroup,
+  TTranslate,
+} from '../../types/common.types';
 
 function memberPreview(group: TGroup) {
   return group.contacts.map((contact) => contact.firstName).join(', ');
+}
+
+function calledTimesLabel(group: TGroup, t: TTranslate) {
+  return t('calledTimes', {
+    count: group.timesCalled,
+    times: group.timesCalled === 1 ? t('time') : t('times'),
+  });
+}
+
+function groupAccessibilityLabel(group: TGroup, t: TTranslate) {
+  return `${group.name}. ${memberPreview(group)}. ${calledTimesLabel(group, t)}`;
 }
 
 export default function GroupsScreen() {
@@ -34,7 +49,11 @@ export default function GroupsScreen() {
           const isLast = index === groups.length - 1;
 
           return (
-            <View style={[styles.row, !isLast && styles.rowDivider]}>
+            <View
+              accessible
+              accessibilityLabel={groupAccessibilityLabel(item, t)}
+              style={[styles.row, !isLast && styles.rowDivider]}
+            >
               <View style={styles.rowTop}>
                 <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.count}>{item.contacts.length}</Text>
@@ -42,12 +61,7 @@ export default function GroupsScreen() {
               <Text style={styles.members} numberOfLines={1}>
                 {memberPreview(item)}
               </Text>
-              <Text style={styles.meta}>
-                {t('calledTimes', {
-                  count: item.timesCalled,
-                  times: item.timesCalled === 1 ? t('time') : t('times'),
-                })}
-              </Text>
+              <Text style={styles.meta}>{calledTimesLabel(item, t)}</Text>
             </View>
           );
         }}

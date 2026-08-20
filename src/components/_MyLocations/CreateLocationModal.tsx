@@ -96,6 +96,7 @@ export function CreateLocationModal({
       <View style={styles.field}>
         <Text style={styles.fieldLabel}>{t('locationName')}</Text>
         <TextInput
+          accessibilityLabel={t('locationName')}
           value={draft.name}
           onChangeText={(value) => updateField('name', value)}
           style={styles.input}
@@ -106,6 +107,7 @@ export function CreateLocationModal({
       <View style={styles.field}>
         <Text style={styles.fieldLabel}>{t('address')}</Text>
         <TextInput
+          accessibilityLabel={t('address')}
           value={draft.address}
           onChangeText={(value) => updateField('address', value)}
           multiline
@@ -118,6 +120,7 @@ export function CreateLocationModal({
         <View style={[styles.field, styles.rowField]}>
           <Text style={styles.fieldLabel}>{t('latitude')}</Text>
           <TextInput
+            accessibilityLabel={t('latitude')}
             value={draft.latitude}
             onChangeText={(value) => updateField('latitude', value)}
             keyboardType="numbers-and-punctuation"
@@ -129,6 +132,7 @@ export function CreateLocationModal({
         <View style={[styles.field, styles.rowField]}>
           <Text style={styles.fieldLabel}>{t('longitude')}</Text>
           <TextInput
+            accessibilityLabel={t('longitude')}
             value={draft.longitude}
             onChangeText={(value) => updateField('longitude', value)}
             keyboardType="numbers-and-punctuation"

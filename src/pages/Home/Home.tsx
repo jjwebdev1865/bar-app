@@ -135,6 +135,22 @@ export default function HomeScreen() {
     setElapsedSeconds(0);
   }
 
+  const headingToLabel =
+    selectedGroup && selectedLocation
+      ? t('headingTo', {
+          group: selectedGroup.name,
+          location: selectedLocation.name,
+        })
+      : null;
+
+  const elapsedLabel = formatElapsedTime(elapsedSeconds, t);
+  const timerAccessibilityLabel = [
+    headingToLabel,
+    `${t('travelTimer')}: ${elapsedLabel}`,
+  ]
+    .filter(Boolean)
+    .join('. ');
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.welcome}>{t('welcomeTo')}</Text>
@@ -142,19 +158,16 @@ export default function HomeScreen() {
 
       {signalActive ? (
         <View style={styles.activeSignal}>
-          <View style={styles.timerBlock}>
-            {selectedGroup && selectedLocation ? (
-              <Text style={styles.headingTo}>
-                {t('headingTo', {
-                  group: selectedGroup.name,
-                  location: selectedLocation.name,
-                })}
-              </Text>
+          <View
+            accessible
+            accessibilityLabel={timerAccessibilityLabel}
+            style={styles.timerBlock}
+          >
+            {headingToLabel ? (
+              <Text style={styles.headingTo}>{headingToLabel}</Text>
             ) : null}
             <Text style={styles.timerLabel}>{t('travelTimer')}</Text>
-            <Text style={styles.timerValue}>
-              {formatElapsedTime(elapsedSeconds, t)}
-            </Text>
+            <Text style={styles.timerValue}>{elapsedLabel}</Text>
           </View>
 
           {selectedGroup ? (
@@ -166,10 +179,15 @@ export default function HomeScreen() {
               >
                 {selectedGroup.contacts.map((contact, index) => {
                   const isLast = index === selectedGroup.contacts.length - 1;
+                  const memberLabel = `${contactDisplayName(contact)}: ${t(
+                    'onTheWay',
+                  )}`;
 
                   return (
                     <View
                       key={contact.id}
+                      accessible
+                      accessibilityLabel={memberLabel}
                       style={[
                         styles.memberRow,
                         !isLast && styles.memberRowDivider,
@@ -245,7 +263,7 @@ export default function HomeScreen() {
         onRequestClose={dismissCancelConfirmation}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalSheet}>
+          <View accessibilityViewIsModal style={styles.modalSheet}>
             <Text style={styles.modalTitle}>{t('cancelSignalTitle')}</Text>
             <Text style={styles.modalMessage}>{t('cancelSignalMessage')}</Text>
 

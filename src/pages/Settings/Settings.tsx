@@ -35,6 +35,7 @@ export default function SettingsScreen() {
             <Text style={styles.hint}>{t('themeHint')}</Text>
           </View>
           <Switch
+            accessibilityLabel={t('darkMode')}
             value={isDark}
             onValueChange={(value) =>
               setThemeMode(

@@ -107,7 +107,11 @@ function actionLabelStyle(
 
 function InfoRow({ label, value, styles }: IInfoRowProps) {
   return (
-    <View style={styles.infoRow}>
+    <View
+      accessible
+      accessibilityLabel={`${label}: ${value}`}
+      style={styles.infoRow}
+    >
       <Text style={styles.fieldLabel}>{label}</Text>
       <Text style={styles.infoValue}>{value}</Text>
     </View>
@@ -212,7 +216,7 @@ export function ContactDetailModal({
       onRequestClose={handleClose}
     >
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View accessibilityViewIsModal style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={2}>
               {isEditing ? t('editContact') : displayName(contact)}
@@ -238,6 +242,7 @@ export function ContactDetailModal({
                   <View key={field.key} style={styles.field}>
                     <Text style={styles.fieldLabel}>{t(field.label)}</Text>
                     <TextInput
+                      accessibilityLabel={t(field.label)}
                       value={draft[field.key]}
                       onChangeText={(value) => updateField(field.key, value)}
                       multiline={field.multiline}
