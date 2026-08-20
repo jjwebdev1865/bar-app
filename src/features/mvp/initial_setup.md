@@ -196,9 +196,29 @@ step 1 lands the jest deps, `jest-expo`, `@testing-library/react-native`, and
 
 ### 7. Error handling
 
-- [ ] Add `ErrorBoundary` component
-- [ ] Mount it at the router root (`app/_layout.tsx`)
-- [ ] Add an `errorReporter` util
+- [x] Add `ErrorBoundary` component
+- [x] Mount it at the router root (`app/_layout.tsx`)
+- [x] Add an `errorReporter` util
+
+Implemented 2026-08-20 using the `react-error-boundary` package, matching PFA.
+`src/components/common/ErrorBoundary.tsx` wraps its `ErrorBoundary`, with a
+themed fallback screen (retry button) and an `onError` hook into
+`src/utils/errorReporter.ts` (currently `console.error`-only — a placeholder
+until Firebase Crashlytics exists per `V1_goals.md`).
+
+**Deviation:** the fallback can't call `useSettings()` or `t()`, since it must
+render even if the crash happened inside `SettingsProvider` itself. It uses
+`THEMES[DEFAULT_THEME_MODE]` directly (still sourced from `theme.ts`, no
+hardcoded hex) and static English copy instead of translated strings.
+
+Mounted in `src/navigation/AppLayout.tsx`, wrapping `SafeAreaProvider` +
+`SettingsProvider` but inside `GestureHandlerRootView`, so it covers provider
+failures as well as screen-level ones. `app/_layout.tsx` itself needed no
+change — it only re-exports `AppLayout`.
+
+No `.test.tsx` yet — same as steps 3–5, deferred until step 1 lands jest.
+
+Verified with `npx tsc --noEmit` (exit 0).
 
 ### 8. Port `.claude/rules/`
 

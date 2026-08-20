@@ -11,6 +11,7 @@ import { StyleSheet, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ErrorBoundary } from '../components/common';
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
 import { EThemeModeOptions } from '../theme/theme';
 import type { TColorTokens } from '../types/common.types';
@@ -100,11 +101,13 @@ function AppDrawer() {
 export default function AppLayout() {
   return (
     <GestureHandlerRootView style={rootStyles.root}>
-      <SafeAreaProvider>
-        <SettingsProvider>
-          <AppDrawer />
-        </SettingsProvider>
-      </SafeAreaProvider>
+      <ErrorBoundary>
+        <SafeAreaProvider>
+          <SettingsProvider>
+            <AppDrawer />
+          </SettingsProvider>
+        </SafeAreaProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }
