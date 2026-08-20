@@ -9,50 +9,44 @@ import {
   View,
 } from 'react-native';
 
-import type { TranslationKey } from '../../i18n';
-import type { ColorTokens } from '../../theme/theme';
-import type { Contact } from '../../data/contacts';
-import { mockLocations } from '../../data/locations';
+import { MOCK_LOCATIONS } from '../../data/locations';
+import type {
+  TColorTokens,
+  TContact,
+  TContactDraft,
+  TTranslate,
+  TTranslationKey,
+} from '../../types/common.types';
 import { Dropdown } from '../common/Dropdown';
 
-type ContactDetailStyles = ReturnType<typeof createStyles>;
+type TContactDetailStyles = ReturnType<typeof createStyles>;
 
-type ContactDetailModalProps = {
-  contact: Contact | null;
+type TActionButtonVariant = 'primary' | 'secondary' | 'danger';
+
+interface IContactDetailModalProps {
+  contact: TContact | null;
   visible: boolean;
-  colors: ColorTokens;
-  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
+  colors: TColorTokens;
+  t: TTranslate;
   onClose: () => void;
-  onSave: (contact: Contact) => void;
-  onDelete: (contact: Contact) => void;
-};
+  onSave: (contact: TContact) => void;
+  onDelete: (contact: TContact) => void;
+}
 
-type ContactDraft = {
-  firstName: string;
-  lastName: string;
-  nickname: string;
-  email: string;
-  phone: string;
-  address: string;
-  favoriteBarId: string;
-};
-
-type ActionButtonVariant = 'primary' | 'secondary' | 'danger';
-
-type InfoRowProps = {
+interface IInfoRowProps {
   label: string;
   value: string;
-  styles: ContactDetailStyles;
-};
+  styles: TContactDetailStyles;
+}
 
-type ActionButtonProps = {
+interface IActionButtonProps {
   label: string;
   onPress: () => void;
-  variant: ActionButtonVariant;
-  styles: ContactDetailStyles;
-};
+  variant: TActionButtonVariant;
+  styles: TContactDetailStyles;
+}
 
-function toDraft(contact: Contact): ContactDraft {
+function toDraft(contact: TContact): TContactDraft {
   return {
     firstName: contact.firstName,
     lastName: contact.lastName,
@@ -64,7 +58,9 @@ function toDraft(contact: Contact): ContactDraft {
   };
 }
 
-function displayName(contact: Pick<Contact, 'firstName' | 'lastName' | 'nickname'>) {
+function displayName(
+  contact: Pick<TContact, 'firstName' | 'lastName' | 'nickname'>,
+) {
   if (contact.nickname) {
     return `${contact.firstName} "${contact.nickname}" ${contact.lastName}`;
   }
@@ -74,14 +70,14 @@ function displayName(contact: Pick<Contact, 'firstName' | 'lastName' | 'nickname
 
 function favoriteBarName(favoriteBarId: string) {
   return (
-    mockLocations.find((location) => location.id === favoriteBarId)?.name ??
+    MOCK_LOCATIONS.find((location) => location.id === favoriteBarId)?.name ??
     favoriteBarId
   );
 }
 
 function actionButtonStyle(
-  variant: ActionButtonVariant,
-  styles: ContactDetailStyles,
+  variant: TActionButtonVariant,
+  styles: TContactDetailStyles,
 ) {
   if (variant === 'primary') {
     return styles.primaryActionButton;
@@ -95,8 +91,8 @@ function actionButtonStyle(
 }
 
 function actionLabelStyle(
-  variant: ActionButtonVariant,
-  styles: ContactDetailStyles,
+  variant: TActionButtonVariant,
+  styles: TContactDetailStyles,
 ) {
   if (variant === 'primary') {
     return styles.primaryActionLabel;
@@ -109,6 +105,30 @@ function actionLabelStyle(
   return styles.secondaryActionLabel;
 }
 
+function InfoRow({ label, value, styles }: IInfoRowProps) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  );
+}
+
+function ActionButton({ label, onPress, variant, styles }: IActionButtonProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        actionButtonStyle(variant, styles),
+        pressed && styles.actionButtonPressed,
+      ]}
+    >
+      <Text style={actionLabelStyle(variant, styles)}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function ContactDetailModal({
   contact,
   visible,
@@ -117,10 +137,10 @@ export function ContactDetailModal({
   onClose,
   onSave,
   onDelete,
-}: ContactDetailModalProps) {
+}: IContactDetailModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState<ContactDraft | null>(null);
+  const [draft, setDraft] = useState<TContactDraft | null>(null);
   const [barDropdownOpen, setBarDropdownOpen] = useState(false);
 
   useEffect(() => {
@@ -135,9 +155,9 @@ export function ContactDetailModal({
     return null;
   }
 
-  function updateField<K extends keyof ContactDraft>(
+  function updateField<K extends keyof TContactDraft>(
     key: K,
-    value: ContactDraft[K],
+    value: TContactDraft[K],
   ) {
     setDraft((current) => (current ? { ...current, [key]: value } : current));
   }
@@ -149,7 +169,7 @@ export function ContactDetailModal({
   }
 
   function handleSave() {
-    const nextContact: Contact = {
+    const nextContact: TContact = {
       ...contact!,
       firstName: draft!.firstName.trim(),
       lastName: draft!.lastName.trim(),
@@ -172,8 +192,8 @@ export function ContactDetailModal({
   }
 
   const fields: {
-    key: keyof ContactDraft;
-    label: TranslationKey;
+    key: keyof TContactDraft;
+    label: TTranslationKey;
     multiline?: boolean;
   }[] = [
     { key: 'firstName', label: 'firstName' },
@@ -232,7 +252,7 @@ export function ContactDetailModal({
                 <Dropdown
                   label={t('favoriteBar')}
                   placeholder={t('chooseLocation')}
-                  options={mockLocations.map((location) => ({
+                  options={MOCK_LOCATIONS.map((location) => ({
                     value: location.id,
                     label: location.name,
                   }))}
@@ -260,8 +280,16 @@ export function ContactDetailModal({
                   value={contact.nickname ?? t('none')}
                   styles={styles}
                 />
-                <InfoRow label={t('email')} value={contact.email} styles={styles} />
-                <InfoRow label={t('phone')} value={contact.phone} styles={styles} />
+                <InfoRow
+                  label={t('email')}
+                  value={contact.email}
+                  styles={styles}
+                />
+                <InfoRow
+                  label={t('phone')}
+                  value={contact.phone}
+                  styles={styles}
+                />
                 <InfoRow
                   label={t('address')}
                   value={contact.address}
@@ -319,31 +347,7 @@ export function ContactDetailModal({
   );
 }
 
-function InfoRow({ label, value, styles }: InfoRowProps) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  );
-}
-
-function ActionButton({ label, onPress, variant, styles }: ActionButtonProps) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [
-        actionButtonStyle(variant, styles),
-        pressed && styles.actionButtonPressed,
-      ]}
-    >
-      <Text style={actionLabelStyle(variant, styles)}>{label}</Text>
-    </Pressable>
-  );
-}
-
-const createStyles = (colors: ColorTokens) => {
+const createStyles = (colors: TColorTokens) => {
   const input = {
     minHeight: 44,
     borderWidth: StyleSheet.hairlineWidth,

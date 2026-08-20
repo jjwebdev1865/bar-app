@@ -5,13 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreateFooter } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
-import { mockContacts } from '../../data/contacts';
-import { mockLocations, type BarLocation } from '../../data/locations';
+import { MOCK_CONTACTS } from '../../data/contacts';
+import { MOCK_LOCATIONS } from '../../data/locations';
 import { CreateLocationModal } from '../../components/_MyLocations';
-import type { ColorTokens } from '../../theme/theme';
+import type { TBarLocation, TColorTokens } from '../../types/common.types';
 
-function favoriteCount(location: BarLocation) {
-  return mockContacts.filter(
+function favoriteCount(location: TBarLocation) {
+  return MOCK_CONTACTS.filter(
     (contact) => contact.favoriteBarId === location.id,
   ).length;
 }
@@ -19,12 +19,12 @@ function favoriteCount(location: BarLocation) {
 export default function LocationsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [locations, setLocations] = useState<BarLocation[]>(() => [
-    ...mockLocations,
+  const [locations, setLocations] = useState<TBarLocation[]>(() => [
+    ...MOCK_LOCATIONS,
   ]);
   const [createVisible, setCreateVisible] = useState(false);
 
-  function handleCreate(location: BarLocation) {
+  function handleCreate(location: TBarLocation) {
     setLocations((current) => [...current, location]);
   }
 
@@ -76,7 +76,7 @@ export default function LocationsScreen() {
   );
 }
 
-const createStyles = (colors: ColorTokens) =>
+const createStyles = (colors: TColorTokens) =>
   StyleSheet.create({
     screen: {
       flex: 1,

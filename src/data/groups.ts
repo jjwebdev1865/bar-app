@@ -1,19 +1,13 @@
-import { mockContacts, type Contact } from './contacts';
+import type { TContact, TGroup } from '../types/common.types';
+import { MOCK_CONTACTS } from './contacts';
 
-export type Group = {
-  id: string;
-  name: string;
-  contacts: Contact[];
-  timesCalled: number;
-};
-
-function contactsByIds(ids: string[]): Contact[] {
+function contactsByIds(ids: string[]): TContact[] {
   return ids
-    .map((id) => mockContacts.find((contact) => contact.id === id))
-    .filter((contact): contact is Contact => contact !== undefined);
+    .map((id) => MOCK_CONTACTS.find((contact) => contact.id === id))
+    .filter((contact): contact is TContact => contact !== undefined);
 }
 
-export const mockGroups: Group[] = [
+export const MOCK_GROUPS: TGroup[] = [
   {
     id: 'group-1',
     name: 'Bat-Family',

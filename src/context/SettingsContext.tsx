@@ -7,45 +7,45 @@ import {
   type ReactNode,
 } from 'react';
 
-import i18n, {
-  defaultLanguage,
-  translate,
-  type Language,
-  type TranslationKey,
-} from '../i18n';
-import {
-  defaultThemeMode,
-  themes,
-  type ColorTokens,
-  type ThemeMode,
-} from '../theme/theme';
+import i18n, { DEFAULT_LANGUAGE, translate } from '../i18n';
+import { DEFAULT_THEME_MODE, THEMES } from '../theme/theme';
+import type {
+  TColorTokens,
+  TLanguage,
+  TThemeMode,
+  TTranslate,
+} from '../types/common.types';
 
-type SettingsContextValue = {
-  themeMode: ThemeMode;
-  setThemeMode: (mode: ThemeMode) => void;
-  language: Language;
-  setLanguage: (language: Language) => void;
-  colors: ColorTokens;
-  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
-};
+interface ISettingsContextValue {
+  themeMode: TThemeMode;
+  setThemeMode: (mode: TThemeMode) => void;
+  language: TLanguage;
+  setLanguage: (language: TLanguage) => void;
+  colors: TColorTokens;
+  t: TTranslate;
+}
 
-const SettingsContext = createContext<SettingsContextValue | null>(null);
+interface ISettingsProviderProps {
+  children: ReactNode;
+}
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [themeMode, setThemeMode] = useState<ThemeMode>(defaultThemeMode);
-  const [language, setLanguage] = useState<Language>(defaultLanguage);
+const SettingsContext = createContext<ISettingsContextValue | null>(null);
+
+export function SettingsProvider({ children }: ISettingsProviderProps) {
+  const [themeMode, setThemeMode] = useState<TThemeMode>(DEFAULT_THEME_MODE);
+  const [language, setLanguage] = useState<TLanguage>(DEFAULT_LANGUAGE);
 
   useEffect(() => {
     i18n.changeLanguage(language);
   }, [language]);
 
-  const value = useMemo<SettingsContextValue>(
+  const value = useMemo<ISettingsContextValue>(
     () => ({
       themeMode,
       setThemeMode,
       language,
       setLanguage,
-      colors: themes[themeMode],
+      colors: THEMES[themeMode],
       t: (key, vars) => translate(language, key, vars),
     }),
     [themeMode, language],

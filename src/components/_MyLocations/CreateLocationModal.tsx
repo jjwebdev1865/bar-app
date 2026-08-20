@@ -1,27 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import type { TranslationKey } from '../../i18n';
-import type { ColorTokens } from '../../theme/theme';
-import type { BarLocation } from '../../data/locations';
+import type {
+  TBarLocation,
+  TColorTokens,
+  TTranslate,
+} from '../../types/common.types';
 import { CreateModal } from '../common/CreateModal';
 
-type CreateLocationModalProps = {
+interface ICreateLocationModalProps {
   visible: boolean;
-  colors: ColorTokens;
-  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
+  colors: TColorTokens;
+  t: TTranslate;
   onClose: () => void;
-  onCreate: (location: BarLocation) => void;
-};
+  onCreate: (location: TBarLocation) => void;
+}
 
-type LocationDraft = {
+type TLocationDraft = {
   name: string;
   address: string;
   latitude: string;
   longitude: string;
 };
 
-const emptyDraft = (): LocationDraft => ({
+const emptyDraft = (): TLocationDraft => ({
   name: '',
   address: '',
   latitude: '',
@@ -34,9 +36,9 @@ export function CreateLocationModal({
   t,
   onClose,
   onCreate,
-}: CreateLocationModalProps) {
+}: ICreateLocationModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [draft, setDraft] = useState<LocationDraft>(emptyDraft);
+  const [draft, setDraft] = useState<TLocationDraft>(emptyDraft);
 
   useEffect(() => {
     if (visible) {
@@ -44,9 +46,9 @@ export function CreateLocationModal({
     }
   }, [visible]);
 
-  function updateField<K extends keyof LocationDraft>(
+  function updateField<K extends keyof TLocationDraft>(
     key: K,
-    value: LocationDraft[K],
+    value: TLocationDraft[K],
   ) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
@@ -139,7 +141,7 @@ export function CreateLocationModal({
   );
 }
 
-const createStyles = (colors: ColorTokens) => {
+const createStyles = (colors: TColorTokens) => {
   const input = {
     minHeight: 44,
     borderWidth: StyleSheet.hairlineWidth,

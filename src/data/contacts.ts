@@ -1,15 +1,6 @@
-export type Contact = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  nickname?: string;
-  email: string;
-  phone: string;
-  address: string;
-  favoriteBarId: string;
-};
+import type { TContact } from '../types/common.types';
 
-export const mockContacts: Contact[] = [
+export const MOCK_CONTACTS: TContact[] = [
   {
     id: '1',
     firstName: 'Bruce',

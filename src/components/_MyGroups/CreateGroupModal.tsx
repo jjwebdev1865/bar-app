@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import type { TranslationKey } from '../../i18n';
-import type { ColorTokens } from '../../theme/theme';
-import type { Contact } from '../../data/contacts';
-import type { Group } from '../../data/groups';
+import type {
+  TColorTokens,
+  TContact,
+  TGroup,
+  TTranslate,
+} from '../../types/common.types';
 import { CreateModal } from '../common/CreateModal';
 
-type CreateGroupModalProps = {
+interface ICreateGroupModalProps {
   visible: boolean;
-  availableContacts: Contact[];
-  colors: ColorTokens;
-  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
+  availableContacts: TContact[];
+  colors: TColorTokens;
+  t: TTranslate;
   onClose: () => void;
-  onCreate: (group: Group) => void;
-};
+  onCreate: (group: TGroup) => void;
+}
 
-function contactDisplayName(contact: Contact) {
+function contactDisplayName(contact: TContact) {
   if (contact.nickname) {
     return `${contact.firstName} "${contact.nickname}" ${contact.lastName}`;
   }
@@ -31,7 +33,7 @@ export function CreateGroupModal({
   t,
   onClose,
   onCreate,
-}: CreateGroupModalProps) {
+}: ICreateGroupModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [name, setName] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -124,7 +126,7 @@ export function CreateGroupModal({
   );
 }
 
-const createStyles = (colors: ColorTokens) => {
+const createStyles = (colors: TColorTokens) => {
   const checkbox = {
     width: 22,
     height: 22,

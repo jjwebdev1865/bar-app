@@ -8,20 +8,20 @@ import {
   View,
 } from 'react-native';
 
-import type { ColorTokens } from '../../theme/theme';
+import type { TColorTokens } from '../../types/common.types';
 
-type CreateModalProps = {
+interface ICreateModalProps {
   visible: boolean;
   title: string;
   closeLabel: string;
   cancelLabel: string;
   createLabel: string;
   canCreate: boolean;
-  colors: ColorTokens;
+  colors: TColorTokens;
   onClose: () => void;
   onCreate: () => void;
   children: ReactNode;
-};
+}
 
 export function CreateModal({
   visible,
@@ -34,7 +34,7 @@ export function CreateModal({
   onClose,
   onCreate,
   children,
-}: CreateModalProps) {
+}: ICreateModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
@@ -96,7 +96,7 @@ export function CreateModal({
   );
 }
 
-const createStyles = (colors: ColorTokens) => {
+const createStyles = (colors: TColorTokens) => {
   const actionButton = {
     flex: 1,
     minHeight: 44,

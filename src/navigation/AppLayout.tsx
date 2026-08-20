@@ -12,9 +12,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
-import type { ColorTokens } from '../theme/theme';
+import { EThemeModeOptions } from '../theme/theme';
+import type { TColorTokens } from '../types/common.types';
 
-function DrawerMenu(props: DrawerContentComponentProps) {
+interface IDrawerMenuProps extends DrawerContentComponentProps {}
+
+function DrawerMenu(props: IDrawerMenuProps) {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -32,7 +35,9 @@ function AppDrawer() {
 
   return (
     <>
-      <StatusBar style={themeMode === 'dark' ? 'light' : 'dark'} />
+      <StatusBar
+        style={themeMode === EThemeModeOptions.DARK ? 'light' : 'dark'}
+      />
       <Drawer
         drawerContent={DrawerMenu}
         screenOptions={{
@@ -105,13 +110,14 @@ export default function AppLayout() {
 }
 
 // Rendered above SettingsProvider, so no theme colors are available here.
+// Named `rootStyles` because the themed `styles` name is taken per-component.
 const rootStyles = StyleSheet.create({
   root: {
     flex: 1,
   },
 });
 
-const createStyles = (colors: ColorTokens) =>
+const createStyles = (colors: TColorTokens) =>
   StyleSheet.create({
     drawerScroll: {
       backgroundColor: colors.panel,

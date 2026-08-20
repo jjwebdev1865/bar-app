@@ -1,12 +1,6 @@
-export type BarLocation = {
-  id: string;
-  name: string;
-  longitude: number;
-  latitude: number;
-  address: string;
-};
+import type { TBarLocation } from '../types/common.types';
 
-export const mockLocations: BarLocation[] = [
+export const MOCK_LOCATIONS: TBarLocation[] = [
   {
     id: 'loc-1',
     name: 'Iceberg Lounge',
@@ -44,6 +38,6 @@ export const mockLocations: BarLocation[] = [
   },
 ];
 
-export function getLocationById(id: string): BarLocation | undefined {
-  return mockLocations.find((location) => location.id === id);
+export function getLocationById(id: string): TBarLocation | undefined {
+  return MOCK_LOCATIONS.find((location) => location.id === id);
 }

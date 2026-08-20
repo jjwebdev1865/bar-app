@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -6,48 +6,61 @@ import {
   StyleSheet,
   Text,
   View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import type { TranslationKey } from "../../i18n";
-import { useSettings } from "../../context/SettingsContext";
-import type { Contact } from "../../data/contacts";
-import { mockGroups } from "../../data/groups";
-import { mockLocations } from "../../data/locations";
-import { Dropdown } from "../../components/common";
-import type { ColorTokens } from "../../theme/theme";
+import { useSettings } from '../../context/SettingsContext';
+import { MOCK_GROUPS } from '../../data/groups';
+import { MOCK_LOCATIONS } from '../../data/locations';
+import { Dropdown } from '../../components/common';
+import type {
+  TColorTokens,
+  TContact,
+  TTranslate,
+} from '../../types/common.types';
 
-type HomeStyles = ReturnType<typeof createStyles>;
+const SIGNAL_SIZE = 220;
 
-type BarStoolProps = {
-  styles: HomeStyles;
-};
+type THomeStyles = ReturnType<typeof createStyles>;
 
-function formatElapsedTime(
-  totalSeconds: number,
-  t: (key: TranslationKey, vars?: Record<string, string | number>) => string,
-) {
+interface IBarStoolProps {
+  styles: THomeStyles;
+}
+
+function formatElapsedTime(totalSeconds: number, t: TTranslate) {
   if (totalSeconds < 60) {
-    return `${totalSeconds} ${totalSeconds === 1 ? t("second") : t("seconds")}`;
+    return `${totalSeconds} ${totalSeconds === 1 ? t('second') : t('seconds')}`;
   }
 
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  const minuteLabel = `${minutes} ${minutes === 1 ? t("minute") : t("minutes")}`;
+  const minuteLabel = `${minutes} ${minutes === 1 ? t('minute') : t('minutes')}`;
 
   if (seconds === 0) {
     return minuteLabel;
   }
 
-  return `${minuteLabel} ${seconds} ${seconds === 1 ? t("second") : t("seconds")}`;
+  return `${minuteLabel} ${seconds} ${seconds === 1 ? t('second') : t('seconds')}`;
 }
 
-function contactDisplayName(contact: Contact) {
+function contactDisplayName(contact: TContact) {
   if (contact.nickname) {
     return `${contact.firstName} "${contact.nickname}" ${contact.lastName}`;
   }
 
   return `${contact.firstName} ${contact.lastName}`;
+}
+
+function BarStool({ styles }: IBarStoolProps) {
+  return (
+    <View style={styles.stool}>
+      <View style={styles.seatTop} />
+      <View style={styles.seat} />
+      <View style={styles.pole} />
+      <View style={styles.footrest} />
+      <View style={styles.base} />
+    </View>
+  );
 }
 
 export default function HomeScreen() {
@@ -57,7 +70,7 @@ export default function HomeScreen() {
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
     null,
   );
-  const [openDropdown, setOpenDropdown] = useState<"group" | "location" | null>(
+  const [openDropdown, setOpenDropdown] = useState<'group' | 'location' | null>(
     null,
   );
   const [signalActive, setSignalActive] = useState(false);
@@ -65,23 +78,23 @@ export default function HomeScreen() {
   const [confirmCancelVisible, setConfirmCancelVisible] = useState(false);
 
   const groupOptions = useMemo(
-    () => mockGroups.map((group) => ({ value: group.id, label: group.name })),
+    () => MOCK_GROUPS.map((group) => ({ value: group.id, label: group.name })),
     [],
   );
 
   const locationOptions = useMemo(
     () =>
-      mockLocations.map((location) => ({
+      MOCK_LOCATIONS.map((location) => ({
         value: location.id,
         label: location.name,
       })),
     [],
   );
 
-  const selectedGroup = mockGroups.find(
+  const selectedGroup = MOCK_GROUPS.find(
     (group) => group.id === selectedGroupId,
   );
-  const selectedLocation = mockLocations.find(
+  const selectedLocation = MOCK_LOCATIONS.find(
     (location) => location.id === selectedLocationId,
   );
 
@@ -102,7 +115,7 @@ export default function HomeScreen() {
       return;
     }
 
-    console.log("Bar Signal Activated");
+    console.log('Bar Signal Activated');
     setOpenDropdown(null);
     setElapsedSeconds(0);
     setSignalActive(true);
@@ -124,21 +137,21 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.welcome}>{t("welcomeTo")}</Text>
-      <Text style={styles.title}>{t("appName")}</Text>
+      <Text style={styles.welcome}>{t('welcomeTo')}</Text>
+      <Text style={styles.title}>{t('appName')}</Text>
 
       {signalActive ? (
         <View style={styles.activeSignal}>
           <View style={styles.timerBlock}>
             {selectedGroup && selectedLocation ? (
               <Text style={styles.headingTo}>
-                {t("headingTo", {
+                {t('headingTo', {
                   group: selectedGroup.name,
                   location: selectedLocation.name,
                 })}
               </Text>
             ) : null}
-            <Text style={styles.timerLabel}>{t("travelTimer")}</Text>
+            <Text style={styles.timerLabel}>{t('travelTimer')}</Text>
             <Text style={styles.timerValue}>
               {formatElapsedTime(elapsedSeconds, t)}
             </Text>
@@ -146,7 +159,7 @@ export default function HomeScreen() {
 
           {selectedGroup ? (
             <View style={styles.membersCard}>
-              <Text style={styles.membersTitle}>{t("whoIsComing")}</Text>
+              <Text style={styles.membersTitle}>{t('whoIsComing')}</Text>
               <ScrollView
                 style={styles.membersList}
                 contentContainerStyle={styles.membersListContent}
@@ -165,7 +178,7 @@ export default function HomeScreen() {
                       <Text style={styles.memberName} numberOfLines={1}>
                         {contactDisplayName(contact)}
                       </Text>
-                      <Text style={styles.memberStatus}>{t("onTheWay")}</Text>
+                      <Text style={styles.memberStatus}>{t('onTheWay')}</Text>
                     </View>
                   );
                 })}
@@ -175,37 +188,37 @@ export default function HomeScreen() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t("cancel")}
+            accessibilityLabel={t('cancel')}
             onPress={requestCancelSignal}
             style={({ pressed }) => [
               styles.cancelButton,
               pressed && styles.cancelButtonPressed,
             ]}
           >
-            <Text style={styles.cancelLabel}>{t("cancel")}</Text>
+            <Text style={styles.cancelLabel}>{t('cancel')}</Text>
           </Pressable>
         </View>
       ) : (
         <>
           <View style={styles.selectors}>
             <Dropdown
-              label={t("selectGroup")}
-              placeholder={t("chooseGroup")}
+              label={t('selectGroup')}
+              placeholder={t('chooseGroup')}
               options={groupOptions}
               value={selectedGroupId}
-              open={openDropdown === "group"}
-              onOpenChange={(open) => setOpenDropdown(open ? "group" : null)}
+              open={openDropdown === 'group'}
+              onOpenChange={(open) => setOpenDropdown(open ? 'group' : null)}
               onChange={setSelectedGroupId}
               colors={colors}
             />
 
             <Dropdown
-              label={t("selectLocation")}
-              placeholder={t("chooseLocation")}
+              label={t('selectLocation')}
+              placeholder={t('chooseLocation')}
               options={locationOptions}
               value={selectedLocationId}
-              open={openDropdown === "location"}
-              onOpenChange={(open) => setOpenDropdown(open ? "location" : null)}
+              open={openDropdown === 'location'}
+              onOpenChange={(open) => setOpenDropdown(open ? 'location' : null)}
               onChange={setSelectedLocationId}
               colors={colors}
             />
@@ -213,7 +226,7 @@ export default function HomeScreen() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t("activateBarSignal")}
+            accessibilityLabel={t('activateBarSignal')}
             onPress={activateSignal}
             style={({ pressed }) => [
               styles.signalButton,
@@ -233,8 +246,8 @@ export default function HomeScreen() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>{t("cancelSignalTitle")}</Text>
-            <Text style={styles.modalMessage}>{t("cancelSignalMessage")}</Text>
+            <Text style={styles.modalTitle}>{t('cancelSignalTitle')}</Text>
+            <Text style={styles.modalMessage}>{t('cancelSignalMessage')}</Text>
 
             <View style={styles.modalActions}>
               <Pressable
@@ -245,7 +258,7 @@ export default function HomeScreen() {
                   pressed && styles.modalButtonPressed,
                 ]}
               >
-                <Text style={styles.modalKeepLabel}>{t("keepSignal")}</Text>
+                <Text style={styles.modalKeepLabel}>{t('keepSignal')}</Text>
               </Pressable>
 
               <Pressable
@@ -256,7 +269,7 @@ export default function HomeScreen() {
                   pressed && styles.modalButtonPressed,
                 ]}
               >
-                <Text style={styles.modalStopLabel}>{t("stopSignal")}</Text>
+                <Text style={styles.modalStopLabel}>{t('stopSignal')}</Text>
               </Pressable>
             </View>
           </View>
@@ -266,101 +279,87 @@ export default function HomeScreen() {
   );
 }
 
-function BarStool({ styles }: BarStoolProps) {
-  return (
-    <View style={styles.stool}>
-      <View style={styles.seatTop} />
-      <View style={styles.seat} />
-      <View style={styles.pole} />
-      <View style={styles.footrest} />
-      <View style={styles.base} />
-    </View>
-  );
-}
-
-const SIGNAL_SIZE = 220;
-
-const createStyles = (colors: ColorTokens) => {
+const createStyles = (colors: TColorTokens) => {
   const modalButton = {
     flex: 1,
     minHeight: 44,
     borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 12,
     borderColor: colors.border,
   } as const;
 
   const modalButtonLabel = {
     fontSize: 15,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
   } as const;
 
   return StyleSheet.create({
     container: {
       flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       paddingHorizontal: 24,
       backgroundColor: colors.background,
     },
     welcome: {
       fontSize: 18,
       letterSpacing: 4,
-      textTransform: "uppercase",
+      textTransform: 'uppercase',
       marginBottom: 8,
       color: colors.accentMuted,
     },
     title: {
       fontSize: 36,
-      fontWeight: "800",
+      fontWeight: '800',
       letterSpacing: 1,
       marginBottom: 28,
-      textAlign: "center",
+      textAlign: 'center',
       color: colors.accent,
     },
     selectors: {
-      width: "100%",
+      width: '100%',
       maxWidth: 360,
       gap: 16,
       marginBottom: 36,
       zIndex: 1,
     },
     activeSignal: {
-      width: "100%",
+      width: '100%',
       maxWidth: 360,
-      alignItems: "center",
+      alignItems: 'center',
       gap: 20,
     },
     timerBlock: {
-      width: "100%",
-      alignItems: "center",
+      width: '100%',
+      alignItems: 'center',
       gap: 8,
     },
     headingTo: {
       fontSize: 14,
-      fontWeight: "600",
-      textAlign: "center",
+      fontWeight: '600',
+      textAlign: 'center',
       marginBottom: 4,
       color: colors.accentMuted,
     },
     timerLabel: {
       fontSize: 12,
-      fontWeight: "800",
+      fontWeight: '800',
       letterSpacing: 1.5,
-      textTransform: "uppercase",
+      textTransform: 'uppercase',
       color: colors.accentMuted,
     },
     timerValue: {
       fontSize: 32,
-      fontWeight: "800",
-      textAlign: "center",
+      fontWeight: '800',
+      textAlign: 'center',
       color: colors.accent,
     },
     membersCard: {
-      width: "100%",
+      width: '100%',
       borderWidth: StyleSheet.hairlineWidth,
       borderRadius: 12,
       paddingTop: 14,
@@ -371,23 +370,23 @@ const createStyles = (colors: ColorTokens) => {
     },
     membersTitle: {
       fontSize: 12,
-      fontWeight: "800",
+      fontWeight: '800',
       letterSpacing: 1.5,
-      textTransform: "uppercase",
+      textTransform: 'uppercase',
       paddingHorizontal: 16,
       marginBottom: 8,
       color: colors.accent,
     },
     membersList: {
-      width: "100%",
+      width: '100%',
     },
     membersListContent: {
       paddingBottom: 8,
     },
     memberRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       gap: 12,
       paddingHorizontal: 16,
       paddingVertical: 12,
@@ -399,12 +398,12 @@ const createStyles = (colors: ColorTokens) => {
     memberName: {
       flex: 1,
       fontSize: 15,
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.text,
     },
     memberStatus: {
       fontSize: 13,
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.accent,
     },
     cancelButton: {
@@ -412,8 +411,8 @@ const createStyles = (colors: ColorTokens) => {
       minWidth: 180,
       borderWidth: StyleSheet.hairlineWidth,
       borderRadius: 10,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       paddingHorizontal: 24,
       backgroundColor: colors.panel,
       borderColor: colors.border,
@@ -423,12 +422,12 @@ const createStyles = (colors: ColorTokens) => {
     },
     cancelLabel: {
       fontSize: 16,
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.text,
     },
     modalBackdrop: {
       flex: 1,
-      justifyContent: "center",
+      justifyContent: 'center',
       paddingHorizontal: 24,
       backgroundColor: colors.overlay,
     },
@@ -443,7 +442,7 @@ const createStyles = (colors: ColorTokens) => {
     },
     modalTitle: {
       fontSize: 20,
-      fontWeight: "800",
+      fontWeight: '800',
       marginBottom: 10,
       color: colors.accent,
     },
@@ -454,7 +453,7 @@ const createStyles = (colors: ColorTokens) => {
       color: colors.text,
     },
     modalActions: {
-      flexDirection: "row",
+      flexDirection: 'row',
       gap: 10,
     },
     modalKeepButton: {
@@ -481,8 +480,8 @@ const createStyles = (colors: ColorTokens) => {
       height: SIGNAL_SIZE,
       borderRadius: SIGNAL_SIZE / 2,
       borderWidth: 6,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       borderColor: colors.white,
       backgroundColor: colors.accent,
     },
@@ -493,7 +492,7 @@ const createStyles = (colors: ColorTokens) => {
     stool: {
       width: 88,
       height: 128,
-      alignItems: "center",
+      alignItems: 'center',
     },
     seatTop: {
       width: 64,
@@ -517,7 +516,7 @@ const createStyles = (colors: ColorTokens) => {
       backgroundColor: colors.stool,
     },
     footrest: {
-      position: "absolute",
+      position: 'absolute',
       top: 70,
       width: 52,
       height: 10,

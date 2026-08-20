@@ -34,14 +34,12 @@ Audited against the nine rules in `personal-fitness-app/.claude/rules/`:
 
 - [x] **`safe-area-wrapper.md`** — ~~zero `SafeAreaView` usages in bar-app~~
   Fixed 2026-08-20, see step 4.
-- [ ] **`code-style.md` naming** — no `T`/`I`/`E` prefixes: `type Contact`,
-  `type Group`, `type DropdownProps`, `type ColorTokens`. Only
-  `EThemeModeOptions` complies. Screen files are `Home.tsx`, not
-  `HomeScreen.tsx`.
-- [ ] **Type location** — `Contact` is declared three separate times
-  (`src/data/contacts.ts`, `src/data/groups.ts`,
-  `src/pages/MyContacts/MyContacts.tsx`); `Group` and `BarLocation` twice each.
-  These belong in `src/types/`.
+- [x] **`code-style.md` naming** — ~~no `T`/`I`/`E` prefixes~~
+  Fixed 2026-08-20, see step 3. Screen *files* are still `Home.tsx` rather than
+  `HomeScreen.tsx`; left alone deliberately, since the rule only requires
+  `PascalCase.tsx` and the page dirs are renamed in step 6 anyway.
+- [x] **Type location** — ~~shared types declared per-module~~
+  Fixed 2026-08-20, see step 3.
 - [ ] **`testing.md`** — nothing to comply with; no test infrastructure exists.
 - [ ] **Component decomposition** — `src/pages/Home/Home.tsx` is 526 lines and
   `_MyContacts/ContactDetailModal.tsx` is 438; PFA's equivalent screens delegate
@@ -87,13 +85,40 @@ Biggest gap.
 - [ ] Make `SettingsContext` language survive restart
 - [ ] Document storage keys (PFA does this in `CLAUDE.md` / `STORAGE.md`)
 
-### 3. Extract `src/types/`
+### 3. Extract `src/types/` — done 2026-08-20
 
-- [ ] Create `src/types/common.types.ts`
-- [ ] Dedupe `Contact` (currently in 3 files) into one shared type
-- [ ] Dedupe `Group` and `BarLocation` (2 files each)
-- [ ] Add per-page type files for page-specific non-props types
-- [ ] Apply `T` / `I` / `E` prefixes across the codebase
+- [x] Create `src/types/common.types.ts`
+- [x] Dedupe `Contact` into one shared type (`TContact`)
+- [x] Dedupe `Group` and `BarLocation` (`TGroup`, `TBarLocation`)
+- [x] Add per-page type files for page-specific non-props types
+      (`src/types/MyContacts.types.ts` holds `TContactSection`)
+- [x] Apply `T` / `I` / `E` prefixes across the codebase
+
+Alongside the prefixes, the rest of `code-style.md` was applied in the same
+pass: every props type is now a named `I…Props` **interface** (no inline props
+in signatures), module-level constants are `UPPER_SNAKE_CASE`
+(`MOCK_CONTACTS`, `THEMES`, `LANGUAGE_OPTIONS`, `DEFAULT_THEME_MODE`,
+`DEFAULT_LANGUAGE`), quotes are single for JS/TS and double for JSX attributes,
+and `Home.tsx` / `ContactDetailModal.tsx` were reordered to the prescribed
+imports → types → helpers → component → `StyleSheet.create()` layout.
+
+Two deliberate deviations:
+
+- **`TContactDraft` was hoisted to `common.types.ts`** even though it is a form
+  shape, because `CreateContactModal` and `ContactDetailModal` each declared
+  their own identical copy. `THomeStyles` / `TContactDetailStyles` stay local —
+  they are `ReturnType<typeof createStyles>` and cannot leave the file that
+  defines `createStyles`.
+- **`src/navigation/AppLayout.tsx` keeps a second stylesheet named
+  `rootStyles`.** The rule says the styles object is always `styles`, but this
+  file needs two: a static one for `GestureHandlerRootView` (rendered above
+  `SettingsProvider`, so no theme colors exist yet) and the per-component
+  themed `styles`. Naming both `styles` would mean shadowing, so the static one
+  keeps a distinct name.
+
+Also folded in: the unused `@deprecated export const colors = themes.dark`
+was deleted rather than renamed to `COLORS`, and the shared `t()` prop
+signature — repeated verbatim in five component files — is now `TTranslate`.
 
 ### 4. SafeAreaView on all screens — done 2026-08-20
 

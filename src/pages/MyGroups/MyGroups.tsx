@@ -1,26 +1,26 @@
-import { useMemo, useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useMemo, useState } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CreateFooter } from "../../components/common";
-import { useSettings } from "../../context/SettingsContext";
-import { HEADER_SCREEN_EDGES } from "../../constants/safeAreaEdges";
-import { mockContacts } from "../../data/contacts";
-import { mockGroups, type Group } from "../../data/groups";
-import { CreateGroupModal } from "../../components/_MyGroups";
-import type { ColorTokens } from "../../theme/theme";
+import { CreateFooter } from '../../components/common';
+import { useSettings } from '../../context/SettingsContext';
+import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
+import { MOCK_CONTACTS } from '../../data/contacts';
+import { MOCK_GROUPS } from '../../data/groups';
+import { CreateGroupModal } from '../../components/_MyGroups';
+import type { TColorTokens, TGroup } from '../../types/common.types';
 
-function memberPreview(group: Group) {
-  return group.contacts.map((contact) => contact.firstName).join(", ");
+function memberPreview(group: TGroup) {
+  return group.contacts.map((contact) => contact.firstName).join(', ');
 }
 
 export default function GroupsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [groups, setGroups] = useState<Group[]>(() => [...mockGroups]);
+  const [groups, setGroups] = useState<TGroup[]>(() => [...MOCK_GROUPS]);
   const [createVisible, setCreateVisible] = useState(false);
 
-  function handleCreate(group: Group) {
+  function handleCreate(group: TGroup) {
     setGroups((current) => [...current, group]);
   }
 
@@ -43,28 +43,28 @@ export default function GroupsScreen() {
                 {memberPreview(item)}
               </Text>
               <Text style={styles.meta}>
-                {t("calledTimes", {
+                {t('calledTimes', {
                   count: item.timesCalled,
-                  times: item.timesCalled === 1 ? t("time") : t("times"),
+                  times: item.timesCalled === 1 ? t('time') : t('times'),
                 })}
               </Text>
             </View>
           );
         }}
         ListEmptyComponent={
-          <Text style={styles.empty}>{t("noGroups")}</Text>
+          <Text style={styles.empty}>{t('noGroups')}</Text>
         }
       />
 
       <CreateFooter
-        label={t("createGroup")}
+        label={t('createGroup')}
         onPress={() => setCreateVisible(true)}
         colors={colors}
       />
 
       <CreateGroupModal
         visible={createVisible}
-        availableContacts={mockContacts}
+        availableContacts={MOCK_CONTACTS}
         colors={colors}
         t={t}
         onClose={() => setCreateVisible(false)}
@@ -74,7 +74,7 @@ export default function GroupsScreen() {
   );
 }
 
-const createStyles = (colors: ColorTokens) =>
+const createStyles = (colors: TColorTokens) =>
   StyleSheet.create({
     screen: {
       flex: 1,
@@ -93,24 +93,24 @@ const createStyles = (colors: ColorTokens) =>
       borderBottomColor: colors.border,
     },
     rowTop: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       marginBottom: 6,
     },
     name: {
       fontSize: 18,
-      fontWeight: "700",
+      fontWeight: '700',
       flex: 1,
       marginRight: 12,
       color: colors.text,
     },
     count: {
-      overflow: "hidden",
+      overflow: 'hidden',
       minWidth: 28,
-      textAlign: "center",
+      textAlign: 'center',
       fontSize: 13,
-      fontWeight: "800",
+      fontWeight: '800',
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 999,
@@ -127,7 +127,7 @@ const createStyles = (colors: ColorTokens) =>
       color: colors.textMuted,
     },
     empty: {
-      textAlign: "center",
+      textAlign: 'center',
       marginTop: 48,
       fontSize: 16,
       color: colors.accentMuted,

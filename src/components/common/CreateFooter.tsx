@@ -2,13 +2,13 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { ColorTokens } from '../../theme/theme';
+import type { TColorTokens } from '../../types/common.types';
 
-type CreateFooterProps = {
+interface ICreateFooterProps {
   label: string;
   onPress: () => void;
-  colors: ColorTokens;
-};
+  colors: TColorTokens;
+}
 
 const MIN_FOOTER_BOTTOM_PADDING = 12;
 
@@ -16,7 +16,7 @@ const getFooterInsetStyle = (bottomInset: number) => ({
   paddingBottom: Math.max(bottomInset, MIN_FOOTER_BOTTOM_PADDING),
 });
 
-export function CreateFooter({ label, onPress, colors }: CreateFooterProps) {
+export function CreateFooter({ label, onPress, colors }: ICreateFooterProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
@@ -34,7 +34,7 @@ export function CreateFooter({ label, onPress, colors }: CreateFooterProps) {
   );
 }
 
-const createStyles = (colors: ColorTokens) =>
+const createStyles = (colors: TColorTokens) =>
   StyleSheet.create({
     footer: {
       borderTopWidth: StyleSheet.hairlineWidth,

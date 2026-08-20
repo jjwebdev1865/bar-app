@@ -1,23 +1,23 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { ColorTokens } from '../../theme/theme';
+import type { TColorTokens } from '../../types/common.types';
 
-export type DropdownOption = {
+export type TDropdownOption = {
   value: string;
   label: string;
 };
 
-type DropdownProps = {
+interface IDropdownProps {
   label: string;
   placeholder: string;
-  options: DropdownOption[];
+  options: TDropdownOption[];
   value: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChange: (value: string) => void;
-  colors: ColorTokens;
-};
+  colors: TColorTokens;
+}
 
 export function Dropdown({
   label,
@@ -28,7 +28,7 @@ export function Dropdown({
   onOpenChange,
   onChange,
   colors,
-}: DropdownProps) {
+}: IDropdownProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const selectedLabel =
@@ -86,7 +86,7 @@ export function Dropdown({
   );
 }
 
-const createStyles = (colors: ColorTokens) =>
+const createStyles = (colors: TColorTokens) =>
   StyleSheet.create({
     wrapper: {
       width: '100%',

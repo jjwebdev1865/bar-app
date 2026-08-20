@@ -1,39 +1,33 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import type { TranslationKey } from '../../i18n';
-import type { ColorTokens } from '../../theme/theme';
-import type { Contact } from '../../data/contacts';
-import { mockLocations } from '../../data/locations';
+import { MOCK_LOCATIONS } from '../../data/locations';
+import type {
+  TColorTokens,
+  TContact,
+  TContactDraft,
+  TTranslate,
+  TTranslationKey,
+} from '../../types/common.types';
 import { CreateModal } from '../common/CreateModal';
 import { Dropdown } from '../common/Dropdown';
 
-type CreateContactModalProps = {
+interface ICreateContactModalProps {
   visible: boolean;
-  colors: ColorTokens;
-  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
+  colors: TColorTokens;
+  t: TTranslate;
   onClose: () => void;
-  onCreate: (contact: Contact) => void;
-};
+  onCreate: (contact: TContact) => void;
+}
 
-type ContactDraft = {
-  firstName: string;
-  lastName: string;
-  nickname: string;
-  email: string;
-  phone: string;
-  address: string;
-  favoriteBarId: string;
-};
-
-const emptyDraft = (): ContactDraft => ({
+const emptyDraft = (): TContactDraft => ({
   firstName: '',
   lastName: '',
   nickname: '',
   email: '',
   phone: '',
   address: '',
-  favoriteBarId: mockLocations[0]?.id ?? '',
+  favoriteBarId: MOCK_LOCATIONS[0]?.id ?? '',
 });
 
 export function CreateContactModal({
@@ -42,9 +36,9 @@ export function CreateContactModal({
   t,
   onClose,
   onCreate,
-}: CreateContactModalProps) {
+}: ICreateContactModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [draft, setDraft] = useState<ContactDraft>(emptyDraft);
+  const [draft, setDraft] = useState<TContactDraft>(emptyDraft);
   const [barDropdownOpen, setBarDropdownOpen] = useState(false);
 
   useEffect(() => {
@@ -54,9 +48,9 @@ export function CreateContactModal({
     }
   }, [visible]);
 
-  function updateField<K extends keyof ContactDraft>(
+  function updateField<K extends keyof TContactDraft>(
     key: K,
-    value: ContactDraft[K],
+    value: TContactDraft[K],
   ) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
@@ -74,7 +68,7 @@ export function CreateContactModal({
       return;
     }
 
-    const contact: Contact = {
+    const contact: TContact = {
       id: `contact-${Date.now()}`,
       firstName,
       lastName,
@@ -93,8 +87,8 @@ export function CreateContactModal({
     draft.firstName.trim().length > 0 && draft.lastName.trim().length > 0;
 
   const fields: {
-    key: keyof ContactDraft;
-    label: TranslationKey;
+    key: keyof TContactDraft;
+    label: TTranslationKey;
     multiline?: boolean;
   }[] = [
     { key: 'firstName', label: 'firstName' },
@@ -133,7 +127,7 @@ export function CreateContactModal({
       <Dropdown
         label={t('favoriteBar')}
         placeholder={t('chooseLocation')}
-        options={mockLocations.map((location) => ({
+        options={MOCK_LOCATIONS.map((location) => ({
           value: location.id,
           label: location.name,
         }))}
@@ -147,7 +141,7 @@ export function CreateContactModal({
   );
 }
 
-const createStyles = (colors: ColorTokens) => {
+const createStyles = (colors: TColorTokens) => {
   const input = {
     minHeight: 44,
     borderWidth: StyleSheet.hairlineWidth,

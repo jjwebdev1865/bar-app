@@ -1,1 +1,1 @@
-export * from "./CreateGroupModal";
+export * from './CreateGroupModal';

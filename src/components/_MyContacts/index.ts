@@ -1,2 +1,2 @@
-export * from "./ContactDetailModal";
-export * from "./CreateContactModal";
+export * from './ContactDetailModal';
+export * from './CreateContactModal';

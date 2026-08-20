@@ -1,24 +1,23 @@
-import { useMemo, useState } from "react";
-import { Pressable, SectionList, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useMemo, useState } from 'react';
+import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useSettings } from "../../context/SettingsContext";
-import { HEADER_SCREEN_EDGES } from "../../constants/safeAreaEdges";
-import { mockContacts, type Contact } from "../../data/contacts";
-import { CreateFooter } from "../../components/common";
-import { ContactDetailModal, CreateContactModal } from "../../components/_MyContacts";
-import type { ColorTokens } from "../../theme/theme";
+import { useSettings } from '../../context/SettingsContext';
+import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
+import { MOCK_CONTACTS } from '../../data/contacts';
+import { CreateFooter } from '../../components/common';
+import {
+  ContactDetailModal,
+  CreateContactModal,
+} from '../../components/_MyContacts';
+import type { TColorTokens, TContact } from '../../types/common.types';
+import type { TContactSection } from '../../types/MyContacts.types';
 
-type ContactSection = {
-  title: string;
-  data: Contact[];
-};
-
-function sortKey(contact: Contact) {
+function sortKey(contact: TContact) {
   return `${contact.lastName} ${contact.firstName}`.toLowerCase();
 }
 
-function displayName(contact: Contact) {
+function displayName(contact: TContact) {
   if (contact.nickname) {
     return `${contact.firstName} "${contact.nickname}" ${contact.lastName}`;
   }
@@ -26,15 +25,15 @@ function displayName(contact: Contact) {
   return `${contact.firstName} ${contact.lastName}`;
 }
 
-function buildSections(contacts: Contact[]): ContactSection[] {
+function buildSections(contacts: TContact[]): TContactSection[] {
   const sorted = [...contacts].sort((a, b) =>
     sortKey(a).localeCompare(sortKey(b)),
   );
 
-  const sections: ContactSection[] = [];
+  const sections: TContactSection[] = [];
 
   for (const contact of sorted) {
-    const letter = contact.lastName[0]?.toUpperCase() ?? "#";
+    const letter = contact.lastName[0]?.toUpperCase() ?? '#';
     const last = sections[sections.length - 1];
 
     if (last?.title === letter) {
@@ -50,7 +49,7 @@ function buildSections(contacts: Contact[]): ContactSection[] {
 export default function ContactsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [contacts, setContacts] = useState<Contact[]>(() => [...mockContacts]);
+  const [contacts, setContacts] = useState<TContact[]>(() => [...MOCK_CONTACTS]);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(
     null,
   );
@@ -60,7 +59,7 @@ export default function ContactsScreen() {
   const selectedContact =
     contacts.find((contact) => contact.id === selectedContactId) ?? null;
 
-  function handleSave(updatedContact: Contact) {
+  function handleSave(updatedContact: TContact) {
     setContacts((current) =>
       current.map((contact) =>
         contact.id === updatedContact.id ? updatedContact : contact,
@@ -68,11 +67,11 @@ export default function ContactsScreen() {
     );
   }
 
-  function handleCreate(contact: Contact) {
+  function handleCreate(contact: TContact) {
     setContacts((current) => [...current, contact]);
   }
 
-  function handleDelete(contact: Contact) {
+  function handleDelete(contact: TContact) {
     setSelectedContactId(null);
     // Local list update is deferred until delete persistence exists.
     void contact;
@@ -109,12 +108,12 @@ export default function ContactsScreen() {
           );
         }}
         ListEmptyComponent={
-          <Text style={styles.empty}>{t("noContacts")}</Text>
+          <Text style={styles.empty}>{t('noContacts')}</Text>
         }
       />
 
       <CreateFooter
-        label={t("createContact")}
+        label={t('createContact')}
         onPress={() => setCreateVisible(true)}
         colors={colors}
       />
@@ -140,7 +139,7 @@ export default function ContactsScreen() {
   );
 }
 
-const createStyles = (colors: ColorTokens) =>
+const createStyles = (colors: TColorTokens) =>
   StyleSheet.create({
     screen: {
       flex: 1,
@@ -156,7 +155,7 @@ const createStyles = (colors: ColorTokens) =>
     },
     sectionLetter: {
       fontSize: 16,
-      fontWeight: "800",
+      fontWeight: '800',
       color: colors.accent,
     },
     row: {
@@ -173,7 +172,7 @@ const createStyles = (colors: ColorTokens) =>
     },
     name: {
       fontSize: 17,
-      fontWeight: "600",
+      fontWeight: '600',
       marginBottom: 4,
       color: colors.text,
     },
@@ -182,7 +181,7 @@ const createStyles = (colors: ColorTokens) =>
       color: colors.accentMuted,
     },
     empty: {
-      textAlign: "center",
+      textAlign: 'center',
       marginTop: 48,
       fontSize: 16,
       color: colors.accentMuted,
