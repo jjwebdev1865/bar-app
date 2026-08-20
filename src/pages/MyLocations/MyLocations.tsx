@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CreateFooter } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
+import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { mockContacts } from '../../data/contacts';
 import { mockLocations, type BarLocation } from '../../data/locations';
 import { CreateLocationModal } from '../../components/_MyLocations';
@@ -25,7 +27,10 @@ export default function LocationsScreen() {
   }
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      edges={HEADER_SCREEN_EDGES}
+      style={[styles.screen, { backgroundColor: colors.background }]}
+    >
       <FlatList
         data={locations}
         keyExtractor={(item) => item.id}
@@ -83,7 +88,7 @@ export default function LocationsScreen() {
         onClose={() => setCreateVisible(false)}
         onCreate={handleCreate}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

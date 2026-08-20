@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { Pressable, SectionList, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useSettings } from "../../context/SettingsContext";
+import { HEADER_SCREEN_EDGES } from "../../constants/safeAreaEdges";
 import { mockContacts, type Contact } from "../../data/contacts";
 import { CreateFooter } from "../../components/common";
 import { ContactDetailModal, CreateContactModal } from "../../components/_MyContacts";
@@ -75,7 +77,10 @@ export default function ContactsScreen() {
   }
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      edges={HEADER_SCREEN_EDGES}
+      style={[styles.screen, { backgroundColor: colors.background }]}
+    >
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
@@ -148,7 +153,7 @@ export default function ContactsScreen() {
         onSave={handleSave}
         onDelete={handleDelete}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

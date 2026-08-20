@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { TranslationKey } from "../../i18n";
 import { useSettings } from "../../context/SettingsContext";
@@ -114,7 +115,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <Text style={[styles.welcome, { color: colors.accentMuted }]}>
         {t("welcomeTo")}
       </Text>
@@ -311,7 +314,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

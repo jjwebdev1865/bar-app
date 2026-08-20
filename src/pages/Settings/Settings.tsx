@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { languageOptions, type Language } from "../../i18n";
 import { useSettings } from "../../context/SettingsContext";
+import { HEADER_SCREEN_EDGES } from "../../constants/safeAreaEdges";
 import { EThemeModeOptions } from "../../theme/theme";
 import { Dropdown } from "../../components/common";
 
@@ -19,7 +21,10 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      edges={HEADER_SCREEN_EDGES}
+      style={[styles.screen, { backgroundColor: colors.background }]}
+    >
       <View
         style={[
           styles.card,
@@ -80,7 +85,7 @@ export default function SettingsScreen() {
           {t("languageHint")}
         </Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

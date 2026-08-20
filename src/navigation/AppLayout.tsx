@@ -8,6 +8,7 @@ import {
 } from 'expo-router/drawer';
 import { StyleSheet, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
 
@@ -93,9 +94,11 @@ function AppDrawer() {
 export default function AppLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
-      <SettingsProvider>
-        <AppDrawer />
-      </SettingsProvider>
+      <SafeAreaProvider>
+        <SettingsProvider>
+          <AppDrawer />
+        </SettingsProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
