@@ -21,6 +21,12 @@ interface ICreateModalProps {
   onClose: () => void;
   onCreate: () => void;
   children: ReactNode;
+  /** Overrides the default Cancel/Create footer, e.g. for multi-step flows. */
+  leftLabel?: string;
+  onLeft?: () => void;
+  rightLabel?: string;
+  rightDisabled?: boolean;
+  onRight?: () => void;
 }
 
 export function CreateModal({
@@ -34,8 +40,18 @@ export function CreateModal({
   onClose,
   onCreate,
   children,
+  leftLabel,
+  onLeft,
+  rightLabel,
+  rightDisabled,
+  onRight,
 }: ICreateModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const footerLeftLabel = leftLabel ?? cancelLabel;
+  const footerRightLabel = rightLabel ?? createLabel;
+  const footerRightDisabled = rightDisabled ?? !canCreate;
+  const handleFooterLeftPress = onLeft ?? onClose;
+  const handleFooterRightPress = onRight ?? onCreate;
 
   return (
     <Modal
@@ -68,26 +84,26 @@ export function CreateModal({
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
-              onPress={onClose}
+              onPress={handleFooterLeftPress}
               style={({ pressed }) => [
                 styles.cancelButton,
                 pressed && styles.actionButtonPressed,
               ]}
             >
-              <Text style={styles.cancelActionLabel}>{cancelLabel}</Text>
+              <Text style={styles.cancelActionLabel}>{footerLeftLabel}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              disabled={!canCreate}
-              onPress={onCreate}
+              disabled={footerRightDisabled}
+              onPress={handleFooterRightPress}
               style={({ pressed }) => [
                 styles.createButton,
-                !canCreate
+                footerRightDisabled
                   ? styles.actionButtonDisabled
                   : pressed && styles.actionButtonPressed,
               ]}
             >
-              <Text style={styles.createActionLabel}>{createLabel}</Text>
+              <Text style={styles.createActionLabel}>{footerRightLabel}</Text>
             </Pressable>
           </View>
         </View>

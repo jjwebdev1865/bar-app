@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import type {
   TColorTokens,
@@ -8,6 +15,7 @@ import type {
   TTranslate,
 } from '../../types/common.types';
 import { CreateModal } from '../common/CreateModal';
+import { formatContactDisplayName } from '../../utils/contactFormat';
 
 interface ICreateGroupModalProps {
   visible: boolean;
@@ -16,14 +24,6 @@ interface ICreateGroupModalProps {
   t: TTranslate;
   onClose: () => void;
   onCreate: (group: TGroup) => void;
-}
-
-function contactDisplayName(contact: TContact) {
-  if (contact.nickname) {
-    return `${contact.firstName} "${contact.nickname}" ${contact.lastName}`;
-  }
-
-  return `${contact.firstName} ${contact.lastName}`;
 }
 
 export function CreateGroupModal({
@@ -100,29 +100,35 @@ export function CreateGroupModal({
 
       <Text style={styles.fieldLabel}>{t('selectMembers')}</Text>
 
-      {availableContacts.map((contact, index) => {
-        const selected = selectedIds.includes(contact.id);
-        const isLast = index === availableContacts.length - 1;
+      <ScrollView
+        style={styles.membersList}
+        contentContainerStyle={styles.membersListContent}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+      >
+        {availableContacts.map((contact) => {
+          const selected = selectedIds.includes(contact.id);
 
-        return (
-          <Pressable
-            key={contact.id}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: selected }}
-            onPress={() => toggleContact(contact.id)}
-            style={[styles.memberRow, !isLast && styles.memberRowSpacing]}
-          >
-            <Text style={styles.memberName} numberOfLines={1}>
-              {contactDisplayName(contact)}
-            </Text>
-            <View
-              style={selected ? styles.checkboxSelected : styles.checkboxDefault}
+          return (
+            <Pressable
+              key={contact.id}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: selected }}
+              onPress={() => toggleContact(contact.id)}
+              style={styles.memberRow}
             >
-              {selected ? <Text style={styles.checkmark}>✓</Text> : null}
-            </View>
-          </Pressable>
-        );
-      })}
+              <Text style={styles.memberName} numberOfLines={1}>
+                {formatContactDisplayName(contact)}
+              </Text>
+              <View
+                style={selected ? styles.checkboxSelected : styles.checkboxDefault}
+              >
+                {selected ? <Text style={styles.checkmark}>✓</Text> : null}
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
     </CreateModal>
   );
 }
@@ -160,6 +166,13 @@ const createStyles = (colors: TColorTokens) => {
       backgroundColor: colors.background,
       borderColor: colors.border,
     },
+    membersList: {
+      maxHeight: 240,
+    },
+    membersListContent: {
+      gap: 8,
+      paddingBottom: 4,
+    },
     memberRow: {
       minHeight: 48,
       borderWidth: StyleSheet.hairlineWidth,
@@ -171,9 +184,6 @@ const createStyles = (colors: TColorTokens) => {
       gap: 12,
       backgroundColor: colors.background,
       borderColor: colors.border,
-    },
-    memberRowSpacing: {
-      marginBottom: 0,
     },
     memberName: {
       flex: 1,

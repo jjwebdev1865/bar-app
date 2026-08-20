@@ -19,16 +19,27 @@ interface ICreateLocationModalProps {
 type TLocationDraft = {
   name: string;
   address: string;
-  latitude: string;
-  longitude: string;
 };
 
 const emptyDraft = (): TLocationDraft => ({
   name: '',
   address: '',
-  latitude: '',
-  longitude: '',
 });
+
+// Mock locations cluster around Gotham City — keep random assignments in the same area.
+const GOTHAM_LATITUDE_RANGE: [number, number] = [40.68, 40.79];
+const GOTHAM_LONGITUDE_RANGE: [number, number] = [-74.05, -73.96];
+
+function randomInRange([min, max]: [number, number]) {
+  return Math.random() * (max - min) + min;
+}
+
+function getRandomCoordinates() {
+  return {
+    latitude: randomInRange(GOTHAM_LATITUDE_RANGE),
+    longitude: randomInRange(GOTHAM_LONGITUDE_RANGE),
+  };
+}
 
 export function CreateLocationModal({
   visible,
@@ -56,10 +67,8 @@ export function CreateLocationModal({
   function handleCreate() {
     const name = draft.name.trim();
     const address = draft.address.trim();
-    const latitude = Number(draft.latitude);
-    const longitude = Number(draft.longitude);
 
-    if (!name || !address || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    if (!name || !address) {
       return;
     }
 
@@ -67,19 +76,13 @@ export function CreateLocationModal({
       id: `loc-${Date.now()}`,
       name,
       address,
-      latitude,
-      longitude,
+      ...getRandomCoordinates(),
     });
     onClose();
   }
 
   const canCreate =
-    draft.name.trim().length > 0 &&
-    draft.address.trim().length > 0 &&
-    Number.isFinite(Number(draft.latitude)) &&
-    draft.latitude.trim().length > 0 &&
-    Number.isFinite(Number(draft.longitude)) &&
-    draft.longitude.trim().length > 0;
+    draft.name.trim().length > 0 && draft.address.trim().length > 0;
 
   return (
     <CreateModal
@@ -115,32 +118,6 @@ export function CreateLocationModal({
           placeholderTextColor={colors.textMuted}
         />
       </View>
-
-      <View style={styles.row}>
-        <View style={[styles.field, styles.rowField]}>
-          <Text style={styles.fieldLabel}>{t('latitude')}</Text>
-          <TextInput
-            accessibilityLabel={t('latitude')}
-            value={draft.latitude}
-            onChangeText={(value) => updateField('latitude', value)}
-            keyboardType="numbers-and-punctuation"
-            style={styles.input}
-            placeholderTextColor={colors.textMuted}
-          />
-        </View>
-
-        <View style={[styles.field, styles.rowField]}>
-          <Text style={styles.fieldLabel}>{t('longitude')}</Text>
-          <TextInput
-            accessibilityLabel={t('longitude')}
-            value={draft.longitude}
-            onChangeText={(value) => updateField('longitude', value)}
-            keyboardType="numbers-and-punctuation"
-            style={styles.input}
-            placeholderTextColor={colors.textMuted}
-          />
-        </View>
-      </View>
     </CreateModal>
   );
 }
@@ -159,13 +136,6 @@ const createStyles = (colors: TColorTokens) => {
   } as const;
 
   return StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    rowField: {
-      flex: 1,
-    },
     field: {
       gap: 6,
     },

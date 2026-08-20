@@ -12,17 +12,10 @@ import {
 } from '../../components/_MyContacts';
 import type { TColorTokens, TContact } from '../../types/common.types';
 import type { TContactSection } from '../../types/MyContacts.types';
+import { formatContactDisplayName } from '../../utils/contactFormat';
 
 function sortKey(contact: TContact) {
   return `${contact.lastName} ${contact.firstName}`.toLowerCase();
-}
-
-function displayName(contact: TContact) {
-  if (contact.nickname) {
-    return `${contact.firstName} "${contact.nickname}" ${contact.lastName}`;
-  }
-
-  return `${contact.firstName} ${contact.lastName}`;
 }
 
 function buildSections(contacts: TContact[]): TContactSection[] {
@@ -102,7 +95,7 @@ export default function ContactsScreen() {
                 !isLast && styles.rowDivider,
               ]}
             >
-              <Text style={styles.name}>{displayName(item)}</Text>
+              <Text style={styles.name}>{formatContactDisplayName(item)}</Text>
               <Text style={styles.phone}>{item.phone}</Text>
             </Pressable>
           );

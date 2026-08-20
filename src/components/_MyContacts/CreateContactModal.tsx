@@ -30,6 +30,25 @@ const emptyDraft = (): TContactDraft => ({
   favoriteBarId: MOCK_LOCATIONS[0]?.id ?? '',
 });
 
+const STEP_COUNT = 3;
+
+const STEP_FIELDS: {
+  key: keyof TContactDraft;
+  label: TTranslationKey;
+  multiline?: boolean;
+}[][] = [
+  [
+    { key: 'firstName', label: 'firstName' },
+    { key: 'lastName', label: 'lastName' },
+    { key: 'nickname', label: 'nickname' },
+  ],
+  [
+    { key: 'email', label: 'email' },
+    { key: 'phone', label: 'phone' },
+  ],
+  [{ key: 'address', label: 'address', multiline: true }],
+];
+
 export function CreateContactModal({
   visible,
   colors,
@@ -40,11 +59,13 @@ export function CreateContactModal({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [draft, setDraft] = useState<TContactDraft>(emptyDraft);
   const [barDropdownOpen, setBarDropdownOpen] = useState(false);
+  const [step, setStep] = useState(0);
 
   useEffect(() => {
     if (visible) {
       setDraft(emptyDraft());
       setBarDropdownOpen(false);
+      setStep(0);
     }
   }, [visible]);
 
@@ -83,21 +104,18 @@ export function CreateContactModal({
     handleClose();
   }
 
+  function handlePrevious() {
+    setStep((current) => Math.max(current - 1, 0));
+  }
+
+  function handleNext() {
+    setStep((current) => Math.min(current + 1, STEP_COUNT - 1));
+  }
+
   const canCreate =
     draft.firstName.trim().length > 0 && draft.lastName.trim().length > 0;
-
-  const fields: {
-    key: keyof TContactDraft;
-    label: TTranslationKey;
-    multiline?: boolean;
-  }[] = [
-    { key: 'firstName', label: 'firstName' },
-    { key: 'lastName', label: 'lastName' },
-    { key: 'nickname', label: 'nickname' },
-    { key: 'email', label: 'email' },
-    { key: 'phone', label: 'phone' },
-    { key: 'address', label: 'address', multiline: true },
-  ];
+  const isFirstStep = step === 0;
+  const isLastStep = step === STEP_COUNT - 1;
 
   return (
     <CreateModal
@@ -110,8 +128,13 @@ export function CreateContactModal({
       colors={colors}
       onClose={handleClose}
       onCreate={handleCreate}
+      leftLabel={isFirstStep ? t('cancel') : t('previous')}
+      onLeft={isFirstStep ? handleClose : handlePrevious}
+      rightLabel={isLastStep ? t('addContact') : t('next')}
+      rightDisabled={!canCreate}
+      onRight={isLastStep ? handleCreate : handleNext}
     >
-      {fields.map((field) => (
+      {STEP_FIELDS[step].map((field) => (
         <View key={field.key} style={styles.field}>
           <Text style={styles.fieldLabel}>{t(field.label)}</Text>
           <TextInput
@@ -125,19 +148,21 @@ export function CreateContactModal({
         </View>
       ))}
 
-      <Dropdown
-        label={t('favoriteBar')}
-        placeholder={t('chooseLocation')}
-        options={MOCK_LOCATIONS.map((location) => ({
-          value: location.id,
-          label: location.name,
-        }))}
-        value={draft.favoriteBarId}
-        open={barDropdownOpen}
-        onOpenChange={setBarDropdownOpen}
-        onChange={(value) => updateField('favoriteBarId', value)}
-        colors={colors}
-      />
+      {step === 1 ? (
+        <Dropdown
+          label={t('favoriteBar')}
+          placeholder={t('chooseLocation')}
+          options={MOCK_LOCATIONS.map((location) => ({
+            value: location.id,
+            label: location.name,
+          }))}
+          value={draft.favoriteBarId}
+          open={barDropdownOpen}
+          onOpenChange={setBarDropdownOpen}
+          onChange={(value) => updateField('favoriteBarId', value)}
+          colors={colors}
+        />
+      ) : null}
     </CreateModal>
   );
 }

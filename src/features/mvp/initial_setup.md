@@ -152,14 +152,39 @@ match.
 Verified with `npx tsc --noEmit` (exit 0). Not yet verified visually on a
 device — worth a look on a notched phone and on Android gesture-nav.
 
-### 5. `src/utils/` + `src/hooks/`
+### 5. `src/utils/` + `src/hooks/` — done 2026-08-20
 Pull logic out of pages into tested modules — this is what makes tests cheap to
-write.
+write. Scope kept to logic that's either duplicated today or genuinely
+stateful; nothing is extracted speculatively.
 
-- [ ] Extract elapsed-time / signal-timer logic from `Home.tsx` into `src/utils/`
-- [ ] Extract date/formatting helpers into `src/utils/`
-- [ ] Add `src/hooks/` for reusable hooks
-- [ ] Write colocated tests for each new util
+- [x] `src/utils/contactFormat.ts` — `formatContactDisplayName(contact)`, deduped
+      from four near-identical copies (`contactDisplayName` in
+      `Home.tsx` and `CreateGroupModal.tsx`, `displayName` in
+      `ContactDetailModal.tsx`, and another copy in `MyContacts.tsx`)
+- [ ] `src/utils/contactFormat.test.ts` — nickname vs. no-nickname cases;
+      removed for now, no jest yet — write it as part of step 1
+- [x] `src/utils/timeFormat.ts` — `formatElapsedTime(totalSeconds, t)` moved out
+      of `Home.tsx`; takes `TTranslate` as a param so it stays framework-free
+- [ ] `src/utils/timeFormat.test.ts` — 0s, <60s singular/plural, exact minute,
+      minute+seconds cases; removed for now, no jest yet — write it as part
+      of step 1
+- [x] `src/hooks/useElapsedTimer.ts` — wraps `Home.tsx`'s `signalActive` /
+      `elapsedSeconds` state plus the `setInterval` effect, exposing
+      `{ elapsedSeconds, isActive, start, reset }`; `Home.tsx` calls `start()`
+      from `activateSignal` and `reset()` from `confirmCancelSignal`
+- [ ] `src/hooks/useElapsedTimer.test.ts` — uses fake timers to assert
+      start/tick/reset behavior; removed for now, no jest yet — write it as
+      part of step 1
+- [x] Leave `openDropdown` state in `Home.tsx` as-is — it isn't duplicated
+      anywhere else, so a `useDropdown` hook would be premature
+
+Verified with `npx tsc --noEmit`: clean. The three `*.test.ts` files above were
+written first, then deleted — they only failed on missing test-runner globals
+(`describe`/`it`/`expect`/`jest`) and the missing
+`@testing-library/react-native` module, both of which are step 1's job. Rather
+than leave broken test files in the tree, they were removed; re-add them once
+step 1 lands the jest deps, `jest-expo`, `@testing-library/react-native`, and
+`"types": ["jest"]` in `tsconfig.json`.
 
 ### 6. Decompose large files
 

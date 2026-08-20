@@ -18,6 +18,7 @@ import type {
   TTranslationKey,
 } from '../../types/common.types';
 import { Dropdown } from '../common/Dropdown';
+import { formatContactDisplayName } from '../../utils/contactFormat';
 
 type TContactDetailStyles = ReturnType<typeof createStyles>;
 
@@ -56,16 +57,6 @@ function toDraft(contact: TContact): TContactDraft {
     address: contact.address,
     favoriteBarId: contact.favoriteBarId,
   };
-}
-
-function displayName(
-  contact: Pick<TContact, 'firstName' | 'lastName' | 'nickname'>,
-) {
-  if (contact.nickname) {
-    return `${contact.firstName} "${contact.nickname}" ${contact.lastName}`;
-  }
-
-  return `${contact.firstName} ${contact.lastName}`;
 }
 
 function favoriteBarName(favoriteBarId: string) {
@@ -219,7 +210,7 @@ export function ContactDetailModal({
         <View accessibilityViewIsModal style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={2}>
-              {isEditing ? t('editContact') : displayName(contact)}
+              {isEditing ? t('editContact') : formatContactDisplayName(contact)}
             </Text>
             <Pressable
               accessibilityRole="button"

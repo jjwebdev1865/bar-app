@@ -54,10 +54,11 @@
   "createContact": "Crear contacto",
   "createGroup": "Crear grupo",
   "create": "Crear",
+  "next": "Siguiente",
+  "previous": "Anterior",
+  "addContact": "Agregar contacto",
   "groupName": "Nombre del grupo",
   "selectMembers": "Seleccionar miembros",
   "createLocation": "Crear ubicación",
-  "locationName": "Nombre de la ubicación",
-  "latitude": "Latitud",
-  "longitude": "Longitud"
+  "locationName": "Nombre de la ubicación"
 }

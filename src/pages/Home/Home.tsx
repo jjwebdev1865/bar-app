@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -15,11 +15,10 @@ import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { MOCK_GROUPS } from '../../data/groups';
 import { MOCK_LOCATIONS } from '../../data/locations';
 import { Dropdown } from '../../components/common';
-import type {
-  TColorTokens,
-  TContact,
-  TTranslate,
-} from '../../types/common.types';
+import { useElapsedTimer } from '../../hooks/useElapsedTimer';
+import { formatContactDisplayName } from '../../utils/contactFormat';
+import { formatElapsedTime } from '../../utils/timeFormat';
+import type { TColorTokens } from '../../types/common.types';
 
 const SIGNAL_SIZE = 220;
 
@@ -27,30 +26,6 @@ type THomeStyles = ReturnType<typeof createStyles>;
 
 interface IBarStoolProps {
   styles: THomeStyles;
-}
-
-function formatElapsedTime(totalSeconds: number, t: TTranslate) {
-  if (totalSeconds < 60) {
-    return `${totalSeconds} ${totalSeconds === 1 ? t('second') : t('seconds')}`;
-  }
-
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  const minuteLabel = `${minutes} ${minutes === 1 ? t('minute') : t('minutes')}`;
-
-  if (seconds === 0) {
-    return minuteLabel;
-  }
-
-  return `${minuteLabel} ${seconds} ${seconds === 1 ? t('second') : t('seconds')}`;
-}
-
-function contactDisplayName(contact: TContact) {
-  if (contact.nickname) {
-    return `${contact.firstName} "${contact.nickname}" ${contact.lastName}`;
-  }
-
-  return `${contact.firstName} ${contact.lastName}`;
 }
 
 function BarStool({ styles }: IBarStoolProps) {
@@ -79,8 +54,8 @@ export default function HomeScreen() {
   const [openDropdown, setOpenDropdown] = useState<'group' | 'location' | null>(
     null,
   );
-  const [signalActive, setSignalActive] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const { elapsedSeconds, isActive: signalActive, start, reset } =
+    useElapsedTimer();
   const [confirmCancelVisible, setConfirmCancelVisible] = useState(false);
 
   const groupOptions = useMemo(
@@ -104,18 +79,6 @@ export default function HomeScreen() {
     (location) => location.id === selectedLocationId,
   );
 
-  useEffect(() => {
-    if (!signalActive) {
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      setElapsedSeconds((current) => current + 1);
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [signalActive]);
-
   function activateSignal() {
     if (signalActive) {
       return;
@@ -123,8 +86,7 @@ export default function HomeScreen() {
 
     console.log('Bar Signal Activated');
     setOpenDropdown(null);
-    setElapsedSeconds(0);
-    setSignalActive(true);
+    start();
   }
 
   function requestCancelSignal() {
@@ -137,8 +99,7 @@ export default function HomeScreen() {
 
   function confirmCancelSignal() {
     setConfirmCancelVisible(false);
-    setSignalActive(false);
-    setElapsedSeconds(0);
+    reset();
   }
 
   const headingToLabel =
@@ -188,7 +149,7 @@ export default function HomeScreen() {
                 >
                   {selectedGroup.contacts.map((contact, index) => {
                     const isLast = index === selectedGroup.contacts.length - 1;
-                    const memberLabel = `${contactDisplayName(contact)}: ${t(
+                    const memberLabel = `${formatContactDisplayName(contact)}: ${t(
                       'onTheWay',
                     )}`;
 
@@ -203,7 +164,7 @@ export default function HomeScreen() {
                         ]}
                       >
                         <Text style={styles.memberName} numberOfLines={1}>
-                          {contactDisplayName(contact)}
+                          {formatContactDisplayName(contact)}
                         </Text>
                         <Text style={styles.memberStatus}>{t('onTheWay')}</Text>
                       </View>

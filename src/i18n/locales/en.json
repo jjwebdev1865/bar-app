@@ -54,10 +54,11 @@
   "createContact": "Create contact",
   "createGroup": "Create group",
   "create": "Create",
+  "next": "Next",
+  "previous": "Previous",
+  "addContact": "Add contact",
   "groupName": "Group name",
   "selectMembers": "Select members",
   "createLocation": "Create location",
-  "locationName": "Location name",
-  "latitude": "Latitude",
-  "longitude": "Longitude"
+  "locationName": "Location name"
 }
