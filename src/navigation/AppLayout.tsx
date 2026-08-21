@@ -15,6 +15,7 @@ import { ErrorBoundary } from '../components/common';
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
 import { EThemeModeOptions } from '../theme/theme';
 import type { TColorTokens } from '../types/common.types';
+import { EDrawerScreen } from '../types/navigation.types';
 
 interface IDrawerMenuProps extends DrawerContentComponentProps {}
 
@@ -57,7 +58,7 @@ function AppDrawer() {
         }}
       >
         <Drawer.Screen
-          name="index"
+          name={EDrawerScreen.HOME}
           options={{
             title: t('appName'),
             drawerLabel: t('navHome'),
@@ -66,28 +67,28 @@ function AppDrawer() {
           }}
         />
         <Drawer.Screen
-          name="contacts"
+          name={EDrawerScreen.CONTACTS}
           options={{
             title: t('navContacts'),
             drawerLabel: t('navContacts'),
           }}
         />
         <Drawer.Screen
-          name="groups"
+          name={EDrawerScreen.GROUPS}
           options={{
             title: t('navGroups'),
             drawerLabel: t('navGroups'),
           }}
         />
         <Drawer.Screen
-          name="locations"
+          name={EDrawerScreen.LOCATIONS}
           options={{
             title: t('navLocations'),
             drawerLabel: t('navLocations'),
           }}
         />
         <Drawer.Screen
-          name="settings"
+          name={EDrawerScreen.SETTINGS}
           options={{
             title: t('navSettings'),
             drawerLabel: t('navSettings'),

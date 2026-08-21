@@ -12,8 +12,8 @@ import { useHeaderHeight } from 'expo-router/react-navigation';
 
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
-import { MOCK_GROUPS } from '../../data/groups';
 import { MOCK_LOCATIONS } from '../../data/locations';
+import { useGroupsStore } from '../../stores/groupsStore';
 import { Dropdown } from '../../components/common';
 import { useElapsedTimer } from '../../hooks/useElapsedTimer';
 import { formatContactDisplayName } from '../../utils/contactFormat';
@@ -58,9 +58,11 @@ export default function HomeScreen() {
     useElapsedTimer();
   const [confirmCancelVisible, setConfirmCancelVisible] = useState(false);
 
+  const groups = useGroupsStore((state) => state.groups);
+
   const groupOptions = useMemo(
-    () => MOCK_GROUPS.map((group) => ({ value: group.id, label: group.name })),
-    [],
+    () => groups.map((group) => ({ value: group.id, label: group.name })),
+    [groups],
   );
 
   const locationOptions = useMemo(
@@ -72,9 +74,7 @@ export default function HomeScreen() {
     [],
   );
 
-  const selectedGroup = MOCK_GROUPS.find(
-    (group) => group.id === selectedGroupId,
-  );
+  const selectedGroup = groups.find((group) => group.id === selectedGroupId);
   const selectedLocation = MOCK_LOCATIONS.find(
     (location) => location.id === selectedLocationId,
   );

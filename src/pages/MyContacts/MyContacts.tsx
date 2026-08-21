@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
-import { MOCK_CONTACTS } from '../../data/contacts';
+import { useContactsStore } from '../../stores/contactsStore';
 import { CreateFooter } from '../../components/common';
 import {
   ContactDetailModal,
@@ -42,7 +42,10 @@ function buildSections(contacts: TContact[]): TContactSection[] {
 export default function ContactsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [contacts, setContacts] = useState<TContact[]>(() => [...MOCK_CONTACTS]);
+  const contacts = useContactsStore((state) => state.contacts);
+  const addContact = useContactsStore((state) => state.addContact);
+  const updateContact = useContactsStore((state) => state.updateContact);
+  const removeContact = useContactsStore((state) => state.removeContact);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(
     null,
   );
@@ -52,22 +55,9 @@ export default function ContactsScreen() {
   const selectedContact =
     contacts.find((contact) => contact.id === selectedContactId) ?? null;
 
-  function handleSave(updatedContact: TContact) {
-    setContacts((current) =>
-      current.map((contact) =>
-        contact.id === updatedContact.id ? updatedContact : contact,
-      ),
-    );
-  }
-
-  function handleCreate(contact: TContact) {
-    setContacts((current) => [...current, contact]);
-  }
-
   function handleDelete(contact: TContact) {
+    removeContact(contact.id);
     setSelectedContactId(null);
-    // Local list update is deferred until delete persistence exists.
-    void contact;
   }
 
   return (
@@ -116,7 +106,7 @@ export default function ContactsScreen() {
         colors={colors}
         t={t}
         onClose={() => setCreateVisible(false)}
-        onCreate={handleCreate}
+        onCreate={addContact}
       />
 
       <ContactDetailModal
@@ -125,7 +115,7 @@ export default function ContactsScreen() {
         colors={colors}
         t={t}
         onClose={() => setSelectedContactId(null)}
-        onSave={handleSave}
+        onSave={updateContact}
         onDelete={handleDelete}
       />
     </SafeAreaView>

@@ -5,19 +5,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreateFooter } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
-import { MOCK_CONTACTS } from '../../data/contacts';
 import { MOCK_LOCATIONS } from '../../data/locations';
+import { useContactsStore } from '../../stores/contactsStore';
 import { CreateLocationModal } from '../../components/_MyLocations';
 import type {
   TBarLocation,
   TColorTokens,
+  TContact,
   TTranslate,
 } from '../../types/common.types';
 
-function favoriteCount(location: TBarLocation) {
-  return MOCK_CONTACTS.filter(
-    (contact) => contact.favoriteBarId === location.id,
-  ).length;
+function favoriteCount(location: TBarLocation, contacts: TContact[]) {
+  return contacts.filter((contact) => contact.favoriteBarId === location.id)
+    .length;
 }
 
 function favoriteOfLabel(fans: number, t: TTranslate) {
@@ -38,6 +38,7 @@ function locationAccessibilityLabel(
 export default function LocationsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const contacts = useContactsStore((state) => state.contacts);
   const [locations, setLocations] = useState<TBarLocation[]>(() => [
     ...MOCK_LOCATIONS,
   ]);
@@ -55,7 +56,7 @@ export default function LocationsScreen() {
         contentContainerStyle={styles.listContent}
         renderItem={({ item, index }) => {
           const isLast = index === locations.length - 1;
-          const fans = favoriteCount(item);
+          const fans = favoriteCount(item, contacts);
 
           return (
             <View

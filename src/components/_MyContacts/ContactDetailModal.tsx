@@ -181,8 +181,8 @@ export function ContactDetailModal({
   }
 
   function handleDelete() {
-    // TODO: Persist contact deletion once contact storage is wired up
-    console.log('Delete contact requested', contact);
+    setIsEditing(false);
+    setBarDropdownOpen(false);
     onDelete(contact!);
   }
 

@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreateFooter } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
-import { MOCK_CONTACTS } from '../../data/contacts';
-import { MOCK_GROUPS } from '../../data/groups';
+import { useContactsStore } from '../../stores/contactsStore';
+import { useGroupsStore } from '../../stores/groupsStore';
 import { CreateGroupModal } from '../../components/_MyGroups';
 import type {
   TColorTokens,
@@ -32,12 +32,10 @@ function groupAccessibilityLabel(group: TGroup, t: TTranslate) {
 export default function GroupsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [groups, setGroups] = useState<TGroup[]>(() => [...MOCK_GROUPS]);
+  const contacts = useContactsStore((state) => state.contacts);
+  const groups = useGroupsStore((state) => state.groups);
+  const addGroup = useGroupsStore((state) => state.addGroup);
   const [createVisible, setCreateVisible] = useState(false);
-
-  function handleCreate(group: TGroup) {
-    setGroups((current) => [...current, group]);
-  }
 
   return (
     <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.screen}>
@@ -78,11 +76,11 @@ export default function GroupsScreen() {
 
       <CreateGroupModal
         visible={createVisible}
-        availableContacts={MOCK_CONTACTS}
+        availableContacts={contacts}
         colors={colors}
         t={t}
         onClose={() => setCreateVisible(false)}
-        onCreate={handleCreate}
+        onCreate={addGroup}
       />
     </SafeAreaView>
   );
