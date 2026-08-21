@@ -37,7 +37,3 @@ export const MOCK_LOCATIONS: TBarLocation[] = [
     address: '1 Wayne Tower, Gotham City',
   },
 ];
-
-export function getLocationById(id: string): TBarLocation | undefined {
-  return MOCK_LOCATIONS.find((location) => location.id === id);
-}

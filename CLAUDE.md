@@ -17,7 +17,7 @@ React Native 0.86, zustand 5 for shared state, i18next for localization
 - `src/context/SettingsContext.tsx` — app-wide theme mode + language + `t()`
   translation helper
 - `src/stores/*.ts` — zustand stores holding the shared domain state
-  (`contactsStore`, `groupsStore`), seeded from `src/data/*.ts`
+  (`contactsStore`, `groupsStore`, `locationsStore`), seeded from `src/data/*.ts`
 - `src/pages/*` — screen implementations; they read domain state from
   `src/stores/*` and keep only UI state (open modal, selected row) in `useState`
 - `src/components/_MyContacts`, `_MyGroups`, `_MyLocations`, `common` —
@@ -42,14 +42,19 @@ zustand store, not in screen-level `useState`. Conventions:
   fan-out inside the store action** — a screen that calls only `updateContact`
   must not be able to skip the sync. Dependency direction is contacts →
   groups; don't add the reverse edge.
+- `TContact.favoriteBarId` points at a location *id*, so
+  `locationsStore.updateLocation` needs no fan-out, but `removeLocation` calls
+  `contactsStore.clearFavoriteBar` to blank the dangling ids — which in turn
+  re-syncs the group copies. Full dependency direction is locations →
+  contacts → groups; don't add a reverse edge.
 - Stores are in-memory only. There is no persistence yet, so all state
   (including theme/language in `SettingsContext`) resets on app reload.
 
 **Current functionality**: Home screen lets you pick a group + location and
 "activate a signal" (broadcast intent to meet up) with an elapsed-time
 counter; Contacts supports create/edit/delete against the store, Groups
-supports create; Locations is still screen-local state reading
-`MOCK_LOCATIONS`; Settings toggles theme/language.
+supports create, Locations supports create/edit/delete; Settings toggles
+theme/language.
 
 **Planned direction** (see `V1_goals.md`, not yet implemented): Firebase auth
 (phone/email) → contacts sync with hashed phone-number matching → groups →

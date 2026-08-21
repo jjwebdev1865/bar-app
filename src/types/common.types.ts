@@ -58,7 +58,6 @@ export type TGroup = {
   id: string;
   name: string;
   contacts: TContact[];
-  timesCalled: number;
 };
 
 export type TBarLocation = {

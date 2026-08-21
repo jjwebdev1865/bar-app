@@ -9,8 +9,9 @@ import {
   View,
 } from 'react-native';
 
-import { MOCK_LOCATIONS } from '../../data/locations';
+import { useLocationsStore } from '../../stores/locationsStore';
 import type {
+  TBarLocation,
   TColorTokens,
   TContact,
   TContactDraft,
@@ -59,9 +60,18 @@ function toDraft(contact: TContact): TContactDraft {
   };
 }
 
-function favoriteBarName(favoriteBarId: string) {
+function favoriteBarName(
+  favoriteBarId: string,
+  locations: TBarLocation[],
+  t: TTranslate,
+) {
+  // `locationsStore.removeLocation` clears the id when the bar is deleted.
+  if (!favoriteBarId) {
+    return t('none');
+  }
+
   return (
-    MOCK_LOCATIONS.find((location) => location.id === favoriteBarId)?.name ??
+    locations.find((location) => location.id === favoriteBarId)?.name ??
     favoriteBarId
   );
 }
@@ -134,9 +144,19 @@ export function ContactDetailModal({
   onDelete,
 }: IContactDetailModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const locations = useLocationsStore((state) => state.locations);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<TContactDraft | null>(null);
   const [barDropdownOpen, setBarDropdownOpen] = useState(false);
+
+  const barOptions = useMemo(
+    () =>
+      locations.map((location) => ({
+        value: location.id,
+        label: location.name,
+      })),
+    [locations],
+  );
 
   useEffect(() => {
     if (contact) {
@@ -248,10 +268,7 @@ export function ContactDetailModal({
                 <Dropdown
                   label={t('favoriteBar')}
                   placeholder={t('chooseLocation')}
-                  options={MOCK_LOCATIONS.map((location) => ({
-                    value: location.id,
-                    label: location.name,
-                  }))}
+                  options={barOptions}
                   value={draft.favoriteBarId}
                   open={barDropdownOpen}
                   onOpenChange={setBarDropdownOpen}
@@ -293,7 +310,7 @@ export function ContactDetailModal({
                 />
                 <InfoRow
                   label={t('favoriteBar')}
-                  value={favoriteBarName(contact.favoriteBarId)}
+                  value={favoriteBarName(contact.favoriteBarId, locations, t)}
                   styles={styles}
                 />
               </>

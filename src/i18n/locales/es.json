@@ -10,9 +10,6 @@
   "noContacts": "Aún no hay contactos",
   "noGroups": "Aún no hay grupos",
   "noLocations": "Aún no hay ubicaciones",
-  "calledTimes": "Llamado {{count}} {{times}}",
-  "time": "vez",
-  "times": "veces",
   "favoriteOf": "Favorito de {{count}} {{contacts}}",
   "contact": "contacto",
   "contacts": "contactos",
@@ -40,7 +37,6 @@
   "deleteGroup": "Eliminar grupo",
   "members": "Miembros",
   "noMembers": "Aún no hay miembros",
-  "timesCalled": "Veces llamado",
   "editGroupList": "Editar lista del grupo",
   "editGroupListHint": "Abre la lista completa de contactos",
   "save": "Guardar",
@@ -67,5 +63,8 @@
   "groupName": "Nombre del grupo",
   "selectMembers": "Seleccionar miembros",
   "createLocation": "Crear ubicación",
-  "locationName": "Nombre de la ubicación"
+  "locationName": "Nombre de la ubicación",
+  "editLocation": "Editar ubicación",
+  "deleteLocation": "Eliminar ubicación",
+  "coordinates": "Coordenadas"
 }

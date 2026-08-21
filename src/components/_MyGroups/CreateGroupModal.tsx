@@ -8,9 +8,9 @@ import {
   View,
 } from 'react-native';
 
+import { useContactsStore } from '../../stores/contactsStore';
 import type {
   TColorTokens,
-  TContact,
   TGroup,
   TTranslate,
 } from '../../types/common.types';
@@ -19,7 +19,6 @@ import { formatContactDisplayName } from '../../utils/contactFormat';
 
 interface ICreateGroupModalProps {
   visible: boolean;
-  availableContacts: TContact[];
   colors: TColorTokens;
   t: TTranslate;
   onClose: () => void;
@@ -28,13 +27,13 @@ interface ICreateGroupModalProps {
 
 export function CreateGroupModal({
   visible,
-  availableContacts,
   colors,
   t,
   onClose,
   onCreate,
 }: ICreateGroupModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const availableContacts = useContactsStore((state) => state.contacts);
   const [name, setName] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -68,7 +67,6 @@ export function CreateGroupModal({
       id: `group-${Date.now()}`,
       name: trimmedName,
       contacts,
-      timesCalled: 0,
     });
     onClose();
   }

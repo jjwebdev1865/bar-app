@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type {
-  TColorTokens,
-  TContact,
-  TTranslate,
-} from '../../types/common.types';
+import { useContactsStore } from '../../stores/contactsStore';
+import type { TColorTokens, TTranslate } from '../../types/common.types';
 import { CreateModal } from '../common/CreateModal';
 import { formatContactDisplayName } from '../../utils/contactFormat';
 
 interface IGroupMembersModalProps {
   visible: boolean;
-  availableContacts: TContact[];
   selectedIds: string[];
   colors: TColorTokens;
   t: TTranslate;
@@ -26,7 +22,6 @@ interface IGroupMembersModalProps {
  */
 export function GroupMembersModal({
   visible,
-  availableContacts,
   selectedIds,
   colors,
   t,
@@ -34,6 +29,7 @@ export function GroupMembersModal({
   onSave,
 }: IGroupMembersModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const availableContacts = useContactsStore((state) => state.contacts);
   const [draftIds, setDraftIds] = useState<string[]>(selectedIds);
 
   useEffect(() => {

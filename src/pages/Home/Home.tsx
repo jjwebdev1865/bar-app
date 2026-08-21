@@ -12,8 +12,8 @@ import { useHeaderHeight } from 'expo-router/react-navigation';
 
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
-import { MOCK_LOCATIONS } from '../../data/locations';
 import { useGroupsStore } from '../../stores/groupsStore';
+import { useLocationsStore } from '../../stores/locationsStore';
 import { Dropdown } from '../../components/common';
 import { useElapsedTimer } from '../../hooks/useElapsedTimer';
 import { formatContactDisplayName } from '../../utils/contactFormat';
@@ -59,6 +59,7 @@ export default function HomeScreen() {
   const [confirmCancelVisible, setConfirmCancelVisible] = useState(false);
 
   const groups = useGroupsStore((state) => state.groups);
+  const locations = useLocationsStore((state) => state.locations);
 
   const groupOptions = useMemo(
     () => groups.map((group) => ({ value: group.id, label: group.name })),
@@ -67,17 +68,19 @@ export default function HomeScreen() {
 
   const locationOptions = useMemo(
     () =>
-      MOCK_LOCATIONS.map((location) => ({
+      locations.map((location) => ({
         value: location.id,
         label: location.name,
       })),
-    [],
+    [locations],
   );
 
-  const selectedGroup = groups.find((group) => group.id === selectedGroupId);
-  const selectedLocation = MOCK_LOCATIONS.find(
-    (location) => location.id === selectedLocationId,
-  );
+  // Resolve against the stores rather than trusting the local ids — a group or
+  // location deleted on its own screen must not linger as a stale selection here.
+  const selectedGroup =
+    groups.find((group) => group.id === selectedGroupId) ?? null;
+  const selectedLocation =
+    locations.find((location) => location.id === selectedLocationId) ?? null;
 
   function activateSignal() {
     if (signalActive) {
@@ -205,7 +208,7 @@ export default function HomeScreen() {
                 label={t('selectGroup')}
                 placeholder={t('chooseGroup')}
                 options={groupOptions}
-                value={selectedGroupId}
+                value={selectedGroup?.id ?? null}
                 open={openDropdown === 'group'}
                 onOpenChange={(open) => setOpenDropdown(open ? 'group' : null)}
                 onChange={setSelectedGroupId}
@@ -216,7 +219,7 @@ export default function HomeScreen() {
                 label={t('selectLocation')}
                 placeholder={t('chooseLocation')}
                 options={locationOptions}
-                value={selectedLocationId}
+                value={selectedLocation?.id ?? null}
                 open={openDropdown === 'location'}
                 onOpenChange={(open) =>
                   setOpenDropdown(open ? 'location' : null)

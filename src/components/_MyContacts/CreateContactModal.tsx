@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { MOCK_LOCATIONS } from '../../data/locations';
+import { useLocationsStore } from '../../stores/locationsStore';
 import type {
   TColorTokens,
   TContact,
@@ -20,14 +20,14 @@ interface ICreateContactModalProps {
   onCreate: (contact: TContact) => void;
 }
 
-const emptyDraft = (): TContactDraft => ({
+const emptyDraft = (defaultBarId: string): TContactDraft => ({
   firstName: '',
   lastName: '',
   nickname: '',
   email: '',
   phone: '',
   address: '',
-  favoriteBarId: MOCK_LOCATIONS[0]?.id ?? '',
+  favoriteBarId: defaultBarId,
 });
 
 const STEP_COUNT = 3;
@@ -57,13 +57,28 @@ export function CreateContactModal({
   onCreate,
 }: ICreateContactModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [draft, setDraft] = useState<TContactDraft>(emptyDraft);
+  const locations = useLocationsStore((state) => state.locations);
+  const defaultBarId = locations[0]?.id ?? '';
+  const [draft, setDraft] = useState<TContactDraft>(() =>
+    emptyDraft(defaultBarId),
+  );
   const [barDropdownOpen, setBarDropdownOpen] = useState(false);
   const [step, setStep] = useState(0);
 
+  const barOptions = useMemo(
+    () =>
+      locations.map((location) => ({
+        value: location.id,
+        label: location.name,
+      })),
+    [locations],
+  );
+
+  // `defaultBarId` is deliberately not a dependency — reopening the modal is what
+  // should reset the draft, not a location being added while it is already open.
   useEffect(() => {
     if (visible) {
-      setDraft(emptyDraft());
+      setDraft(emptyDraft(defaultBarId));
       setBarDropdownOpen(false);
       setStep(0);
     }
@@ -152,10 +167,7 @@ export function CreateContactModal({
         <Dropdown
           label={t('favoriteBar')}
           placeholder={t('chooseLocation')}
-          options={MOCK_LOCATIONS.map((location) => ({
-            value: location.id,
-            label: location.name,
-          }))}
+          options={barOptions}
           value={draft.favoriteBarId}
           open={barDropdownOpen}
           onOpenChange={setBarDropdownOpen}

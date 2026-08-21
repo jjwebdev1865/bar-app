@@ -5,37 +5,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreateFooter } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
-import { useContactsStore } from '../../stores/contactsStore';
 import { useGroupsStore } from '../../stores/groupsStore';
 import {
   CreateGroupModal,
   GroupDetailModal,
 } from '../../components/_MyGroups';
-import type {
-  TColorTokens,
-  TGroup,
-  TTranslate,
-} from '../../types/common.types';
+import type { TColorTokens, TGroup } from '../../types/common.types';
 
 function memberPreview(group: TGroup) {
   return group.contacts.map((contact) => contact.firstName).join(', ');
 }
 
-function calledTimesLabel(group: TGroup, t: TTranslate) {
-  return t('calledTimes', {
-    count: group.timesCalled,
-    times: group.timesCalled === 1 ? t('time') : t('times'),
-  });
-}
-
-function groupAccessibilityLabel(group: TGroup, t: TTranslate) {
-  return `${group.name}. ${memberPreview(group)}. ${calledTimesLabel(group, t)}`;
+function groupAccessibilityLabel(group: TGroup) {
+  return `${group.name}. ${memberPreview(group)}`;
 }
 
 export default function GroupsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const contacts = useContactsStore((state) => state.contacts);
   const groups = useGroupsStore((state) => state.groups);
   const addGroup = useGroupsStore((state) => state.addGroup);
   const updateGroup = useGroupsStore((state) => state.updateGroup);
@@ -63,7 +50,7 @@ export default function GroupsScreen() {
           return (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={groupAccessibilityLabel(item, t)}
+              accessibilityLabel={groupAccessibilityLabel(item)}
               onPress={() => setSelectedGroupId(item.id)}
               style={({ pressed }) => [
                 styles.row,
@@ -78,7 +65,6 @@ export default function GroupsScreen() {
               <Text style={styles.members} numberOfLines={1}>
                 {memberPreview(item)}
               </Text>
-              <Text style={styles.meta}>{calledTimesLabel(item, t)}</Text>
             </Pressable>
           );
         }}
@@ -95,7 +81,6 @@ export default function GroupsScreen() {
 
       <CreateGroupModal
         visible={createVisible}
-        availableContacts={contacts}
         colors={colors}
         t={t}
         onClose={() => setCreateVisible(false)}
@@ -105,7 +90,6 @@ export default function GroupsScreen() {
       <GroupDetailModal
         group={selectedGroup}
         visible={selectedGroup !== null}
-        availableContacts={contacts}
         colors={colors}
         t={t}
         onClose={() => setSelectedGroupId(null)}
@@ -166,10 +150,6 @@ const createStyles = (colors: TColorTokens) =>
       fontSize: 14,
       marginBottom: 4,
       color: colors.accentMuted,
-    },
-    meta: {
-      fontSize: 13,
-      color: colors.textMuted,
     },
     empty: {
       textAlign: 'center',

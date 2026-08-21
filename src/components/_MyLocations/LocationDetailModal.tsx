@@ -11,48 +11,62 @@ import {
 
 import { useContactsStore } from '../../stores/contactsStore';
 import type {
+  TBarLocation,
   TColorTokens,
-  TGroup,
   TTranslate,
+  TTranslationKey,
 } from '../../types/common.types';
-import { formatContactDisplayName } from '../../utils/contactFormat';
-import { GroupMembersModal } from './GroupMembersModal';
+import {
+  countFavoriteContacts,
+  formatFavoriteOfLabel,
+} from '../../utils/locationFormat';
 
-type TGroupDetailStyles = ReturnType<typeof createStyles>;
+type TLocationDetailStyles = ReturnType<typeof createStyles>;
 
 type TActionButtonVariant = 'primary' | 'secondary' | 'danger';
 
-interface IGroupDetailModalProps {
-  group: TGroup | null;
+type TLocationDraft = {
+  name: string;
+  address: string;
+};
+
+interface ILocationDetailModalProps {
+  location: TBarLocation | null;
   visible: boolean;
   colors: TColorTokens;
   t: TTranslate;
   onClose: () => void;
-  onSave: (group: TGroup) => void;
-  onDelete: (group: TGroup) => void;
+  onSave: (location: TBarLocation) => void;
+  onDelete: (location: TBarLocation) => void;
 }
 
 interface IInfoRowProps {
   label: string;
   value: string;
-  styles: TGroupDetailStyles;
+  styles: TLocationDetailStyles;
 }
 
 interface IActionButtonProps {
   label: string;
   onPress: () => void;
   variant: TActionButtonVariant;
-  styles: TGroupDetailStyles;
-  disabled?: boolean;
+  styles: TLocationDetailStyles;
 }
 
-function memberCountLabel(count: number, t: TTranslate) {
-  return `${count} ${count === 1 ? t('contact') : t('contacts')}`;
+function toDraft(location: TBarLocation): TLocationDraft {
+  return {
+    name: location.name,
+    address: location.address,
+  };
+}
+
+function formatCoordinates(location: TBarLocation) {
+  return `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`;
 }
 
 function actionButtonStyle(
   variant: TActionButtonVariant,
-  styles: TGroupDetailStyles,
+  styles: TLocationDetailStyles,
 ) {
   if (variant === 'primary') {
     return styles.primaryActionButton;
@@ -67,7 +81,7 @@ function actionButtonStyle(
 
 function actionLabelStyle(
   variant: TActionButtonVariant,
-  styles: TGroupDetailStyles,
+  styles: TLocationDetailStyles,
 ) {
   if (variant === 'primary') {
     return styles.primaryActionLabel;
@@ -93,23 +107,14 @@ function InfoRow({ label, value, styles }: IInfoRowProps) {
   );
 }
 
-function ActionButton({
-  label,
-  onPress,
-  variant,
-  styles,
-  disabled,
-}: IActionButtonProps) {
+function ActionButton({ label, onPress, variant, styles }: IActionButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled: Boolean(disabled) }}
-      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         actionButtonStyle(variant, styles),
-        disabled && styles.actionButtonDisabled,
-        pressed && !disabled && styles.actionButtonPressed,
+        pressed && styles.actionButtonPressed,
       ]}
     >
       <Text style={actionLabelStyle(variant, styles)}>{label}</Text>
@@ -117,69 +122,72 @@ function ActionButton({
   );
 }
 
-export function GroupDetailModal({
-  group,
+export function LocationDetailModal({
+  location,
   visible,
   colors,
   t,
   onClose,
   onSave,
   onDelete,
-}: IGroupDetailModalProps) {
+}: ILocationDetailModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const availableContacts = useContactsStore((state) => state.contacts);
+  const contacts = useContactsStore((state) => state.contacts);
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [membersVisible, setMembersVisible] = useState(false);
+  const [draft, setDraft] = useState<TLocationDraft | null>(null);
 
   useEffect(() => {
-    if (group) {
-      setName(group.name);
-      setSelectedIds(group.contacts.map((contact) => contact.id));
+    if (location) {
+      setDraft(toDraft(location));
       setIsEditing(false);
-      setMembersVisible(false);
     }
-  }, [group]);
+  }, [location]);
 
-  if (!group) {
+  if (!location || !draft) {
     return null;
   }
 
-  function resetDraft() {
-    setName(group!.name);
-    setSelectedIds(group!.contacts.map((contact) => contact.id));
+  const favoriteCount = countFavoriteContacts(location, contacts);
+
+  function updateField<K extends keyof TLocationDraft>(
+    key: K,
+    value: TLocationDraft[K],
+  ) {
+    setDraft((current) => (current ? { ...current, [key]: value } : current));
   }
 
   function handleClose() {
     setIsEditing(false);
-    setMembersVisible(false);
     onClose();
   }
 
   function handleSave() {
-    const trimmedName = name.trim();
+    const name = draft!.name.trim();
+    const address = draft!.address.trim();
 
-    if (!trimmedName || selectedIds.length === 0) {
+    if (!name || !address) {
       return;
     }
 
-    onSave({
-      ...group!,
-      name: trimmedName,
-      contacts: availableContacts.filter((contact) =>
-        selectedIds.includes(contact.id),
-      ),
-    });
+    // Coordinates are not editable here — the create flow assigns them, so an
+    // edit carries the existing pair through untouched.
+    onSave({ ...location!, name, address });
     setIsEditing(false);
   }
 
   function handleDelete() {
     setIsEditing(false);
-    onDelete(group!);
+    onDelete(location!);
   }
 
-  const canSave = name.trim().length > 0 && selectedIds.length > 0;
+  const fields: {
+    key: keyof TLocationDraft;
+    label: TTranslationKey;
+    multiline?: boolean;
+  }[] = [
+    { key: 'name', label: 'locationName' },
+    { key: 'address', label: 'address', multiline: true },
+  ];
 
   return (
     <Modal
@@ -192,7 +200,7 @@ export function GroupDetailModal({
         <View accessibilityViewIsModal style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={2}>
-              {isEditing ? t('editGroup') : group.name}
+              {isEditing ? t('editLocation') : location.name}
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -210,82 +218,43 @@ export function GroupDetailModal({
             keyboardShouldPersistTaps="handled"
           >
             {isEditing ? (
-              <>
-                <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>{t('groupName')}</Text>
+              fields.map((field) => (
+                <View key={field.key} style={styles.field}>
+                  <Text style={styles.fieldLabel}>{t(field.label)}</Text>
                   <TextInput
-                    accessibilityLabel={t('groupName')}
-                    value={name}
-                    onChangeText={setName}
-                    style={styles.input}
+                    accessibilityLabel={t(field.label)}
+                    value={draft[field.key]}
+                    onChangeText={(value) => updateField(field.key, value)}
+                    multiline={field.multiline}
+                    style={
+                      field.multiline ? styles.multilineInput : styles.input
+                    }
                     placeholderTextColor={colors.textMuted}
                   />
                 </View>
-
-                <View style={styles.field}>
-                  <View
-                    accessible
-                    accessibilityLabel={`${t('members')}: ${memberCountLabel(
-                      selectedIds.length,
-                      t,
-                    )}`}
-                    style={styles.membersFieldHeader}
-                  >
-                    <Text style={styles.fieldLabel}>{t('members')}</Text>
-                    <Text style={styles.membersFieldCount}>
-                      {memberCountLabel(selectedIds.length, t)}
-                    </Text>
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t('editGroupList')}
-                    accessibilityHint={t('editGroupListHint')}
-                    onPress={() => setMembersVisible(true)}
-                    style={({ pressed }) => [
-                      styles.editListRow,
-                      pressed && styles.editListRowPressed,
-                    ]}
-                  >
-                    <Text style={styles.editListLabel}>
-                      {t('editGroupList')}
-                    </Text>
-                    <Text style={styles.editListChevron}>›</Text>
-                  </Pressable>
-                </View>
-              </>
+              ))
             ) : (
               <>
                 <InfoRow
-                  label={t('groupName')}
-                  value={group.name}
+                  label={t('locationName')}
+                  value={location.name}
                   styles={styles}
                 />
-                <View style={styles.infoRow}>
-                  <View style={styles.membersFieldHeader}>
-                    <Text style={styles.fieldLabel}>{t('members')}</Text>
-                    <Text style={styles.membersFieldCount}>
-                      {memberCountLabel(group.contacts.length, t)}
-                    </Text>
-                  </View>
-
-                  {group.contacts.length === 0 ? (
-                    <Text style={styles.infoValue}>{t('noMembers')}</Text>
-                  ) : (
-                    group.contacts.map((contact, index) => (
-                      <Text
-                        key={contact.id}
-                        numberOfLines={1}
-                        style={[
-                          styles.memberListRow,
-                          index < group.contacts.length - 1 &&
-                            styles.memberListRowDivider,
-                        ]}
-                      >
-                        {formatContactDisplayName(contact)}
-                      </Text>
-                    ))
-                  )}
-                </View>
+                <InfoRow
+                  label={t('address')}
+                  value={location.address}
+                  styles={styles}
+                />
+                <InfoRow
+                  label={t('coordinates')}
+                  value={formatCoordinates(location)}
+                  styles={styles}
+                />
+                <InfoRow
+                  label={t('favoriteBar')}
+                  value={formatFavoriteOfLabel(favoriteCount, t)}
+                  styles={styles}
+                />
               </>
             )}
           </ScrollView>
@@ -296,7 +265,7 @@ export function GroupDetailModal({
                 <ActionButton
                   label={t('cancel')}
                   onPress={() => {
-                    resetDraft();
+                    setDraft(toDraft(location));
                     setIsEditing(false);
                   }}
                   variant="secondary"
@@ -307,19 +276,18 @@ export function GroupDetailModal({
                   onPress={handleSave}
                   variant="primary"
                   styles={styles}
-                  disabled={!canSave}
                 />
               </>
             ) : (
               <>
                 <ActionButton
-                  label={t('editGroup')}
+                  label={t('editLocation')}
                   onPress={() => setIsEditing(true)}
                   variant="primary"
                   styles={styles}
                 />
                 <ActionButton
-                  label={t('deleteGroup')}
+                  label={t('deleteLocation')}
                   onPress={handleDelete}
                   variant="danger"
                   styles={styles}
@@ -327,18 +295,6 @@ export function GroupDetailModal({
               </>
             )}
           </View>
-
-          <GroupMembersModal
-            visible={membersVisible}
-            selectedIds={selectedIds}
-            colors={colors}
-            t={t}
-            onCancel={() => setMembersVisible(false)}
-            onSave={(ids) => {
-              setSelectedIds(ids);
-              setMembersVisible(false);
-            }}
-          />
         </View>
       </View>
     </Modal>
@@ -346,6 +302,18 @@ export function GroupDetailModal({
 }
 
 const createStyles = (colors: TColorTokens) => {
+  const input = {
+    minHeight: 44,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: colors.text,
+    backgroundColor: colors.background,
+    borderColor: colors.border,
+  } as const;
+
   const actionButton = {
     flex: 1,
     minHeight: 44,
@@ -419,16 +387,11 @@ const createStyles = (colors: TColorTokens) => {
       textTransform: 'uppercase',
       color: colors.accentMuted,
     },
-    input: {
-      minHeight: 44,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 16,
-      color: colors.text,
-      backgroundColor: colors.background,
-      borderColor: colors.border,
+    input,
+    multilineInput: {
+      ...input,
+      minHeight: 72,
+      textAlignVertical: 'top',
     },
     infoRow: {
       gap: 4,
@@ -437,49 +400,6 @@ const createStyles = (colors: TColorTokens) => {
       fontSize: 16,
       fontWeight: '500',
       color: colors.text,
-    },
-    membersFieldHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 12,
-    },
-    membersFieldCount: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.accentMuted,
-    },
-    memberListRow: {
-      paddingVertical: 10,
-      fontSize: 16,
-      fontWeight: '500',
-      color: colors.text,
-    },
-    memberListRowDivider: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
-    },
-    editListRow: {
-      minHeight: 44,
-      paddingVertical: 6,
-      marginBottom: 16,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    editListRowPressed: {
-      opacity: 0.6,
-    },
-    editListLabel: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.accent,
-    },
-    editListChevron: {
-      fontSize: 22,
-      lineHeight: 24,
-      fontWeight: '700',
-      color: colors.accent,
     },
     actions: {
       flexDirection: 'row',
@@ -504,9 +424,6 @@ const createStyles = (colors: TColorTokens) => {
     },
     actionButtonPressed: {
       opacity: 0.8,
-    },
-    actionButtonDisabled: {
-      opacity: 0.5,
     },
     primaryActionLabel: {
       ...actionLabel,

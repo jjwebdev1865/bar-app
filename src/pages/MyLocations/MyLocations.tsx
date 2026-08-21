@@ -1,51 +1,56 @@
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CreateFooter } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
-import { MOCK_LOCATIONS } from '../../data/locations';
 import { useContactsStore } from '../../stores/contactsStore';
-import { CreateLocationModal } from '../../components/_MyLocations';
+import { useLocationsStore } from '../../stores/locationsStore';
+import {
+  CreateLocationModal,
+  LocationDetailModal,
+} from '../../components/_MyLocations';
 import type {
   TBarLocation,
   TColorTokens,
-  TContact,
   TTranslate,
 } from '../../types/common.types';
-
-function favoriteCount(location: TBarLocation, contacts: TContact[]) {
-  return contacts.filter((contact) => contact.favoriteBarId === location.id)
-    .length;
-}
-
-function favoriteOfLabel(fans: number, t: TTranslate) {
-  return t('favoriteOf', {
-    count: fans,
-    contacts: fans === 1 ? t('contact') : t('contacts'),
-  });
-}
+import {
+  countFavoriteContacts,
+  formatFavoriteOfLabel,
+} from '../../utils/locationFormat';
 
 function locationAccessibilityLabel(
   location: TBarLocation,
   fans: number,
   t: TTranslate,
 ) {
-  return `${location.name}. ${location.address}. ${favoriteOfLabel(fans, t)}`;
+  return `${location.name}. ${location.address}. ${formatFavoriteOfLabel(
+    fans,
+    t,
+  )}`;
 }
 
 export default function LocationsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const contacts = useContactsStore((state) => state.contacts);
-  const [locations, setLocations] = useState<TBarLocation[]>(() => [
-    ...MOCK_LOCATIONS,
-  ]);
+  const locations = useLocationsStore((state) => state.locations);
+  const addLocation = useLocationsStore((state) => state.addLocation);
+  const updateLocation = useLocationsStore((state) => state.updateLocation);
+  const removeLocation = useLocationsStore((state) => state.removeLocation);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    null,
+  );
   const [createVisible, setCreateVisible] = useState(false);
 
-  function handleCreate(location: TBarLocation) {
-    setLocations((current) => [...current, location]);
+  const selectedLocation =
+    locations.find((location) => location.id === selectedLocationId) ?? null;
+
+  function handleDelete(location: TBarLocation) {
+    removeLocation(location.id);
+    setSelectedLocationId(null);
   }
 
   return (
@@ -56,21 +61,28 @@ export default function LocationsScreen() {
         contentContainerStyle={styles.listContent}
         renderItem={({ item, index }) => {
           const isLast = index === locations.length - 1;
-          const fans = favoriteCount(item, contacts);
+          const fans = countFavoriteContacts(item, contacts);
 
           return (
-            <View
-              accessible
+            <Pressable
+              accessibilityRole="button"
               accessibilityLabel={locationAccessibilityLabel(item, fans, t)}
-              style={[styles.row, !isLast && styles.rowDivider]}
+              onPress={() => setSelectedLocationId(item.id)}
+              style={({ pressed }) => [
+                styles.row,
+                pressed && styles.rowPressed,
+                !isLast && styles.rowDivider,
+              ]}
             >
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.address}>{item.address}</Text>
               <Text style={styles.coords}>
                 {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
               </Text>
-              <Text style={styles.meta}>{favoriteOfLabel(fans, t)}</Text>
-            </View>
+              <Text style={styles.meta}>
+                {formatFavoriteOfLabel(fans, t)}
+              </Text>
+            </Pressable>
           );
         }}
         ListEmptyComponent={
@@ -89,7 +101,17 @@ export default function LocationsScreen() {
         colors={colors}
         t={t}
         onClose={() => setCreateVisible(false)}
-        onCreate={handleCreate}
+        onCreate={addLocation}
+      />
+
+      <LocationDetailModal
+        location={selectedLocation}
+        visible={selectedLocation !== null}
+        colors={colors}
+        t={t}
+        onClose={() => setSelectedLocationId(null)}
+        onSave={updateLocation}
+        onDelete={handleDelete}
       />
     </SafeAreaView>
   );
@@ -108,6 +130,9 @@ const createStyles = (colors: TColorTokens) =>
       paddingHorizontal: 20,
       paddingVertical: 16,
       backgroundColor: colors.background,
+    },
+    rowPressed: {
+      opacity: 0.7,
     },
     rowDivider: {
       borderBottomWidth: StyleSheet.hairlineWidth,
