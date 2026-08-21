@@ -6,6 +6,8 @@ import type { TContact, TGroup } from '../types/common.types';
 interface IGroupsStore {
   groups: TGroup[];
   addGroup: (group: TGroup) => void;
+  updateGroup: (group: TGroup) => void;
+  removeGroup: (groupId: string) => void;
   applyContactUpdate: (contact: TContact) => void;
   removeContactFromGroups: (contactId: string) => void;
 }
@@ -23,6 +25,16 @@ interface IGroupsStore {
 export const useGroupsStore = create<IGroupsStore>((set) => ({
   groups: [...MOCK_GROUPS],
   addGroup: (group) => set((state) => ({ groups: [...state.groups, group] })),
+  updateGroup: (group) =>
+    set((state) => ({
+      groups: state.groups.map((existing) =>
+        existing.id === group.id ? group : existing,
+      ),
+    })),
+  removeGroup: (groupId) =>
+    set((state) => ({
+      groups: state.groups.filter((existing) => existing.id !== groupId),
+    })),
   applyContactUpdate: (contact) =>
     set((state) => ({
       groups: state.groups.map((group) =>

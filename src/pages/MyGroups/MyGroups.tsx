@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CreateFooter } from '../../components/common';
@@ -7,7 +7,10 @@ import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { useContactsStore } from '../../stores/contactsStore';
 import { useGroupsStore } from '../../stores/groupsStore';
-import { CreateGroupModal } from '../../components/_MyGroups';
+import {
+  CreateGroupModal,
+  GroupDetailModal,
+} from '../../components/_MyGroups';
 import type {
   TColorTokens,
   TGroup,
@@ -35,7 +38,18 @@ export default function GroupsScreen() {
   const contacts = useContactsStore((state) => state.contacts);
   const groups = useGroupsStore((state) => state.groups);
   const addGroup = useGroupsStore((state) => state.addGroup);
+  const updateGroup = useGroupsStore((state) => state.updateGroup);
+  const removeGroup = useGroupsStore((state) => state.removeGroup);
   const [createVisible, setCreateVisible] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  const selectedGroup =
+    groups.find((group) => group.id === selectedGroupId) ?? null;
+
+  function handleDelete(group: TGroup) {
+    removeGroup(group.id);
+    setSelectedGroupId(null);
+  }
 
   return (
     <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.screen}>
@@ -47,10 +61,15 @@ export default function GroupsScreen() {
           const isLast = index === groups.length - 1;
 
           return (
-            <View
-              accessible
+            <Pressable
+              accessibilityRole="button"
               accessibilityLabel={groupAccessibilityLabel(item, t)}
-              style={[styles.row, !isLast && styles.rowDivider]}
+              onPress={() => setSelectedGroupId(item.id)}
+              style={({ pressed }) => [
+                styles.row,
+                pressed && styles.rowPressed,
+                !isLast && styles.rowDivider,
+              ]}
             >
               <View style={styles.rowTop}>
                 <Text style={styles.name}>{item.name}</Text>
@@ -60,7 +79,7 @@ export default function GroupsScreen() {
                 {memberPreview(item)}
               </Text>
               <Text style={styles.meta}>{calledTimesLabel(item, t)}</Text>
-            </View>
+            </Pressable>
           );
         }}
         ListEmptyComponent={
@@ -82,6 +101,17 @@ export default function GroupsScreen() {
         onClose={() => setCreateVisible(false)}
         onCreate={addGroup}
       />
+
+      <GroupDetailModal
+        group={selectedGroup}
+        visible={selectedGroup !== null}
+        availableContacts={contacts}
+        colors={colors}
+        t={t}
+        onClose={() => setSelectedGroupId(null)}
+        onSave={updateGroup}
+        onDelete={handleDelete}
+      />
     </SafeAreaView>
   );
 }
@@ -99,6 +129,9 @@ const createStyles = (colors: TColorTokens) =>
       paddingHorizontal: 20,
       paddingVertical: 16,
       backgroundColor: colors.background,
+    },
+    rowPressed: {
+      opacity: 0.7,
     },
     rowDivider: {
       borderBottomWidth: StyleSheet.hairlineWidth,

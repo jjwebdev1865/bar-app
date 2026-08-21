@@ -9,66 +9,58 @@ import {
   View,
 } from 'react-native';
 
-import { MOCK_LOCATIONS } from '../../data/locations';
 import type {
   TColorTokens,
   TContact,
-  TContactDraft,
+  TGroup,
   TTranslate,
-  TTranslationKey,
 } from '../../types/common.types';
-import { Dropdown } from '../common/Dropdown';
 import { formatContactDisplayName } from '../../utils/contactFormat';
+import { GroupMembersModal } from './GroupMembersModal';
 
-type TContactDetailStyles = ReturnType<typeof createStyles>;
+type TGroupDetailStyles = ReturnType<typeof createStyles>;
 
 type TActionButtonVariant = 'primary' | 'secondary' | 'danger';
 
-interface IContactDetailModalProps {
-  contact: TContact | null;
+interface IGroupDetailModalProps {
+  group: TGroup | null;
   visible: boolean;
+  availableContacts: TContact[];
   colors: TColorTokens;
   t: TTranslate;
   onClose: () => void;
-  onSave: (contact: TContact) => void;
-  onDelete: (contact: TContact) => void;
+  onSave: (group: TGroup) => void;
+  onDelete: (group: TGroup) => void;
 }
 
 interface IInfoRowProps {
   label: string;
   value: string;
-  styles: TContactDetailStyles;
+  styles: TGroupDetailStyles;
 }
 
 interface IActionButtonProps {
   label: string;
   onPress: () => void;
   variant: TActionButtonVariant;
-  styles: TContactDetailStyles;
+  styles: TGroupDetailStyles;
+  disabled?: boolean;
 }
 
-function toDraft(contact: TContact): TContactDraft {
-  return {
-    firstName: contact.firstName,
-    lastName: contact.lastName,
-    nickname: contact.nickname ?? '',
-    email: contact.email,
-    phone: contact.phone,
-    address: contact.address,
-    favoriteBarId: contact.favoriteBarId,
-  };
+function calledTimesLabel(group: TGroup, t: TTranslate) {
+  return t('calledTimes', {
+    count: group.timesCalled,
+    times: group.timesCalled === 1 ? t('time') : t('times'),
+  });
 }
 
-function favoriteBarName(favoriteBarId: string) {
-  return (
-    MOCK_LOCATIONS.find((location) => location.id === favoriteBarId)?.name ??
-    favoriteBarId
-  );
+function memberCountLabel(count: number, t: TTranslate) {
+  return `${count} ${count === 1 ? t('contact') : t('contacts')}`;
 }
 
 function actionButtonStyle(
   variant: TActionButtonVariant,
-  styles: TContactDetailStyles,
+  styles: TGroupDetailStyles,
 ) {
   if (variant === 'primary') {
     return styles.primaryActionButton;
@@ -83,7 +75,7 @@ function actionButtonStyle(
 
 function actionLabelStyle(
   variant: TActionButtonVariant,
-  styles: TContactDetailStyles,
+  styles: TGroupDetailStyles,
 ) {
   if (variant === 'primary') {
     return styles.primaryActionLabel;
@@ -109,14 +101,23 @@ function InfoRow({ label, value, styles }: IInfoRowProps) {
   );
 }
 
-function ActionButton({ label, onPress, variant, styles }: IActionButtonProps) {
+function ActionButton({
+  label,
+  onPress,
+  variant,
+  styles,
+  disabled,
+}: IActionButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled: Boolean(disabled) }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         actionButtonStyle(variant, styles),
-        pressed && styles.actionButtonPressed,
+        disabled && styles.actionButtonDisabled,
+        pressed && !disabled && styles.actionButtonPressed,
       ]}
     >
       <Text style={actionLabelStyle(variant, styles)}>{label}</Text>
@@ -124,80 +125,69 @@ function ActionButton({ label, onPress, variant, styles }: IActionButtonProps) {
   );
 }
 
-export function ContactDetailModal({
-  contact,
+export function GroupDetailModal({
+  group,
   visible,
+  availableContacts,
   colors,
   t,
   onClose,
   onSave,
   onDelete,
-}: IContactDetailModalProps) {
+}: IGroupDetailModalProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState<TContactDraft | null>(null);
-  const [barDropdownOpen, setBarDropdownOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [membersVisible, setMembersVisible] = useState(false);
 
   useEffect(() => {
-    if (contact) {
-      setDraft(toDraft(contact));
+    if (group) {
+      setName(group.name);
+      setSelectedIds(group.contacts.map((contact) => contact.id));
       setIsEditing(false);
-      setBarDropdownOpen(false);
+      setMembersVisible(false);
     }
-  }, [contact]);
+  }, [group]);
 
-  if (!contact || !draft) {
+  if (!group) {
     return null;
   }
 
-  function updateField<K extends keyof TContactDraft>(
-    key: K,
-    value: TContactDraft[K],
-  ) {
-    setDraft((current) => (current ? { ...current, [key]: value } : current));
+  function resetDraft() {
+    setName(group!.name);
+    setSelectedIds(group!.contacts.map((contact) => contact.id));
   }
 
   function handleClose() {
     setIsEditing(false);
-    setBarDropdownOpen(false);
+    setMembersVisible(false);
     onClose();
   }
 
   function handleSave() {
-    const nextContact: TContact = {
-      ...contact!,
-      firstName: draft!.firstName.trim(),
-      lastName: draft!.lastName.trim(),
-      nickname: draft!.nickname.trim() || undefined,
-      email: draft!.email.trim(),
-      phone: draft!.phone.trim(),
-      address: draft!.address.trim(),
-      favoriteBarId: draft!.favoriteBarId,
-    };
+    const trimmedName = name.trim();
 
-    onSave(nextContact);
+    if (!trimmedName || selectedIds.length === 0) {
+      return;
+    }
+
+    onSave({
+      ...group!,
+      name: trimmedName,
+      contacts: availableContacts.filter((contact) =>
+        selectedIds.includes(contact.id),
+      ),
+    });
     setIsEditing(false);
-    setBarDropdownOpen(false);
   }
 
   function handleDelete() {
     setIsEditing(false);
-    setBarDropdownOpen(false);
-    onDelete(contact!);
+    onDelete(group!);
   }
 
-  const fields: {
-    key: keyof TContactDraft;
-    label: TTranslationKey;
-    multiline?: boolean;
-  }[] = [
-    { key: 'firstName', label: 'firstName' },
-    { key: 'lastName', label: 'lastName' },
-    { key: 'nickname', label: 'nickname' },
-    { key: 'email', label: 'email' },
-    { key: 'phone', label: 'phone' },
-    { key: 'address', label: 'address', multiline: true },
-  ];
+  const canSave = name.trim().length > 0 && selectedIds.length > 0;
 
   return (
     <Modal
@@ -210,7 +200,7 @@ export function ContactDetailModal({
         <View accessibilityViewIsModal style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={2}>
-              {isEditing ? t('editContact') : formatContactDisplayName(contact)}
+              {isEditing ? t('editGroup') : group.name}
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -229,71 +219,84 @@ export function ContactDetailModal({
           >
             {isEditing ? (
               <>
-                {fields.map((field) => (
-                  <View key={field.key} style={styles.field}>
-                    <Text style={styles.fieldLabel}>{t(field.label)}</Text>
-                    <TextInput
-                      accessibilityLabel={t(field.label)}
-                      value={draft[field.key]}
-                      onChangeText={(value) => updateField(field.key, value)}
-                      multiline={field.multiline}
-                      style={
-                        field.multiline ? styles.multilineInput : styles.input
-                      }
-                      placeholderTextColor={colors.textMuted}
-                    />
-                  </View>
-                ))}
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>{t('groupName')}</Text>
+                  <TextInput
+                    accessibilityLabel={t('groupName')}
+                    value={name}
+                    onChangeText={setName}
+                    style={styles.input}
+                    placeholderTextColor={colors.textMuted}
+                  />
+                </View>
 
-                <Dropdown
-                  label={t('favoriteBar')}
-                  placeholder={t('chooseLocation')}
-                  options={MOCK_LOCATIONS.map((location) => ({
-                    value: location.id,
-                    label: location.name,
-                  }))}
-                  value={draft.favoriteBarId}
-                  open={barDropdownOpen}
-                  onOpenChange={setBarDropdownOpen}
-                  onChange={(value) => updateField('favoriteBarId', value)}
-                  colors={colors}
-                />
+                <View style={styles.field}>
+                  <View
+                    accessible
+                    accessibilityLabel={`${t('members')}: ${memberCountLabel(
+                      selectedIds.length,
+                      t,
+                    )}`}
+                    style={styles.membersFieldHeader}
+                  >
+                    <Text style={styles.fieldLabel}>{t('members')}</Text>
+                    <Text style={styles.membersFieldCount}>
+                      {memberCountLabel(selectedIds.length, t)}
+                    </Text>
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('editGroupList')}
+                    accessibilityHint={t('editGroupListHint')}
+                    onPress={() => setMembersVisible(true)}
+                    style={({ pressed }) => [
+                      styles.editListRow,
+                      pressed && styles.editListRowPressed,
+                    ]}
+                  >
+                    <Text style={styles.editListLabel}>
+                      {t('editGroupList')}
+                    </Text>
+                    <Text style={styles.editListChevron}>›</Text>
+                  </Pressable>
+                </View>
               </>
             ) : (
               <>
                 <InfoRow
-                  label={t('firstName')}
-                  value={contact.firstName}
+                  label={t('groupName')}
+                  value={group.name}
                   styles={styles}
                 />
+                <View style={styles.infoRow}>
+                  <View style={styles.membersFieldHeader}>
+                    <Text style={styles.fieldLabel}>{t('members')}</Text>
+                    <Text style={styles.membersFieldCount}>
+                      {memberCountLabel(group.contacts.length, t)}
+                    </Text>
+                  </View>
+
+                  {group.contacts.length === 0 ? (
+                    <Text style={styles.infoValue}>{t('noMembers')}</Text>
+                  ) : (
+                    group.contacts.map((contact, index) => (
+                      <Text
+                        key={contact.id}
+                        numberOfLines={1}
+                        style={[
+                          styles.memberListRow,
+                          index < group.contacts.length - 1 &&
+                            styles.memberListRowDivider,
+                        ]}
+                      >
+                        {formatContactDisplayName(contact)}
+                      </Text>
+                    ))
+                  )}
+                </View>
                 <InfoRow
-                  label={t('lastName')}
-                  value={contact.lastName}
-                  styles={styles}
-                />
-                <InfoRow
-                  label={t('nickname')}
-                  value={contact.nickname ?? t('none')}
-                  styles={styles}
-                />
-                <InfoRow
-                  label={t('email')}
-                  value={contact.email}
-                  styles={styles}
-                />
-                <InfoRow
-                  label={t('phone')}
-                  value={contact.phone}
-                  styles={styles}
-                />
-                <InfoRow
-                  label={t('address')}
-                  value={contact.address}
-                  styles={styles}
-                />
-                <InfoRow
-                  label={t('favoriteBar')}
-                  value={favoriteBarName(contact.favoriteBarId)}
+                  label={t('timesCalled')}
+                  value={calledTimesLabel(group, t)}
                   styles={styles}
                 />
               </>
@@ -306,9 +309,8 @@ export function ContactDetailModal({
                 <ActionButton
                   label={t('cancel')}
                   onPress={() => {
-                    setDraft(toDraft(contact));
+                    resetDraft();
                     setIsEditing(false);
-                    setBarDropdownOpen(false);
                   }}
                   variant="secondary"
                   styles={styles}
@@ -318,18 +320,19 @@ export function ContactDetailModal({
                   onPress={handleSave}
                   variant="primary"
                   styles={styles}
+                  disabled={!canSave}
                 />
               </>
             ) : (
               <>
                 <ActionButton
-                  label={t('editContact')}
+                  label={t('editGroup')}
                   onPress={() => setIsEditing(true)}
                   variant="primary"
                   styles={styles}
                 />
                 <ActionButton
-                  label={t('deleteContact')}
+                  label={t('deleteGroup')}
                   onPress={handleDelete}
                   variant="danger"
                   styles={styles}
@@ -337,6 +340,19 @@ export function ContactDetailModal({
               </>
             )}
           </View>
+
+          <GroupMembersModal
+            visible={membersVisible}
+            availableContacts={availableContacts}
+            selectedIds={selectedIds}
+            colors={colors}
+            t={t}
+            onCancel={() => setMembersVisible(false)}
+            onSave={(ids) => {
+              setSelectedIds(ids);
+              setMembersVisible(false);
+            }}
+          />
         </View>
       </View>
     </Modal>
@@ -344,18 +360,6 @@ export function ContactDetailModal({
 }
 
 const createStyles = (colors: TColorTokens) => {
-  const input = {
-    minHeight: 44,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.background,
-    borderColor: colors.border,
-  } as const;
-
   const actionButton = {
     flex: 1,
     minHeight: 44,
@@ -429,11 +433,16 @@ const createStyles = (colors: TColorTokens) => {
       textTransform: 'uppercase',
       color: colors.accentMuted,
     },
-    input,
-    multilineInput: {
-      ...input,
-      minHeight: 72,
-      textAlignVertical: 'top',
+    input: {
+      minHeight: 44,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.background,
+      borderColor: colors.border,
     },
     infoRow: {
       gap: 4,
@@ -442,6 +451,49 @@ const createStyles = (colors: TColorTokens) => {
       fontSize: 16,
       fontWeight: '500',
       color: colors.text,
+    },
+    membersFieldHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    membersFieldCount: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.accentMuted,
+    },
+    memberListRow: {
+      paddingVertical: 10,
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+    },
+    memberListRowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    editListRow: {
+      minHeight: 44,
+      paddingVertical: 6,
+      marginBottom: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    editListRowPressed: {
+      opacity: 0.6,
+    },
+    editListLabel: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.accent,
+    },
+    editListChevron: {
+      fontSize: 22,
+      lineHeight: 24,
+      fontWeight: '700',
+      color: colors.accent,
     },
     actions: {
       flexDirection: 'row',
@@ -466,6 +518,9 @@ const createStyles = (colors: TColorTokens) => {
     },
     actionButtonPressed: {
       opacity: 0.8,
+    },
+    actionButtonDisabled: {
+      opacity: 0.5,
     },
     primaryActionLabel: {
       ...actionLabel,

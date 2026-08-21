@@ -176,8 +176,10 @@ const createStyles = (colors: TColorTokens) => {
       flexDirection: 'row',
       gap: 10,
       paddingHorizontal: 20,
-      paddingTop: 12,
+      paddingTop: 14,
       paddingBottom: 18,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
     },
     cancelButton: {
       ...actionButton,
