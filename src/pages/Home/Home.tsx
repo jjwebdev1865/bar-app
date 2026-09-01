@@ -1,12 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 
@@ -16,29 +9,13 @@ import { useGroupsStore } from '../../stores/groupsStore';
 import { useLocationsStore } from '../../stores/locationsStore';
 import { Dropdown } from '../../components/common';
 import { useElapsedTimer } from '../../hooks/useElapsedTimer';
-import { formatContactDisplayName } from '../../utils/contactFormat';
 import { formatElapsedTime } from '../../utils/timeFormat';
 import type { TColorTokens } from '../../types/common.types';
-
-const SIGNAL_SIZE = 220;
-
-type THomeStyles = ReturnType<typeof createStyles>;
-
-interface IBarStoolProps {
-  styles: THomeStyles;
-}
-
-function BarStool({ styles }: IBarStoolProps) {
-  return (
-    <View style={styles.stool}>
-      <View style={styles.seatTop} />
-      <View style={styles.seat} />
-      <View style={styles.pole} />
-      <View style={styles.footrest} />
-      <View style={styles.base} />
-    </View>
-  );
-}
+import {
+  ActiveSignal,
+  BarStool,
+  CancelSignalModal,
+} from '../../components/_Home';
 
 export default function HomeScreen() {
   const { colors, t } = useSettings();
@@ -54,8 +31,12 @@ export default function HomeScreen() {
   const [openDropdown, setOpenDropdown] = useState<'group' | 'location' | null>(
     null,
   );
-  const { elapsedSeconds, isActive: signalActive, start, reset } =
-    useElapsedTimer();
+  const {
+    elapsedSeconds,
+    isActive: signalActive,
+    start,
+    reset,
+  } = useElapsedTimer();
   const [confirmCancelVisible, setConfirmCancelVisible] = useState(false);
 
   const groups = useGroupsStore((state) => state.groups);
@@ -105,21 +86,7 @@ export default function HomeScreen() {
     reset();
   }
 
-  const headingToLabel =
-    selectedGroup && selectedLocation
-      ? t('headingTo', {
-          group: selectedGroup.name,
-          location: selectedLocation.name,
-        })
-      : null;
-
   const elapsedLabel = formatElapsedTime(elapsedSeconds, t);
-  const timerAccessibilityLabel = [
-    headingToLabel,
-    `${t('travelTimer')}: ${elapsedLabel}`,
-  ]
-    .filter(Boolean)
-    .join('. ');
 
   return (
     <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.container}>
@@ -130,78 +97,17 @@ export default function HomeScreen() {
 
       <View style={styles.content}>
         {signalActive ? (
-          <View style={styles.activeSignal}>
-            <View
-              accessible
-              accessibilityLabel={timerAccessibilityLabel}
-              style={styles.timerBlock}
-            >
-              {headingToLabel ? (
-                <Text style={styles.headingTo}>{headingToLabel}</Text>
-              ) : null}
-              <Text style={styles.timerLabel}>{t('travelTimer')}</Text>
-              <Text style={styles.timerValue}>{elapsedLabel}</Text>
-            </View>
-
-            {selectedGroup ? (
-              <View style={styles.membersCard}>
-                <Text style={styles.membersTitle}>{t('whoIsComing')}</Text>
-                <ScrollView
-                  style={styles.membersList}
-                  contentContainerStyle={styles.membersListContent}
-                >
-                  {selectedGroup.contacts.map((contact, index) => {
-                    const isLast = index === selectedGroup.contacts.length - 1;
-                    const memberLabel = `${formatContactDisplayName(contact)}: ${t(
-                      'onTheWay',
-                    )}`;
-
-                    return (
-                      <View
-                        key={contact.id}
-                        accessible
-                        accessibilityLabel={memberLabel}
-                        style={[
-                          styles.memberRow,
-                          !isLast && styles.memberRowDivider,
-                        ]}
-                      >
-                        <Text style={styles.memberName} numberOfLines={1}>
-                          {formatContactDisplayName(contact)}
-                        </Text>
-                        <Text style={styles.memberStatus}>{t('onTheWay')}</Text>
-                      </View>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            ) : null}
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('cancel')}
-              onPress={requestCancelSignal}
-              style={({ pressed }) => [
-                styles.cancelButton,
-                pressed && styles.cancelButtonPressed,
-              ]}
-            >
-              <Text style={styles.cancelLabel}>{t('cancel')}</Text>
-            </Pressable>
-          </View>
+          <ActiveSignal
+            requestCancelSignal={requestCancelSignal}
+            selectedGroup={selectedGroup}
+            selectedLocation={selectedLocation}
+            colors={colors}
+            elapsedLabel={elapsedLabel}
+            t={t}
+          />
         ) : (
           <>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('activateBarSignal')}
-              onPress={activateSignal}
-              style={({ pressed }) => [
-                styles.signalButton,
-                pressed && styles.signalButtonPressed,
-              ]}
-            >
-              <BarStool styles={styles} />
-            </Pressable>
+            <BarStool activateSignal={activateSignal} t={t} colors={colors} />
 
             <View style={styles.selectors}>
               <Dropdown
@@ -232,66 +138,19 @@ export default function HomeScreen() {
         )}
       </View>
 
-      <Modal
+      <CancelSignalModal
         visible={confirmCancelVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={dismissCancelConfirmation}
-      >
-        <View style={styles.modalBackdrop}>
-          <View accessibilityViewIsModal style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>{t('cancelSignalTitle')}</Text>
-            <Text style={styles.modalMessage}>{t('cancelSignalMessage')}</Text>
-
-            <View style={styles.modalActions}>
-              <Pressable
-                accessibilityRole="button"
-                onPress={dismissCancelConfirmation}
-                style={({ pressed }) => [
-                  styles.modalKeepButton,
-                  pressed && styles.modalButtonPressed,
-                ]}
-              >
-                <Text style={styles.modalKeepLabel}>{t('keepSignal')}</Text>
-              </Pressable>
-
-              <Pressable
-                accessibilityRole="button"
-                onPress={confirmCancelSignal}
-                style={({ pressed }) => [
-                  styles.modalStopButton,
-                  pressed && styles.modalButtonPressed,
-                ]}
-              >
-                <Text style={styles.modalStopLabel}>{t('stopSignal')}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onDismiss={dismissCancelConfirmation}
+        onConfirm={confirmCancelSignal}
+        colors={colors}
+        t={t}
+      />
     </SafeAreaView>
   );
 }
 
-const createStyles = (colors: TColorTokens, headerHeight: number) => {
-  const modalButton = {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    borderColor: colors.border,
-  } as const;
-
-  const modalButtonLabel = {
-    fontSize: 15,
-    fontWeight: '700',
-    textAlign: 'center',
-  } as const;
-
-  return StyleSheet.create({
+const createStyles = (colors: TColorTokens, headerHeight: number) =>
+  StyleSheet.create({
     container: {
       flex: 1,
       alignItems: 'center',
@@ -332,207 +191,4 @@ const createStyles = (colors: TColorTokens, headerHeight: number) => {
       marginTop: 36,
       zIndex: 1,
     },
-    activeSignal: {
-      width: '100%',
-      maxWidth: 360,
-      alignItems: 'center',
-      gap: 20,
-    },
-    timerBlock: {
-      width: '100%',
-      alignItems: 'center',
-      gap: 8,
-    },
-    headingTo: {
-      fontSize: 14,
-      fontWeight: '600',
-      textAlign: 'center',
-      marginBottom: 4,
-      color: colors.accentMuted,
-    },
-    timerLabel: {
-      fontSize: 12,
-      fontWeight: '800',
-      letterSpacing: 1.5,
-      textTransform: 'uppercase',
-      color: colors.accentMuted,
-    },
-    timerValue: {
-      fontSize: 32,
-      fontWeight: '800',
-      textAlign: 'center',
-      color: colors.accent,
-    },
-    membersCard: {
-      width: '100%',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: 12,
-      paddingTop: 14,
-      paddingBottom: 4,
-      maxHeight: 260,
-      backgroundColor: colors.panel,
-      borderColor: colors.border,
-    },
-    membersTitle: {
-      fontSize: 12,
-      fontWeight: '800',
-      letterSpacing: 1.5,
-      textTransform: 'uppercase',
-      paddingHorizontal: 16,
-      marginBottom: 8,
-      color: colors.accent,
-    },
-    membersList: {
-      width: '100%',
-    },
-    membersListContent: {
-      paddingBottom: 8,
-    },
-    memberRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-    },
-    memberRowDivider: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
-    },
-    memberName: {
-      flex: 1,
-      fontSize: 15,
-      fontWeight: '600',
-      color: colors.text,
-    },
-    memberStatus: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: colors.accent,
-    },
-    cancelButton: {
-      minHeight: 48,
-      minWidth: 180,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 24,
-      backgroundColor: colors.panel,
-      borderColor: colors.border,
-    },
-    cancelButtonPressed: {
-      opacity: 0.8,
-    },
-    cancelLabel: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    modalBackdrop: {
-      flex: 1,
-      justifyContent: 'center',
-      paddingHorizontal: 24,
-      backgroundColor: colors.overlay,
-    },
-    modalSheet: {
-      borderRadius: 16,
-      borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 18,
-      backgroundColor: colors.panel,
-      borderColor: colors.border,
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: '800',
-      marginBottom: 10,
-      color: colors.accent,
-    },
-    modalMessage: {
-      fontSize: 15,
-      lineHeight: 22,
-      marginBottom: 20,
-      color: colors.text,
-    },
-    modalActions: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    modalKeepButton: {
-      ...modalButton,
-      backgroundColor: colors.background,
-    },
-    modalStopButton: {
-      ...modalButton,
-      backgroundColor: colors.danger,
-    },
-    modalButtonPressed: {
-      opacity: 0.8,
-    },
-    modalKeepLabel: {
-      ...modalButtonLabel,
-      color: colors.text,
-    },
-    modalStopLabel: {
-      ...modalButtonLabel,
-      color: colors.white,
-    },
-    signalButton: {
-      width: SIGNAL_SIZE,
-      height: SIGNAL_SIZE,
-      borderRadius: SIGNAL_SIZE / 2,
-      borderWidth: 6,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderColor: colors.white,
-      backgroundColor: colors.accent,
-    },
-    signalButtonPressed: {
-      opacity: 0.75,
-      transform: [{ scale: 0.97 }],
-    },
-    stool: {
-      width: 88,
-      height: 128,
-      alignItems: 'center',
-    },
-    seatTop: {
-      width: 64,
-      height: 10,
-      borderTopLeftRadius: 32,
-      borderTopRightRadius: 32,
-      backgroundColor: colors.stool,
-    },
-    seat: {
-      width: 72,
-      height: 14,
-      borderRadius: 6,
-      marginTop: -2,
-      backgroundColor: colors.stool,
-    },
-    pole: {
-      width: 10,
-      flex: 1,
-      marginTop: -1,
-      marginBottom: -1,
-      backgroundColor: colors.stool,
-    },
-    footrest: {
-      position: 'absolute',
-      top: 70,
-      width: 52,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: colors.stool,
-    },
-    base: {
-      width: 64,
-      height: 12,
-      borderRadius: 6,
-      backgroundColor: colors.stool,
-    },
   });
-};
