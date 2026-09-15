@@ -10,7 +10,7 @@ import { useLocationsStore } from '../../stores/locationsStore';
 import {
   CreateLocationModal,
   LocationDetailModal,
-} from '../../components/_MyLocations';
+} from '../../components/MyLocations';
 import type {
   TBarLocation,
   TColorTokens,

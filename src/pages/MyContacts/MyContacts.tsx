@@ -9,7 +9,7 @@ import { CreateFooter } from '../../components/common';
 import {
   ContactDetailModal,
   CreateContactModal,
-} from '../../components/_MyContacts';
+} from '../../components/MyContacts';
 import type { TColorTokens, TContact } from '../../types/common.types';
 import type { TContactSection } from '../../types/MyContacts.types';
 import { formatContactDisplayName } from '../../utils/contactFormat';

@@ -44,9 +44,10 @@ Audited against the nine rules in `personal-fitness-app/.claude/rules/`:
 - [ ] **Component decomposition** — `src/pages/Home/Home.tsx` is 526 lines and
   `_MyContacts/ContactDetailModal.tsx` is 438; PFA's equivalent screens delegate
   to panel/card components.
-- [ ] **Folder naming** — `_MyContacts` / `_MyGroups` / `_MyLocations` use an
-  underscore prefix PFA doesn't; PFA matches the component dir to the page name
-  (`Home/`, `Settings/`).
+- [x] **Folder naming** — ~~`_MyContacts` / `_MyGroups` / `_MyLocations` use an
+  underscore prefix PFA doesn't~~
+  Fixed 2026-09-15: renamed to `MyContacts/`, `MyGroups/`, `MyLocations/` to match PFA
+  pattern where component dir names match page names (`Home/`, `Settings/`).
 
 Also non-compliant, and worse than a first pass suggested:
 

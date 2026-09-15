@@ -144,6 +144,8 @@ const createStyles = (colors: TColorTokens) =>
     },
     drawer: {
       backgroundColor: colors.panel,
+      width: '70%',
+      maxWidth: 280,
     },
     drawerLabel: {
       fontWeight: '700',

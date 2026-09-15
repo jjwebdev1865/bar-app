@@ -9,7 +9,7 @@ import { useGroupsStore } from '../../stores/groupsStore';
 import {
   CreateGroupModal,
   GroupDetailModal,
-} from '../../components/_MyGroups';
+} from '../../components/MyGroups';
 import type { TColorTokens, TGroup } from '../../types/common.types';
 
 function memberPreview(group: TGroup) {
