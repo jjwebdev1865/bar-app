@@ -99,7 +99,6 @@ export function CreateLocationModal({
         control={control}
         name="address"
         label="address"
-        multiline
         colors={colors}
         t={t}
       />

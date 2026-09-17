@@ -4,3 +4,4 @@ export * from './Dropdown';
 export * from './ErrorBoundary';
 export * from './FormDropdown';
 export * from './FormTextField';
+export * from './Toast';

@@ -11,11 +11,12 @@ import { StyleSheet, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ErrorBoundary } from '../components/common';
+import { ErrorBoundary, Toast } from '../components/common';
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
 import { EThemeModeOptions } from '../theme/theme';
 import type { TColorTokens } from '../types/common.types';
 import { EDrawerScreen } from '../types/navigation.types';
+import { createHeaderOptions } from './headerOptions';
 
 interface IDrawerMenuProps extends DrawerContentComponentProps {}
 
@@ -34,6 +35,7 @@ function DrawerMenu(props: IDrawerMenuProps) {
 function AppDrawer() {
   const { colors, themeMode, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const headerOptions = useMemo(() => createHeaderOptions(colors), [colors]);
 
   return (
     <>
@@ -43,10 +45,7 @@ function AppDrawer() {
       <Drawer
         drawerContent={DrawerMenu}
         screenOptions={{
-          headerStyle: styles.header,
-          headerTintColor: colors.accent,
-          headerTitleStyle: styles.headerTitle,
-          headerShadowVisible: false,
+          ...headerOptions,
           headerLeft: () => <DrawerToggleButton tintColor={colors.accent} />,
           drawerStyle: styles.drawer,
           drawerActiveTintColor: colors.onAccent,
@@ -71,6 +70,10 @@ function AppDrawer() {
           options={{
             title: t('navContacts'),
             drawerLabel: t('navContacts'),
+            // Contacts nests a stack (`ContactsLayout`) so the create form can
+            // be pushed as a screen. That stack draws the header — leaving this
+            // one on would stack two headers.
+            headerShown: false,
           }}
         />
         <Drawer.Screen
@@ -95,6 +98,8 @@ function AppDrawer() {
           }}
         />
       </Drawer>
+
+      <Toast colors={colors} t={t} />
     </>
   );
 }
@@ -134,13 +139,6 @@ const createStyles = (colors: TColorTokens) =>
       paddingBottom: 20,
       paddingTop: 8,
       color: colors.accent,
-    },
-    header: {
-      backgroundColor: colors.background,
-    },
-    headerTitle: {
-      color: colors.accent,
-      fontWeight: '800',
     },
     drawer: {
       backgroundColor: colors.panel,

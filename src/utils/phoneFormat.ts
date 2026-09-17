@@ -1,9 +1,6 @@
 /** Contacts hold 10-digit numbers, displayed as `(XXX) XXX-XXXX`. */
 export const PHONE_DIGIT_COUNT = 10;
 
-/** Character length of a fully masked number — `(XXX) XXX-XXXX` is 14. */
-export const PHONE_DISPLAY_LENGTH = 14;
-
 /** Digits only — the canonical value behind any display formatting. */
 export function phoneDigits(value: string) {
   return value.replace(/\D/g, '');

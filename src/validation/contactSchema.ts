@@ -14,7 +14,7 @@ function isValidPhone(value: string) {
 }
 
 /**
- * Shared by `CreateContactModal` and `ContactDetailModal`.
+ * Shared by the `CreateContact` screen and `ContactDetailModal`.
  *
  * Only the name fields are required — that matches what the modals already
  * enforced. The other fields are modelled as "blank or valid" rather than
@@ -76,7 +76,7 @@ const NAME_TAKEN_KEY: TTranslationKey = 'contactNameTaken';
  * True when a field error came from the cross-field duplicate-name rule.
  *
  * Callers need this because the rule reports on two fields at once, which means
- * they have to be revalidated as a pair — see `CreateContactModal`.
+ * they have to be revalidated as a pair — see the `CreateContact` screen.
  */
 export function isNameConflictError(error: { message?: string } | undefined) {
   return error?.message === NAME_TAKEN_KEY;
@@ -117,7 +117,7 @@ export function createContactFormSchema(existingContacts: TContact[]) {
     if (takenNames.has(contactNameKey(values.firstName, values.lastName))) {
       // Reported on both halves of the name: it is the pair that collides, so
       // both inputs are flagged. Anchoring to fields rather than the form root
-      // is also what lets the wizard's per-step `trigger()` block step one.
+      // is also what puts the message under the input the user has to fix.
       for (const path of ['firstName', 'lastName'] as const) {
         ctx.addIssue({
           code: 'custom',

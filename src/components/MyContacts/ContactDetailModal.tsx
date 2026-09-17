@@ -24,12 +24,8 @@ import {
   contactFormSchema,
   type TContactFormValues,
 } from '../../validation/contactSchema';
-import {
-  formatPhoneDisplay,
-  formatPhoneInput,
-  PHONE_DISPLAY_LENGTH,
-} from '../../utils/phoneFormat';
-import { formatZipInput, ZIP_DISPLAY_LENGTH } from '../../utils/zipFormat';
+import { formatPhoneDisplay, formatPhoneInput } from '../../utils/phoneFormat';
+import { formatZipInput } from '../../utils/zipFormat';
 import { FormDropdown } from '../common/FormDropdown';
 import { FormTextField } from '../common/FormTextField';
 import {
@@ -67,11 +63,9 @@ interface IActionButtonProps {
 interface IEditField {
   key: keyof TContactFormValues;
   label: TTranslationKey;
-  multiline?: boolean;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: TextInputProps['autoCapitalize'];
   format?: (value: string) => string;
-  maxLength?: number;
 }
 
 const EDIT_FIELDS: IEditField[] = [
@@ -89,7 +83,6 @@ const EDIT_FIELDS: IEditField[] = [
     label: 'phone',
     keyboardType: 'phone-pad',
     format: formatPhoneInput,
-    maxLength: PHONE_DISPLAY_LENGTH,
   },
   { key: 'addressLine1', label: 'addressLine1', autoCapitalize: 'words' },
   { key: 'addressLine2', label: 'addressLine2', autoCapitalize: 'words' },
@@ -100,7 +93,6 @@ const EDIT_FIELDS: IEditField[] = [
     label: 'zip',
     keyboardType: 'number-pad',
     format: formatZipInput,
-    maxLength: ZIP_DISPLAY_LENGTH,
   },
 ];
 
@@ -320,11 +312,9 @@ export function ContactDetailModal({
                     control={control}
                     name={field.key}
                     label={field.label}
-                    multiline={field.multiline}
                     keyboardType={field.keyboardType}
                     autoCapitalize={field.autoCapitalize}
                     format={field.format}
-                    maxLength={field.maxLength}
                     colors={colors}
                     t={t}
                   />

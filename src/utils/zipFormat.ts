@@ -2,9 +2,6 @@
 export const ZIP_DIGIT_COUNT = 5;
 export const ZIP_PLUS_FOUR_DIGIT_COUNT = 9;
 
-/** Character length of a fully masked ZIP+4 — `XXXXX-XXXX` is 10. */
-export const ZIP_DISPLAY_LENGTH = 10;
-
 /** Digits only — the canonical value behind any display formatting. */
 export function zipDigits(value: string) {
   return value.replace(/\D/g, '');

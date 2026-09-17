@@ -1,7 +1,14 @@
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useFooterStore } from '../../stores/footerStore';
 import type { TColorTokens } from '../../types/common.types';
 
 interface ICreateFooterProps {
@@ -19,9 +26,20 @@ const getFooterInsetStyle = (bottomInset: number) => ({
 export function CreateFooter({ label, onPress, colors }: ICreateFooterProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const setFooterHeight = useFooterStore((state) => state.setFooterHeight);
+
+  // Published so floating chrome (`Toast`) can sit above the button instead of
+  // over it. Measured rather than assumed — the height carries a safe-area
+  // inset that differs per device.
+  function handleLayout(event: LayoutChangeEvent) {
+    setFooterHeight(event.nativeEvent.layout.height);
+  }
 
   return (
-    <View style={[styles.footer, getFooterInsetStyle(insets.bottom)]}>
+    <View
+      onLayout={handleLayout}
+      style={[styles.footer, getFooterInsetStyle(insets.bottom)]}
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}

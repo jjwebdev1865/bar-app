@@ -34,12 +34,11 @@ type TActionButtonVariant = 'primary' | 'secondary' | 'danger';
 interface IEditField {
   key: keyof TLocationFormValues;
   label: TTranslationKey;
-  multiline?: boolean;
 }
 
 const EDIT_FIELDS: IEditField[] = [
   { key: 'name', label: 'locationName' },
-  { key: 'address', label: 'address', multiline: true },
+  { key: 'address', label: 'address' },
 ];
 
 interface ILocationDetailModalProps {
@@ -226,7 +225,6 @@ export function LocationDetailModal({
                   control={control}
                   name={field.key}
                   label={field.label}
-                  multiline={field.multiline}
                   autoCapitalize="words"
                   colors={colors}
                   t={t}

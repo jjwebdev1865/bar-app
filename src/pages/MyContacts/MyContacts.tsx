@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,11 +7,9 @@ import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { useContactsStore } from '../../stores/contactsStore';
 import { CreateFooter } from '../../components/common';
-import {
-  ContactDetailModal,
-  CreateContactModal,
-} from '../../components/MyContacts';
+import { ContactDetailModal } from '../../components/MyContacts';
 import type { TColorTokens, TContact } from '../../types/common.types';
+import { ENestedRoute } from '../../types/navigation.types';
 import type { TContactSection } from '../../types/MyContacts.types';
 import { formatContactDisplayName } from '../../utils/contactFormat';
 import { formatPhoneDisplay } from '../../utils/phoneFormat';
@@ -43,14 +42,13 @@ function buildSections(contacts: TContact[]): TContactSection[] {
 export default function ContactsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const router = useRouter();
   const contacts = useContactsStore((state) => state.contacts);
-  const addContact = useContactsStore((state) => state.addContact);
   const updateContact = useContactsStore((state) => state.updateContact);
   const removeContact = useContactsStore((state) => state.removeContact);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(
     null,
   );
-  const [createVisible, setCreateVisible] = useState(false);
 
   const sections = useMemo(() => buildSections(contacts), [contacts]);
   const selectedContact =
@@ -96,16 +94,8 @@ export default function ContactsScreen() {
 
       <CreateFooter
         label={t('createContact')}
-        onPress={() => setCreateVisible(true)}
+        onPress={() => router.push(ENestedRoute.CREATE_CONTACT)}
         colors={colors}
-      />
-
-      <CreateContactModal
-        visible={createVisible}
-        colors={colors}
-        t={t}
-        onClose={() => setCreateVisible(false)}
-        onCreate={addContact}
       />
 
       <ContactDetailModal

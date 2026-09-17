@@ -28,8 +28,8 @@ interface IFormDropdownProps<TValues extends FieldValues> {
 
 /**
  * `Dropdown` bound to a form field. The open/closed flag stays local because it
- * is pure UI state — callers render this behind a conditional (edit mode, a
- * wizard step) that unmounts it, which is what collapses the menu on close.
+ * is pure UI state — callers render this behind a conditional (edit mode) or on
+ * a screen that unmounts, which is what collapses the menu on close.
  */
 export function FormDropdown<TValues extends FieldValues>({
   control,

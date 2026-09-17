@@ -104,14 +104,14 @@ const createStyles = (colors: TColorTokens) =>
     },
     trigger: {
       minHeight: 48,
-      borderWidth: StyleSheet.hairlineWidth,
+      borderWidth: 1,
       borderRadius: 10,
       paddingHorizontal: 14,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: colors.panel,
-      borderColor: colors.border,
+      backgroundColor: colors.inputBackground,
+      borderColor: colors.inputBorder,
     },
     valueSelected: {
       flex: 1,
@@ -133,11 +133,11 @@ const createStyles = (colors: TColorTokens) =>
     },
     menu: {
       marginTop: 8,
-      borderWidth: StyleSheet.hairlineWidth,
+      borderWidth: 1,
       borderRadius: 10,
       overflow: 'hidden',
       backgroundColor: colors.panel,
-      borderColor: colors.border,
+      borderColor: colors.inputBorder,
     },
     option: {
       paddingHorizontal: 14,

@@ -33,6 +33,22 @@ export enum EDrawerScreen {
   SETTINGS = 'settings',
 }
 
+/**
+ * Routes pushed onto a section's stack rather than reached from the drawer.
+ *
+ * Kept out of `EAppRoute` deliberately: that enum pairs with `EDrawerScreen`
+ * under `TRoutesInSync`, and a route with no drawer item would break the pair.
+ */
+export enum ENestedRoute {
+  CREATE_CONTACT = '/contacts/new',
+}
+
+/** File-route names inside the contacts stack (`app/contacts/`). */
+export enum EContactsScreen {
+  LIST = 'index',
+  NEW = 'new',
+}
+
 type TSameMembers<A, B> = keyof A extends keyof B
   ? keyof B extends keyof A
     ? true

@@ -26,10 +26,14 @@ export type TColorTokens = {
   accentMuted: string;
   onAccent: string;
   border: string;
+  inputBackground: string;
+  inputBorder: string;
   stool: string;
   overlay: string;
   white: string;
   danger: string;
+  success: string;
+  onSuccess: string;
 };
 
 export type TContact = {

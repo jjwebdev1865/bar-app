@@ -28,16 +28,22 @@ interface IFormTextFieldProps<TValues extends FieldValues> {
   label: TTranslationKey;
   colors: TColorTokens;
   t: TTranslate;
-  multiline?: boolean;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: TextInputProps['autoCapitalize'];
   /**
    * Rewrites each keystroke before it reaches the form, e.g. a phone mask. The
    * masked text becomes the stored value, so the schema validates exactly what
    * the user sees.
+   *
+   * The formatter is the only length authority — never also cap the input with
+   * `maxLength`. React Native truncates pasted text before `onChangeText` runs,
+   * so a cap would hand the formatter a clipped string: pasting
+   * `+1 (555) 123-4567` under a 14-char cap arrives as `+1 (555) 123-4` and
+   * masks to a plausible but wrong number. Overflow needs no cap anyway — the
+   * formatter drops the extra characters and `TextInput` reverts the native
+   * text to the value JS kept.
    */
   format?: (value: string) => string;
-  maxLength?: number;
 }
 
 /**
@@ -51,11 +57,9 @@ export function FormTextField<TValues extends FieldValues>({
   label,
   colors,
   t,
-  multiline,
   keyboardType,
   autoCapitalize,
   format,
-  maxLength,
 }: IFormTextFieldProps<TValues>) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { field, fieldState } = useController({ control, name });
@@ -73,15 +77,10 @@ export function FormTextField<TValues extends FieldValues>({
         value={field.value}
         onChangeText={(text) => field.onChange(format ? format(text) : text)}
         onBlur={field.onBlur}
-        multiline={multiline}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
-        maxLength={maxLength}
         placeholderTextColor={colors.textMuted}
-        style={[
-          multiline ? styles.multilineInput : styles.input,
-          Boolean(error) && styles.inputInvalid,
-        ]}
+        style={[styles.input, Boolean(error) && styles.inputInvalid]}
       />
       {error ? (
         <Text accessibilityLiveRegion="polite" style={styles.errorText}>
@@ -95,14 +94,14 @@ export function FormTextField<TValues extends FieldValues>({
 const createStyles = (colors: TColorTokens) => {
   const input = {
     minHeight: 44,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
     color: colors.text,
-    backgroundColor: colors.background,
-    borderColor: colors.border,
+    backgroundColor: colors.inputBackground,
+    borderColor: colors.inputBorder,
   } as const;
 
   return StyleSheet.create({
@@ -117,11 +116,6 @@ const createStyles = (colors: TColorTokens) => {
       color: colors.accentMuted,
     },
     input,
-    multilineInput: {
-      ...input,
-      minHeight: 72,
-      textAlignVertical: 'top',
-    },
     inputInvalid: {
       borderColor: colors.danger,
     },
