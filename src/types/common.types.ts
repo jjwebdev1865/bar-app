@@ -43,16 +43,9 @@ export type TContact = {
   favoriteBarId: string;
 };
 
-/** Editable form shape for a contact, shared by the create and detail modals. */
-export type TContactDraft = {
-  firstName: string;
-  lastName: string;
-  nickname: string;
-  email: string;
-  phone: string;
-  address: string;
-  favoriteBarId: string;
-};
+// The editable form shapes (`TContactFormValues`, `TGroupFormValues`,
+// `TLocationFormValues`) are inferred from the zod schemas in
+// `src/validation/` and stay co-located with them.
 
 export type TGroup = {
   id: string;

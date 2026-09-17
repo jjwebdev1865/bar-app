@@ -1,3 +1,4 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
@@ -5,9 +6,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
+import { useController, useForm } from 'react-hook-form';
 
 import { useContactsStore } from '../../stores/contactsStore';
 import type {
@@ -15,6 +16,12 @@ import type {
   TGroup,
   TTranslate,
 } from '../../types/common.types';
+import {
+  groupFormSchema,
+  type TGroupFormValues,
+} from '../../validation/groupSchema';
+import { translateFieldError } from '../../validation/messages';
+import { FormTextField } from '../common/FormTextField';
 import { formatContactDisplayName } from '../../utils/contactFormat';
 import { GroupMembersModal } from './GroupMembersModal';
 
@@ -43,11 +50,17 @@ interface IActionButtonProps {
   onPress: () => void;
   variant: TActionButtonVariant;
   styles: TGroupDetailStyles;
-  disabled?: boolean;
 }
 
 function memberCountLabel(count: number, t: TTranslate) {
   return `${count} ${count === 1 ? t('contact') : t('contacts')}`;
+}
+
+function toFormValues(group: TGroup): TGroupFormValues {
+  return {
+    name: group.name,
+    contactIds: group.contacts.map((contact) => contact.id),
+  };
 }
 
 function actionButtonStyle(
@@ -93,23 +106,14 @@ function InfoRow({ label, value, styles }: IInfoRowProps) {
   );
 }
 
-function ActionButton({
-  label,
-  onPress,
-  variant,
-  styles,
-  disabled,
-}: IActionButtonProps) {
+function ActionButton({ label, onPress, variant, styles }: IActionButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled: Boolean(disabled) }}
-      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         actionButtonStyle(variant, styles),
-        disabled && styles.actionButtonDisabled,
-        pressed && !disabled && styles.actionButtonPressed,
+        pressed && styles.actionButtonPressed,
       ]}
     >
       <Text style={actionLabelStyle(variant, styles)}>{label}</Text>
@@ -129,27 +133,35 @@ export function GroupDetailModal({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const availableContacts = useContactsStore((state) => state.contacts);
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [membersVisible, setMembersVisible] = useState(false);
+
+  const { control, handleSubmit, reset } = useForm<TGroupFormValues>({
+    resolver: zodResolver(groupFormSchema),
+    mode: 'onTouched',
+    defaultValues: { name: '', contactIds: [] },
+  });
+
+  // The member picker is a custom control rather than a text input, so it binds
+  // through `useController` directly.
+  const { field: contactIds, fieldState: contactIdsState } = useController({
+    control,
+    name: 'contactIds',
+  });
 
   useEffect(() => {
     if (group) {
-      setName(group.name);
-      setSelectedIds(group.contacts.map((contact) => contact.id));
+      reset(toFormValues(group));
       setIsEditing(false);
       setMembersVisible(false);
     }
-  }, [group]);
+  }, [group, reset]);
 
   if (!group) {
     return null;
   }
 
-  function resetDraft() {
-    setName(group!.name);
-    setSelectedIds(group!.contacts.map((contact) => contact.id));
-  }
+  const membersError = translateFieldError(t, contactIdsState.error?.message);
+  const selectedIds = contactIds.value;
 
   function handleClose() {
     setIsEditing(false);
@@ -157,20 +169,19 @@ export function GroupDetailModal({
     onClose();
   }
 
-  function handleSave() {
-    const trimmedName = name.trim();
-
-    if (!trimmedName || selectedIds.length === 0) {
-      return;
-    }
-
+  function handleSave(values: TGroupFormValues) {
     onSave({
       ...group!,
-      name: trimmedName,
+      name: values.name,
       contacts: availableContacts.filter((contact) =>
-        selectedIds.includes(contact.id),
+        values.contactIds.includes(contact.id),
       ),
     });
+    setIsEditing(false);
+  }
+
+  function handleCancelEdit() {
+    reset(toFormValues(group!));
     setIsEditing(false);
   }
 
@@ -178,8 +189,6 @@ export function GroupDetailModal({
     setIsEditing(false);
     onDelete(group!);
   }
-
-  const canSave = name.trim().length > 0 && selectedIds.length > 0;
 
   return (
     <Modal
@@ -211,16 +220,14 @@ export function GroupDetailModal({
           >
             {isEditing ? (
               <>
-                <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>{t('groupName')}</Text>
-                  <TextInput
-                    accessibilityLabel={t('groupName')}
-                    value={name}
-                    onChangeText={setName}
-                    style={styles.input}
-                    placeholderTextColor={colors.textMuted}
-                  />
-                </View>
+                <FormTextField
+                  control={control}
+                  name="name"
+                  label="groupName"
+                  autoCapitalize="words"
+                  colors={colors}
+                  t={t}
+                />
 
                 <View style={styles.field}>
                   <View
@@ -251,6 +258,14 @@ export function GroupDetailModal({
                     </Text>
                     <Text style={styles.editListChevron}>›</Text>
                   </Pressable>
+                  {membersError ? (
+                    <Text
+                      accessibilityLiveRegion="polite"
+                      style={styles.errorText}
+                    >
+                      {membersError}
+                    </Text>
+                  ) : null}
                 </View>
               </>
             ) : (
@@ -295,19 +310,18 @@ export function GroupDetailModal({
               <>
                 <ActionButton
                   label={t('cancel')}
-                  onPress={() => {
-                    resetDraft();
-                    setIsEditing(false);
-                  }}
+                  onPress={handleCancelEdit}
                   variant="secondary"
                   styles={styles}
                 />
+                {/* Save stays pressable so `handleSubmit` can surface the
+                    errors — emptying the member list has no blur event to
+                    trigger `onTouched` validation. */}
                 <ActionButton
                   label={t('save')}
-                  onPress={handleSave}
+                  onPress={handleSubmit(handleSave)}
                   variant="primary"
                   styles={styles}
-                  disabled={!canSave}
                 />
               </>
             ) : (
@@ -335,7 +349,7 @@ export function GroupDetailModal({
             t={t}
             onCancel={() => setMembersVisible(false)}
             onSave={(ids) => {
-              setSelectedIds(ids);
+              contactIds.onChange(ids);
               setMembersVisible(false);
             }}
           />
@@ -419,16 +433,10 @@ const createStyles = (colors: TColorTokens) => {
       textTransform: 'uppercase',
       color: colors.accentMuted,
     },
-    input: {
-      minHeight: 44,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 16,
-      color: colors.text,
-      backgroundColor: colors.background,
-      borderColor: colors.border,
+    errorText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.danger,
     },
     infoRow: {
       gap: 4,
@@ -504,9 +512,6 @@ const createStyles = (colors: TColorTokens) => {
     },
     actionButtonPressed: {
       opacity: 0.8,
-    },
-    actionButtonDisabled: {
-      opacity: 0.5,
     },
     primaryActionLabel: {
       ...actionLabel,

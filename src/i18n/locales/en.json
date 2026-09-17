@@ -66,5 +66,13 @@
   "locationName": "Location name",
   "editLocation": "Edit location",
   "deleteLocation": "Delete location",
-  "coordinates": "Coordinates"
+  "coordinates": "Coordinates",
+  "firstNameRequired": "First name is required",
+  "lastNameRequired": "Last name is required",
+  "emailInvalid": "Enter a valid email address",
+  "phoneInvalid": "Enter a valid phone number",
+  "groupNameRequired": "Group name is required",
+  "membersRequired": "Select at least one member",
+  "locationNameRequired": "Location name is required",
+  "addressRequired": "Address is required"
 }

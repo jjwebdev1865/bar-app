@@ -105,9 +105,11 @@ imports → types → helpers → component → `StyleSheet.create()` layout.
 
 Two deliberate deviations:
 
-- **`TContactDraft` was hoisted to `common.types.ts`** even though it is a form
-  shape, because `CreateContactModal` and `ContactDetailModal` each declared
-  their own identical copy. `THomeStyles` / `TContactDetailStyles` stay local —
+- **Form shapes live in `src/validation/`, not `common.types.ts`.** They are
+  `z.infer` of the zod schema that validates them (`TContactFormValues`,
+  `TGroupFormValues`, `TLocationFormValues`), so splitting the type from its
+  schema would leave two things to keep in sync. This supersedes the earlier
+  `TContactDraft` hoist. `THomeStyles` / `TContactDetailStyles` stay local —
   they are `ReturnType<typeof createStyles>` and cannot leave the file that
   defines `createStyles`.
 - **`src/navigation/AppLayout.tsx` keeps a second stylesheet named

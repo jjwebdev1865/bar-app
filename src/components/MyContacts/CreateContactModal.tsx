@@ -1,16 +1,22 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { useForm } from 'react-hook-form';
+import type { KeyboardTypeOptions, TextInputProps } from 'react-native';
 
 import { useLocationsStore } from '../../stores/locationsStore';
 import type {
   TColorTokens,
   TContact,
-  TContactDraft,
   TTranslate,
   TTranslationKey,
 } from '../../types/common.types';
+import {
+  contactFormSchema,
+  type TContactFormValues,
+} from '../../validation/contactSchema';
 import { CreateModal } from '../common/CreateModal';
-import { Dropdown } from '../common/Dropdown';
+import { FormDropdown } from '../common/FormDropdown';
+import { FormTextField } from '../common/FormTextField';
 
 interface ICreateContactModalProps {
   visible: boolean;
@@ -20,7 +26,15 @@ interface ICreateContactModalProps {
   onCreate: (contact: TContact) => void;
 }
 
-const emptyDraft = (defaultBarId: string): TContactDraft => ({
+interface IStepField {
+  key: keyof TContactFormValues;
+  label: TTranslationKey;
+  multiline?: boolean;
+  keyboardType?: KeyboardTypeOptions;
+  autoCapitalize?: TextInputProps['autoCapitalize'];
+}
+
+const emptyValues = (defaultBarId: string): TContactFormValues => ({
   firstName: '',
   lastName: '',
   nickname: '',
@@ -32,19 +46,20 @@ const emptyDraft = (defaultBarId: string): TContactDraft => ({
 
 const STEP_COUNT = 3;
 
-const STEP_FIELDS: {
-  key: keyof TContactDraft;
-  label: TTranslationKey;
-  multiline?: boolean;
-}[][] = [
+const STEP_FIELDS: IStepField[][] = [
   [
-    { key: 'firstName', label: 'firstName' },
-    { key: 'lastName', label: 'lastName' },
-    { key: 'nickname', label: 'nickname' },
+    { key: 'firstName', label: 'firstName', autoCapitalize: 'words' },
+    { key: 'lastName', label: 'lastName', autoCapitalize: 'words' },
+    { key: 'nickname', label: 'nickname', autoCapitalize: 'words' },
   ],
   [
-    { key: 'email', label: 'email' },
-    { key: 'phone', label: 'phone' },
+    {
+      key: 'email',
+      label: 'email',
+      keyboardType: 'email-address',
+      autoCapitalize: 'none',
+    },
+    { key: 'phone', label: 'phone', keyboardType: 'phone-pad' },
   ],
   [{ key: 'address', label: 'address', multiline: true }],
 ];
@@ -56,14 +71,18 @@ export function CreateContactModal({
   onClose,
   onCreate,
 }: ICreateContactModalProps) {
-  const styles = useMemo(() => createStyles(colors), [colors]);
   const locations = useLocationsStore((state) => state.locations);
   const defaultBarId = locations[0]?.id ?? '';
-  const [draft, setDraft] = useState<TContactDraft>(() =>
-    emptyDraft(defaultBarId),
-  );
-  const [barDropdownOpen, setBarDropdownOpen] = useState(false);
   const [step, setStep] = useState(0);
+
+  const { control, handleSubmit, reset, trigger } = useForm<TContactFormValues>(
+    {
+      resolver: zodResolver(contactFormSchema),
+      // Errors appear once a field has been left, then keep up as it is retyped.
+      mode: 'onTouched',
+      defaultValues: emptyValues(defaultBarId),
+    },
+  );
 
   const barOptions = useMemo(
     () =>
@@ -78,59 +97,46 @@ export function CreateContactModal({
   // should reset the draft, not a location being added while it is already open.
   useEffect(() => {
     if (visible) {
-      setDraft(emptyDraft(defaultBarId));
-      setBarDropdownOpen(false);
+      reset(emptyValues(defaultBarId));
       setStep(0);
     }
   }, [visible]);
 
-  function updateField<K extends keyof TContactDraft>(
-    key: K,
-    value: TContactDraft[K],
-  ) {
-    setDraft((current) => ({ ...current, [key]: value }));
-  }
-
-  function handleClose() {
-    setBarDropdownOpen(false);
-    onClose();
-  }
-
-  function handleCreate() {
-    const firstName = draft.firstName.trim();
-    const lastName = draft.lastName.trim();
-
-    if (!firstName || !lastName) {
-      return;
-    }
-
-    const contact: TContact = {
+  function handleCreate(values: TContactFormValues) {
+    // `contactFormSchema` trims on parse, so these are already clean.
+    onCreate({
       id: `contact-${Date.now()}`,
-      firstName,
-      lastName,
-      nickname: draft.nickname.trim() || undefined,
-      email: draft.email.trim(),
-      phone: draft.phone.trim(),
-      address: draft.address.trim(),
-      favoriteBarId: draft.favoriteBarId,
-    };
-
-    onCreate(contact);
-    handleClose();
+      firstName: values.firstName,
+      lastName: values.lastName,
+      nickname: values.nickname || undefined,
+      email: values.email,
+      phone: values.phone,
+      address: values.address,
+      favoriteBarId: values.favoriteBarId,
+    });
+    onClose();
   }
 
   function handlePrevious() {
     setStep((current) => Math.max(current - 1, 0));
   }
 
-  function handleNext() {
-    setStep((current) => Math.min(current + 1, STEP_COUNT - 1));
+  // Gate on the current step's fields only, so the wizard surfaces the error
+  // where it happened instead of letting the user walk to the end and find a
+  // dead Add button.
+  async function handleNext() {
+    const stepIsValid = await trigger(
+      STEP_FIELDS[step].map((field) => field.key),
+    );
+
+    if (stepIsValid) {
+      setStep((current) => Math.min(current + 1, STEP_COUNT - 1));
+    }
   }
 
-  const canCreate =
-    draft.firstName.trim().length > 0 && draft.lastName.trim().length > 0;
   const isFirstStep = step === 0;
   const isLastStep = step === STEP_COUNT - 1;
+  const submit = handleSubmit(handleCreate);
 
   return (
     <CreateModal
@@ -139,75 +145,43 @@ export function CreateContactModal({
       closeLabel={t('close')}
       cancelLabel={t('cancel')}
       createLabel={t('create')}
-      canCreate={canCreate}
+      // Next/Add stay pressable: `handleNext` gates on the current step's
+      // fields and `handleSubmit` gates the last one, both of which render the
+      // reason inline instead of leaving a dead button.
+      canCreate
       colors={colors}
-      onClose={handleClose}
-      onCreate={handleCreate}
+      onClose={onClose}
+      onCreate={submit}
       leftLabel={isFirstStep ? t('cancel') : t('previous')}
-      onLeft={isFirstStep ? handleClose : handlePrevious}
+      onLeft={isFirstStep ? onClose : handlePrevious}
       rightLabel={isLastStep ? t('addContact') : t('next')}
-      rightDisabled={!canCreate}
-      onRight={isLastStep ? handleCreate : handleNext}
+      onRight={isLastStep ? submit : handleNext}
     >
       {STEP_FIELDS[step].map((field) => (
-        <View key={field.key} style={styles.field}>
-          <Text style={styles.fieldLabel}>{t(field.label)}</Text>
-          <TextInput
-            accessibilityLabel={t(field.label)}
-            value={draft[field.key]}
-            onChangeText={(value) => updateField(field.key, value)}
-            multiline={field.multiline}
-            style={field.multiline ? styles.multilineInput : styles.input}
-            placeholderTextColor={colors.textMuted}
-          />
-        </View>
+        <FormTextField
+          key={field.key}
+          control={control}
+          name={field.key}
+          label={field.label}
+          multiline={field.multiline}
+          keyboardType={field.keyboardType}
+          autoCapitalize={field.autoCapitalize}
+          colors={colors}
+          t={t}
+        />
       ))}
 
       {step === 1 ? (
-        <Dropdown
-          label={t('favoriteBar')}
-          placeholder={t('chooseLocation')}
+        <FormDropdown
+          control={control}
+          name="favoriteBarId"
+          label="favoriteBar"
+          placeholder="chooseLocation"
           options={barOptions}
-          value={draft.favoriteBarId}
-          open={barDropdownOpen}
-          onOpenChange={setBarDropdownOpen}
-          onChange={(value) => updateField('favoriteBarId', value)}
           colors={colors}
+          t={t}
         />
       ) : null}
     </CreateModal>
   );
 }
-
-const createStyles = (colors: TColorTokens) => {
-  const input = {
-    minHeight: 44,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.background,
-    borderColor: colors.border,
-  } as const;
-
-  return StyleSheet.create({
-    field: {
-      gap: 6,
-    },
-    fieldLabel: {
-      fontSize: 12,
-      fontWeight: '800',
-      letterSpacing: 1.2,
-      textTransform: 'uppercase',
-      color: colors.accentMuted,
-    },
-    input,
-    multilineInput: {
-      ...input,
-      minHeight: 72,
-      textAlignVertical: 'top',
-    },
-  });
-};

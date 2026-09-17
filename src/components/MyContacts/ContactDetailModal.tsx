@@ -1,3 +1,4 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
@@ -5,20 +6,26 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
+  type KeyboardTypeOptions,
+  type TextInputProps,
 } from 'react-native';
+import { useForm } from 'react-hook-form';
 
 import { useLocationsStore } from '../../stores/locationsStore';
 import type {
   TBarLocation,
   TColorTokens,
   TContact,
-  TContactDraft,
   TTranslate,
   TTranslationKey,
 } from '../../types/common.types';
-import { Dropdown } from '../common/Dropdown';
+import {
+  contactFormSchema,
+  type TContactFormValues,
+} from '../../validation/contactSchema';
+import { FormDropdown } from '../common/FormDropdown';
+import { FormTextField } from '../common/FormTextField';
 import { formatContactDisplayName } from '../../utils/contactFormat';
 
 type TContactDetailStyles = ReturnType<typeof createStyles>;
@@ -48,7 +55,29 @@ interface IActionButtonProps {
   styles: TContactDetailStyles;
 }
 
-function toDraft(contact: TContact): TContactDraft {
+interface IEditField {
+  key: keyof TContactFormValues;
+  label: TTranslationKey;
+  multiline?: boolean;
+  keyboardType?: KeyboardTypeOptions;
+  autoCapitalize?: TextInputProps['autoCapitalize'];
+}
+
+const EDIT_FIELDS: IEditField[] = [
+  { key: 'firstName', label: 'firstName', autoCapitalize: 'words' },
+  { key: 'lastName', label: 'lastName', autoCapitalize: 'words' },
+  { key: 'nickname', label: 'nickname', autoCapitalize: 'words' },
+  {
+    key: 'email',
+    label: 'email',
+    keyboardType: 'email-address',
+    autoCapitalize: 'none',
+  },
+  { key: 'phone', label: 'phone', keyboardType: 'phone-pad' },
+  { key: 'address', label: 'address', multiline: true },
+];
+
+function toFormValues(contact: TContact): TContactFormValues {
   return {
     firstName: contact.firstName,
     lastName: contact.lastName,
@@ -146,8 +175,22 @@ export function ContactDetailModal({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const locations = useLocationsStore((state) => state.locations);
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState<TContactDraft | null>(null);
-  const [barDropdownOpen, setBarDropdownOpen] = useState(false);
+
+  const { control, handleSubmit, reset } = useForm<TContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+    mode: 'onTouched',
+    // Real values arrive via `reset` once a contact is selected; these just
+    // keep every input controlled from the first render.
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      nickname: '',
+      email: '',
+      phone: '',
+      address: '',
+      favoriteBarId: '',
+    },
+  });
 
   const barOptions = useMemo(
     () =>
@@ -160,64 +203,44 @@ export function ContactDetailModal({
 
   useEffect(() => {
     if (contact) {
-      setDraft(toDraft(contact));
+      reset(toFormValues(contact));
       setIsEditing(false);
-      setBarDropdownOpen(false);
     }
-  }, [contact]);
+  }, [contact, reset]);
 
-  if (!contact || !draft) {
+  if (!contact) {
     return null;
-  }
-
-  function updateField<K extends keyof TContactDraft>(
-    key: K,
-    value: TContactDraft[K],
-  ) {
-    setDraft((current) => (current ? { ...current, [key]: value } : current));
   }
 
   function handleClose() {
     setIsEditing(false);
-    setBarDropdownOpen(false);
     onClose();
   }
 
-  function handleSave() {
-    const nextContact: TContact = {
+  function handleSave(values: TContactFormValues) {
+    // `contactFormSchema` trims on parse, so these are already clean.
+    onSave({
       ...contact!,
-      firstName: draft!.firstName.trim(),
-      lastName: draft!.lastName.trim(),
-      nickname: draft!.nickname.trim() || undefined,
-      email: draft!.email.trim(),
-      phone: draft!.phone.trim(),
-      address: draft!.address.trim(),
-      favoriteBarId: draft!.favoriteBarId,
-    };
-
-    onSave(nextContact);
+      firstName: values.firstName,
+      lastName: values.lastName,
+      nickname: values.nickname || undefined,
+      email: values.email,
+      phone: values.phone,
+      address: values.address,
+      favoriteBarId: values.favoriteBarId,
+    });
     setIsEditing(false);
-    setBarDropdownOpen(false);
+  }
+
+  function handleCancelEdit() {
+    reset(toFormValues(contact!));
+    setIsEditing(false);
   }
 
   function handleDelete() {
     setIsEditing(false);
-    setBarDropdownOpen(false);
     onDelete(contact!);
   }
-
-  const fields: {
-    key: keyof TContactDraft;
-    label: TTranslationKey;
-    multiline?: boolean;
-  }[] = [
-    { key: 'firstName', label: 'firstName' },
-    { key: 'lastName', label: 'lastName' },
-    { key: 'nickname', label: 'nickname' },
-    { key: 'email', label: 'email' },
-    { key: 'phone', label: 'phone' },
-    { key: 'address', label: 'address', multiline: true },
-  ];
 
   return (
     <Modal
@@ -249,31 +272,28 @@ export function ContactDetailModal({
           >
             {isEditing ? (
               <>
-                {fields.map((field) => (
-                  <View key={field.key} style={styles.field}>
-                    <Text style={styles.fieldLabel}>{t(field.label)}</Text>
-                    <TextInput
-                      accessibilityLabel={t(field.label)}
-                      value={draft[field.key]}
-                      onChangeText={(value) => updateField(field.key, value)}
-                      multiline={field.multiline}
-                      style={
-                        field.multiline ? styles.multilineInput : styles.input
-                      }
-                      placeholderTextColor={colors.textMuted}
-                    />
-                  </View>
+                {EDIT_FIELDS.map((field) => (
+                  <FormTextField
+                    key={field.key}
+                    control={control}
+                    name={field.key}
+                    label={field.label}
+                    multiline={field.multiline}
+                    keyboardType={field.keyboardType}
+                    autoCapitalize={field.autoCapitalize}
+                    colors={colors}
+                    t={t}
+                  />
                 ))}
 
-                <Dropdown
-                  label={t('favoriteBar')}
-                  placeholder={t('chooseLocation')}
+                <FormDropdown
+                  control={control}
+                  name="favoriteBarId"
+                  label="favoriteBar"
+                  placeholder="chooseLocation"
                   options={barOptions}
-                  value={draft.favoriteBarId}
-                  open={barDropdownOpen}
-                  onOpenChange={setBarDropdownOpen}
-                  onChange={(value) => updateField('favoriteBarId', value)}
                   colors={colors}
+                  t={t}
                 />
               </>
             ) : (
@@ -322,17 +342,13 @@ export function ContactDetailModal({
               <>
                 <ActionButton
                   label={t('cancel')}
-                  onPress={() => {
-                    setDraft(toDraft(contact));
-                    setIsEditing(false);
-                    setBarDropdownOpen(false);
-                  }}
+                  onPress={handleCancelEdit}
                   variant="secondary"
                   styles={styles}
                 />
                 <ActionButton
                   label={t('save')}
-                  onPress={handleSave}
+                  onPress={handleSubmit(handleSave)}
                   variant="primary"
                   styles={styles}
                 />
@@ -361,18 +377,6 @@ export function ContactDetailModal({
 }
 
 const createStyles = (colors: TColorTokens) => {
-  const input = {
-    minHeight: 44,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.background,
-    borderColor: colors.border,
-  } as const;
-
   const actionButton = {
     flex: 1,
     minHeight: 44,
@@ -436,21 +440,12 @@ const createStyles = (colors: TColorTokens) => {
       paddingBottom: 8,
       gap: 14,
     },
-    field: {
-      gap: 6,
-    },
     fieldLabel: {
       fontSize: 12,
       fontWeight: '800',
       letterSpacing: 1.2,
       textTransform: 'uppercase',
       color: colors.accentMuted,
-    },
-    input,
-    multilineInput: {
-      ...input,
-      minHeight: 72,
-      textAlignVertical: 'top',
     },
     infoRow: {
       gap: 4,

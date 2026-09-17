@@ -1,12 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 
 import type {
   TBarLocation,
   TColorTokens,
   TTranslate,
 } from '../../types/common.types';
+import {
+  locationFormSchema,
+  type TLocationFormValues,
+} from '../../validation/locationSchema';
 import { CreateModal } from '../common/CreateModal';
+import { FormTextField } from '../common/FormTextField';
 
 interface ICreateLocationModalProps {
   visible: boolean;
@@ -16,12 +22,7 @@ interface ICreateLocationModalProps {
   onCreate: (location: TBarLocation) => void;
 }
 
-type TLocationDraft = {
-  name: string;
-  address: string;
-};
-
-const emptyDraft = (): TLocationDraft => ({
+const emptyValues = (): TLocationFormValues => ({
   name: '',
   address: '',
 });
@@ -48,41 +49,28 @@ export function CreateLocationModal({
   onClose,
   onCreate,
 }: ICreateLocationModalProps) {
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const [draft, setDraft] = useState<TLocationDraft>(emptyDraft);
+  const { control, handleSubmit, reset } = useForm<TLocationFormValues>({
+    resolver: zodResolver(locationFormSchema),
+    mode: 'onTouched',
+    defaultValues: emptyValues(),
+  });
 
   useEffect(() => {
     if (visible) {
-      setDraft(emptyDraft());
+      reset(emptyValues());
     }
-  }, [visible]);
+  }, [visible, reset]);
 
-  function updateField<K extends keyof TLocationDraft>(
-    key: K,
-    value: TLocationDraft[K],
-  ) {
-    setDraft((current) => ({ ...current, [key]: value }));
-  }
-
-  function handleCreate() {
-    const name = draft.name.trim();
-    const address = draft.address.trim();
-
-    if (!name || !address) {
-      return;
-    }
-
+  function handleCreate(values: TLocationFormValues) {
+    // `locationFormSchema` trims on parse, so these are already clean.
     onCreate({
       id: `loc-${Date.now()}`,
-      name,
-      address,
+      name: values.name,
+      address: values.address,
       ...getRandomCoordinates(),
     });
     onClose();
   }
-
-  const canCreate =
-    draft.name.trim().length > 0 && draft.address.trim().length > 0;
 
   return (
     <CreateModal
@@ -91,66 +79,30 @@ export function CreateLocationModal({
       closeLabel={t('close')}
       cancelLabel={t('cancel')}
       createLabel={t('create')}
-      canCreate={canCreate}
+      // Create stays pressable so `handleSubmit` can surface the errors rather
+      // than leaving the user with a dead button and no explanation.
+      canCreate
       colors={colors}
       onClose={onClose}
-      onCreate={handleCreate}
+      onCreate={handleSubmit(handleCreate)}
     >
-      <View style={styles.field}>
-        <Text style={styles.fieldLabel}>{t('locationName')}</Text>
-        <TextInput
-          accessibilityLabel={t('locationName')}
-          value={draft.name}
-          onChangeText={(value) => updateField('name', value)}
-          style={styles.input}
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
+      <FormTextField
+        control={control}
+        name="name"
+        label="locationName"
+        autoCapitalize="words"
+        colors={colors}
+        t={t}
+      />
 
-      <View style={styles.field}>
-        <Text style={styles.fieldLabel}>{t('address')}</Text>
-        <TextInput
-          accessibilityLabel={t('address')}
-          value={draft.address}
-          onChangeText={(value) => updateField('address', value)}
-          multiline
-          style={styles.multilineInput}
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
+      <FormTextField
+        control={control}
+        name="address"
+        label="address"
+        multiline
+        colors={colors}
+        t={t}
+      />
     </CreateModal>
   );
 }
-
-const createStyles = (colors: TColorTokens) => {
-  const input = {
-    minHeight: 44,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.background,
-    borderColor: colors.border,
-  } as const;
-
-  return StyleSheet.create({
-    field: {
-      gap: 6,
-    },
-    fieldLabel: {
-      fontSize: 12,
-      fontWeight: '800',
-      letterSpacing: 1.2,
-      textTransform: 'uppercase',
-      color: colors.accentMuted,
-    },
-    input,
-    multilineInput: {
-      ...input,
-      minHeight: 72,
-      textAlignVertical: 'top',
-    },
-  });
-};

@@ -1,3 +1,4 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
@@ -5,9 +6,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
+import { useForm } from 'react-hook-form';
 
 import { useContactsStore } from '../../stores/contactsStore';
 import type {
@@ -17,6 +18,11 @@ import type {
   TTranslationKey,
 } from '../../types/common.types';
 import {
+  locationFormSchema,
+  type TLocationFormValues,
+} from '../../validation/locationSchema';
+import { FormTextField } from '../common/FormTextField';
+import {
   countFavoriteContacts,
   formatFavoriteOfLabel,
 } from '../../utils/locationFormat';
@@ -25,10 +31,16 @@ type TLocationDetailStyles = ReturnType<typeof createStyles>;
 
 type TActionButtonVariant = 'primary' | 'secondary' | 'danger';
 
-type TLocationDraft = {
-  name: string;
-  address: string;
-};
+interface IEditField {
+  key: keyof TLocationFormValues;
+  label: TTranslationKey;
+  multiline?: boolean;
+}
+
+const EDIT_FIELDS: IEditField[] = [
+  { key: 'name', label: 'locationName' },
+  { key: 'address', label: 'address', multiline: true },
+];
 
 interface ILocationDetailModalProps {
   location: TBarLocation | null;
@@ -53,7 +65,7 @@ interface IActionButtonProps {
   styles: TLocationDetailStyles;
 }
 
-function toDraft(location: TBarLocation): TLocationDraft {
+function toFormValues(location: TBarLocation): TLocationFormValues {
   return {
     name: location.name,
     address: location.address,
@@ -134,44 +146,43 @@ export function LocationDetailModal({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const contacts = useContactsStore((state) => state.contacts);
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState<TLocationDraft | null>(null);
+
+  const { control, handleSubmit, reset } = useForm<TLocationFormValues>({
+    resolver: zodResolver(locationFormSchema),
+    mode: 'onTouched',
+    // Real values arrive via `reset` once a location is selected; these just
+    // keep every input controlled from the first render.
+    defaultValues: { name: '', address: '' },
+  });
 
   useEffect(() => {
     if (location) {
-      setDraft(toDraft(location));
+      reset(toFormValues(location));
       setIsEditing(false);
     }
-  }, [location]);
+  }, [location, reset]);
 
-  if (!location || !draft) {
+  if (!location) {
     return null;
   }
 
   const favoriteCount = countFavoriteContacts(location, contacts);
-
-  function updateField<K extends keyof TLocationDraft>(
-    key: K,
-    value: TLocationDraft[K],
-  ) {
-    setDraft((current) => (current ? { ...current, [key]: value } : current));
-  }
 
   function handleClose() {
     setIsEditing(false);
     onClose();
   }
 
-  function handleSave() {
-    const name = draft!.name.trim();
-    const address = draft!.address.trim();
-
-    if (!name || !address) {
-      return;
-    }
-
+  function handleSave(values: TLocationFormValues) {
+    // `locationFormSchema` trims on parse, so these are already clean.
     // Coordinates are not editable here — the create flow assigns them, so an
     // edit carries the existing pair through untouched.
-    onSave({ ...location!, name, address });
+    onSave({ ...location!, name: values.name, address: values.address });
+    setIsEditing(false);
+  }
+
+  function handleCancelEdit() {
+    reset(toFormValues(location!));
     setIsEditing(false);
   }
 
@@ -179,15 +190,6 @@ export function LocationDetailModal({
     setIsEditing(false);
     onDelete(location!);
   }
-
-  const fields: {
-    key: keyof TLocationDraft;
-    label: TTranslationKey;
-    multiline?: boolean;
-  }[] = [
-    { key: 'name', label: 'locationName' },
-    { key: 'address', label: 'address', multiline: true },
-  ];
 
   return (
     <Modal
@@ -218,20 +220,17 @@ export function LocationDetailModal({
             keyboardShouldPersistTaps="handled"
           >
             {isEditing ? (
-              fields.map((field) => (
-                <View key={field.key} style={styles.field}>
-                  <Text style={styles.fieldLabel}>{t(field.label)}</Text>
-                  <TextInput
-                    accessibilityLabel={t(field.label)}
-                    value={draft[field.key]}
-                    onChangeText={(value) => updateField(field.key, value)}
-                    multiline={field.multiline}
-                    style={
-                      field.multiline ? styles.multilineInput : styles.input
-                    }
-                    placeholderTextColor={colors.textMuted}
-                  />
-                </View>
+              EDIT_FIELDS.map((field) => (
+                <FormTextField
+                  key={field.key}
+                  control={control}
+                  name={field.key}
+                  label={field.label}
+                  multiline={field.multiline}
+                  autoCapitalize="words"
+                  colors={colors}
+                  t={t}
+                />
               ))
             ) : (
               <>
@@ -264,16 +263,13 @@ export function LocationDetailModal({
               <>
                 <ActionButton
                   label={t('cancel')}
-                  onPress={() => {
-                    setDraft(toDraft(location));
-                    setIsEditing(false);
-                  }}
+                  onPress={handleCancelEdit}
                   variant="secondary"
                   styles={styles}
                 />
                 <ActionButton
                   label={t('save')}
-                  onPress={handleSave}
+                  onPress={handleSubmit(handleSave)}
                   variant="primary"
                   styles={styles}
                 />
@@ -302,18 +298,6 @@ export function LocationDetailModal({
 }
 
 const createStyles = (colors: TColorTokens) => {
-  const input = {
-    minHeight: 44,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.background,
-    borderColor: colors.border,
-  } as const;
-
   const actionButton = {
     flex: 1,
     minHeight: 44,
@@ -377,21 +361,12 @@ const createStyles = (colors: TColorTokens) => {
       paddingBottom: 8,
       gap: 14,
     },
-    field: {
-      gap: 6,
-    },
     fieldLabel: {
       fontSize: 12,
       fontWeight: '800',
       letterSpacing: 1.2,
       textTransform: 'uppercase',
       color: colors.accentMuted,
-    },
-    input,
-    multilineInput: {
-      ...input,
-      minHeight: 72,
-      textAlignVertical: 'top',
     },
     infoRow: {
       gap: 4,
