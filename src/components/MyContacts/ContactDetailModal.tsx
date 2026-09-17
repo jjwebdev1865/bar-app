@@ -24,9 +24,18 @@ import {
   contactFormSchema,
   type TContactFormValues,
 } from '../../validation/contactSchema';
+import {
+  formatPhoneDisplay,
+  formatPhoneInput,
+  PHONE_DISPLAY_LENGTH,
+} from '../../utils/phoneFormat';
+import { formatZipInput, ZIP_DISPLAY_LENGTH } from '../../utils/zipFormat';
 import { FormDropdown } from '../common/FormDropdown';
 import { FormTextField } from '../common/FormTextField';
-import { formatContactDisplayName } from '../../utils/contactFormat';
+import {
+  formatContactAddress,
+  formatContactDisplayName,
+} from '../../utils/contactFormat';
 
 type TContactDetailStyles = ReturnType<typeof createStyles>;
 
@@ -61,6 +70,8 @@ interface IEditField {
   multiline?: boolean;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: TextInputProps['autoCapitalize'];
+  format?: (value: string) => string;
+  maxLength?: number;
 }
 
 const EDIT_FIELDS: IEditField[] = [
@@ -73,8 +84,24 @@ const EDIT_FIELDS: IEditField[] = [
     keyboardType: 'email-address',
     autoCapitalize: 'none',
   },
-  { key: 'phone', label: 'phone', keyboardType: 'phone-pad' },
-  { key: 'address', label: 'address', multiline: true },
+  {
+    key: 'phone',
+    label: 'phone',
+    keyboardType: 'phone-pad',
+    format: formatPhoneInput,
+    maxLength: PHONE_DISPLAY_LENGTH,
+  },
+  { key: 'addressLine1', label: 'addressLine1', autoCapitalize: 'words' },
+  { key: 'addressLine2', label: 'addressLine2', autoCapitalize: 'words' },
+  { key: 'city', label: 'city', autoCapitalize: 'words' },
+  { key: 'state', label: 'state', autoCapitalize: 'words' },
+  {
+    key: 'zip',
+    label: 'zip',
+    keyboardType: 'number-pad',
+    format: formatZipInput,
+    maxLength: ZIP_DISPLAY_LENGTH,
+  },
 ];
 
 function toFormValues(contact: TContact): TContactFormValues {
@@ -83,8 +110,15 @@ function toFormValues(contact: TContact): TContactFormValues {
     lastName: contact.lastName,
     nickname: contact.nickname ?? '',
     email: contact.email,
-    phone: contact.phone,
-    address: contact.address,
+    // Seeded through the display formatter so the edit field opens showing the
+    // same text as the read view, rather than waiting for the first keystroke
+    // to pull a differently-formatted stored number into the mask.
+    phone: formatPhoneDisplay(contact.phone),
+    addressLine1: contact.addressLine1,
+    addressLine2: contact.addressLine2,
+    city: contact.city,
+    state: contact.state,
+    zip: contact.zip,
     favoriteBarId: contact.favoriteBarId,
   };
 }
@@ -187,7 +221,11 @@ export function ContactDetailModal({
       nickname: '',
       email: '',
       phone: '',
-      address: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      zip: '',
       favoriteBarId: '',
     },
   });
@@ -226,7 +264,11 @@ export function ContactDetailModal({
       nickname: values.nickname || undefined,
       email: values.email,
       phone: values.phone,
-      address: values.address,
+      addressLine1: values.addressLine1,
+      addressLine2: values.addressLine2,
+      city: values.city,
+      state: values.state,
+      zip: values.zip,
       favoriteBarId: values.favoriteBarId,
     });
     setIsEditing(false);
@@ -281,6 +323,8 @@ export function ContactDetailModal({
                     multiline={field.multiline}
                     keyboardType={field.keyboardType}
                     autoCapitalize={field.autoCapitalize}
+                    format={field.format}
+                    maxLength={field.maxLength}
                     colors={colors}
                     t={t}
                   />
@@ -320,12 +364,14 @@ export function ContactDetailModal({
                 />
                 <InfoRow
                   label={t('phone')}
-                  value={contact.phone}
+                  value={formatPhoneDisplay(contact.phone)}
                   styles={styles}
                 />
                 <InfoRow
                   label={t('address')}
-                  value={contact.address}
+                  // Blank parts collapse away, so a contact with no address at
+                  // all leaves the formatter empty rather than showing gaps.
+                  value={formatContactAddress(contact) || t('none')}
                   styles={styles}
                 />
                 <InfoRow

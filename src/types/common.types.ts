@@ -39,7 +39,11 @@ export type TContact = {
   nickname?: string;
   email: string;
   phone: string;
-  address: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  zip: string;
   favoriteBarId: string;
 };
 

@@ -29,6 +29,11 @@
   "email": "Correo",
   "phone": "Teléfono",
   "address": "Dirección",
+  "addressLine1": "Dirección línea 1",
+  "addressLine2": "Dirección línea 2",
+  "city": "Ciudad",
+  "state": "Estado",
+  "zip": "Código postal",
   "favoriteBar": "Bar favorito",
   "none": "Ninguno",
   "editContact": "Editar contacto",
@@ -70,9 +75,13 @@
   "firstNameRequired": "El nombre es obligatorio",
   "lastNameRequired": "El apellido es obligatorio",
   "emailInvalid": "Introduce un correo electrónico válido",
-  "phoneInvalid": "Introduce un número de teléfono válido",
+  "phoneInvalid": "Introduce un número de teléfono de 10 dígitos",
+  "zipInvalid": "Introduce un código postal de 5 o 9 dígitos",
   "groupNameRequired": "El nombre del grupo es obligatorio",
   "membersRequired": "Selecciona al menos un miembro",
   "locationNameRequired": "El nombre de la ubicación es obligatorio",
-  "addressRequired": "La dirección es obligatoria"
+  "addressRequired": "La dirección es obligatoria",
+  "contactNameTaken": "Ya existe un contacto con ese nombre",
+  "emailTaken": "Ya existe un contacto con ese correo electrónico",
+  "phoneTaken": "Ya existe un contacto con ese número de teléfono"
 }

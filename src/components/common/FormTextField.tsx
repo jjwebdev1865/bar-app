@@ -31,6 +31,13 @@ interface IFormTextFieldProps<TValues extends FieldValues> {
   multiline?: boolean;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: TextInputProps['autoCapitalize'];
+  /**
+   * Rewrites each keystroke before it reaches the form, e.g. a phone mask. The
+   * masked text becomes the stored value, so the schema validates exactly what
+   * the user sees.
+   */
+  format?: (value: string) => string;
+  maxLength?: number;
 }
 
 /**
@@ -47,6 +54,8 @@ export function FormTextField<TValues extends FieldValues>({
   multiline,
   keyboardType,
   autoCapitalize,
+  format,
+  maxLength,
 }: IFormTextFieldProps<TValues>) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { field, fieldState } = useController({ control, name });
@@ -62,11 +71,12 @@ export function FormTextField<TValues extends FieldValues>({
         // relying on the error text below being reached separately.
         accessibilityLabel={error ? `${fieldLabel}, ${error}` : fieldLabel}
         value={field.value}
-        onChangeText={field.onChange}
+        onChangeText={(text) => field.onChange(format ? format(text) : text)}
         onBlur={field.onBlur}
         multiline={multiline}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
+        maxLength={maxLength}
         placeholderTextColor={colors.textMuted}
         style={[
           multiline ? styles.multilineInput : styles.input,

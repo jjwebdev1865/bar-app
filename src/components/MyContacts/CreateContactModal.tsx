@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import type { KeyboardTypeOptions, TextInputProps } from 'react-native';
 
+import { useContactsStore } from '../../stores/contactsStore';
 import { useLocationsStore } from '../../stores/locationsStore';
 import type {
   TColorTokens,
@@ -11,9 +12,15 @@ import type {
   TTranslationKey,
 } from '../../types/common.types';
 import {
-  contactFormSchema,
+  createContactFormSchema,
+  isNameConflictError,
   type TContactFormValues,
 } from '../../validation/contactSchema';
+import {
+  formatPhoneInput,
+  PHONE_DISPLAY_LENGTH,
+} from '../../utils/phoneFormat';
+import { formatZipInput, ZIP_DISPLAY_LENGTH } from '../../utils/zipFormat';
 import { CreateModal } from '../common/CreateModal';
 import { FormDropdown } from '../common/FormDropdown';
 import { FormTextField } from '../common/FormTextField';
@@ -32,6 +39,8 @@ interface IStepField {
   multiline?: boolean;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: TextInputProps['autoCapitalize'];
+  format?: (value: string) => string;
+  maxLength?: number;
 }
 
 const emptyValues = (defaultBarId: string): TContactFormValues => ({
@@ -40,7 +49,11 @@ const emptyValues = (defaultBarId: string): TContactFormValues => ({
   nickname: '',
   email: '',
   phone: '',
-  address: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  zip: '',
   favoriteBarId: defaultBarId,
 });
 
@@ -59,9 +72,27 @@ const STEP_FIELDS: IStepField[][] = [
       keyboardType: 'email-address',
       autoCapitalize: 'none',
     },
-    { key: 'phone', label: 'phone', keyboardType: 'phone-pad' },
+    {
+      key: 'phone',
+      label: 'phone',
+      keyboardType: 'phone-pad',
+      format: formatPhoneInput,
+      maxLength: PHONE_DISPLAY_LENGTH,
+    },
   ],
-  [{ key: 'address', label: 'address', multiline: true }],
+  [
+    { key: 'addressLine1', label: 'addressLine1', autoCapitalize: 'words' },
+    { key: 'addressLine2', label: 'addressLine2', autoCapitalize: 'words' },
+    { key: 'city', label: 'city', autoCapitalize: 'words' },
+    { key: 'state', label: 'state', autoCapitalize: 'words' },
+    {
+      key: 'zip',
+      label: 'zip',
+      keyboardType: 'number-pad',
+      format: formatZipInput,
+      maxLength: ZIP_DISPLAY_LENGTH,
+    },
+  ],
 ];
 
 export function CreateContactModal({
@@ -72,17 +103,46 @@ export function CreateContactModal({
   onCreate,
 }: ICreateContactModalProps) {
   const locations = useLocationsStore((state) => state.locations);
+  const existingContacts = useContactsStore((state) => state.contacts);
   const defaultBarId = locations[0]?.id ?? '';
   const [step, setStep] = useState(0);
 
-  const { control, handleSubmit, reset, trigger } = useForm<TContactFormValues>(
-    {
-      resolver: zodResolver(contactFormSchema),
-      // Errors appear once a field has been left, then keep up as it is retyped.
-      mode: 'onTouched',
-      defaultValues: emptyValues(defaultBarId),
-    },
+  // Rebuilt whenever the contact list changes so the duplicate-name check sees
+  // the current roster — `useForm` re-reads its resolver on every render.
+  const resolver = useMemo(
+    () => zodResolver(createContactFormSchema(existingContacts)),
+    [existingContacts],
   );
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    trigger,
+    formState: { errors },
+  } = useForm<TContactFormValues>({
+    resolver,
+    // Errors appear once a field has been left, then keep up as it is retyped.
+    mode: 'onTouched',
+    defaultValues: emptyValues(defaultBarId),
+  });
+
+  const firstName = useWatch({ control, name: 'firstName' });
+  const lastName = useWatch({ control, name: 'lastName' });
+  const hasNameConflict =
+    isNameConflictError(errors.firstName) ||
+    isNameConflictError(errors.lastName);
+
+  // The duplicate-name rule spans both name fields, but React Hook Form
+  // revalidates only the field that changed. Without this, correcting the first
+  // name would clear its own message and leave a stale conflict sitting under
+  // the last name. Guarded on an active conflict so untouched fields are never
+  // dragged into validation early.
+  useEffect(() => {
+    if (hasNameConflict) {
+      void trigger(['firstName', 'lastName']);
+    }
+  }, [firstName, lastName, hasNameConflict, trigger]);
 
   const barOptions = useMemo(
     () =>
@@ -111,7 +171,11 @@ export function CreateContactModal({
       nickname: values.nickname || undefined,
       email: values.email,
       phone: values.phone,
-      address: values.address,
+      addressLine1: values.addressLine1,
+      addressLine2: values.addressLine2,
+      city: values.city,
+      state: values.state,
+      zip: values.zip,
       favoriteBarId: values.favoriteBarId,
     });
     onClose();
@@ -166,6 +230,8 @@ export function CreateContactModal({
           multiline={field.multiline}
           keyboardType={field.keyboardType}
           autoCapitalize={field.autoCapitalize}
+          format={field.format}
+          maxLength={field.maxLength}
           colors={colors}
           t={t}
         />

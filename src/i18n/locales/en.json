@@ -29,6 +29,11 @@
   "email": "Email",
   "phone": "Phone",
   "address": "Address",
+  "addressLine1": "Address line 1",
+  "addressLine2": "Address line 2",
+  "city": "City",
+  "state": "State",
+  "zip": "ZIP code",
   "favoriteBar": "Favorite bar",
   "none": "None",
   "editContact": "Edit contact",
@@ -70,9 +75,13 @@
   "firstNameRequired": "First name is required",
   "lastNameRequired": "Last name is required",
   "emailInvalid": "Enter a valid email address",
-  "phoneInvalid": "Enter a valid phone number",
+  "phoneInvalid": "Enter a 10-digit phone number",
+  "zipInvalid": "Enter a 5- or 9-digit ZIP code",
   "groupNameRequired": "Group name is required",
   "membersRequired": "Select at least one member",
   "locationNameRequired": "Location name is required",
-  "addressRequired": "Address is required"
+  "addressRequired": "Address is required",
+  "contactNameTaken": "A contact with this name already exists",
+  "emailTaken": "A contact with this email already exists",
+  "phoneTaken": "A contact with this phone number already exists"
 }

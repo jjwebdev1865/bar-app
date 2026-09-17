@@ -13,6 +13,7 @@ import {
 import type { TColorTokens, TContact } from '../../types/common.types';
 import type { TContactSection } from '../../types/MyContacts.types';
 import { formatContactDisplayName } from '../../utils/contactFormat';
+import { formatPhoneDisplay } from '../../utils/phoneFormat';
 
 function sortKey(contact: TContact) {
   return `${contact.lastName} ${contact.firstName}`.toLowerCase();
@@ -86,13 +87,11 @@ export default function ContactsScreen() {
               ]}
             >
               <Text style={styles.name}>{formatContactDisplayName(item)}</Text>
-              <Text style={styles.phone}>{item.phone}</Text>
+              <Text style={styles.phone}>{formatPhoneDisplay(item.phone)}</Text>
             </Pressable>
           );
         }}
-        ListEmptyComponent={
-          <Text style={styles.empty}>{t('noContacts')}</Text>
-        }
+        ListEmptyComponent={<Text style={styles.empty}>{t('noContacts')}</Text>}
       />
 
       <CreateFooter
