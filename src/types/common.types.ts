@@ -36,18 +36,27 @@ export type TColorTokens = {
   onSuccess: string;
 };
 
-export type TContact = {
+/**
+ * Mailing-address parts, held by both contacts and bar locations. Every part is
+ * a plain string rather than optional: they are edited through controlled
+ * `TextInput`s, so `''` is the empty state. `utils/addressFormat.ts` is what
+ * drops the blanks at render time.
+ */
+export type TPostalAddress = {
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  zip: string;
+};
+
+export type TContact = TPostalAddress & {
   id: string;
   firstName: string;
   lastName: string;
   nickname?: string;
   email: string;
   phone: string;
-  addressLine1: string;
-  addressLine2: string;
-  city: string;
-  state: string;
-  zip: string;
   favoriteBarId: string;
 };
 
@@ -61,10 +70,9 @@ export type TGroup = {
   contacts: TContact[];
 };
 
-export type TBarLocation = {
+export type TBarLocation = TPostalAddress & {
   id: string;
   name: string;
   longitude: number;
   latitude: number;
-  address: string;
 };

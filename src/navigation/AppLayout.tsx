@@ -70,9 +70,6 @@ function AppDrawer() {
           options={{
             title: t('navContacts'),
             drawerLabel: t('navContacts'),
-            // Contacts nests a stack (`ContactsLayout`) so the create form can
-            // be pushed as a screen. That stack draws the header — leaving this
-            // one on would stack two headers.
             headerShown: false,
           }}
         />
@@ -81,6 +78,7 @@ function AppDrawer() {
           options={{
             title: t('navGroups'),
             drawerLabel: t('navGroups'),
+            headerShown: false,
           }}
         />
         <Drawer.Screen
@@ -88,6 +86,7 @@ function AppDrawer() {
           options={{
             title: t('navLocations'),
             drawerLabel: t('navLocations'),
+            headerShown: false,
           }}
         />
         <Drawer.Screen

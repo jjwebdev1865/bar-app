@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { msg } from './messages';
 
 /**
- * Shared by `CreateGroupModal` and `GroupDetailModal`. The form holds member
- * *ids*; the modals resolve those against `contactsStore` on submit so the
+ * Shared by the `CreateGroup` screen and `GroupDetailModal`. The form holds
+ * member *ids*; both resolve those against `contactsStore` on submit so the
  * `TGroup.contacts` copies are always built from current contact records.
  */
 export const groupFormSchema = z.object({

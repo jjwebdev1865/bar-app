@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,15 +8,14 @@ import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { useContactsStore } from '../../stores/contactsStore';
 import { useLocationsStore } from '../../stores/locationsStore';
-import {
-  CreateLocationModal,
-  LocationDetailModal,
-} from '../../components/MyLocations';
+import { LocationDetailModal } from '../../components/MyLocations';
 import type {
   TBarLocation,
   TColorTokens,
   TTranslate,
 } from '../../types/common.types';
+import { ENestedRoute } from '../../types/navigation.types';
+import { formatAddressSummary } from '../../utils/addressFormat';
 import {
   countFavoriteContacts,
   formatFavoriteOfLabel,
@@ -26,24 +26,22 @@ function locationAccessibilityLabel(
   fans: number,
   t: TTranslate,
 ) {
-  return `${location.name}. ${location.address}. ${formatFavoriteOfLabel(
-    fans,
-    t,
-  )}`;
+  return `${location.name}. ${formatAddressSummary(
+    location,
+  )}. ${formatFavoriteOfLabel(fans, t)}`;
 }
 
 export default function LocationsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const router = useRouter();
   const contacts = useContactsStore((state) => state.contacts);
   const locations = useLocationsStore((state) => state.locations);
-  const addLocation = useLocationsStore((state) => state.addLocation);
   const updateLocation = useLocationsStore((state) => state.updateLocation);
   const removeLocation = useLocationsStore((state) => state.removeLocation);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
     null,
   );
-  const [createVisible, setCreateVisible] = useState(false);
 
   const selectedLocation =
     locations.find((location) => location.id === selectedLocationId) ?? null;
@@ -75,7 +73,11 @@ export default function LocationsScreen() {
               ]}
             >
               <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.address}>{item.address}</Text>
+              {/* One line, not the mailing-label block the detail modal
+                  shows — the row stays a fixed height whatever was filled in. */}
+              <Text style={styles.address} numberOfLines={1}>
+                {formatAddressSummary(item)}
+              </Text>
               <Text style={styles.coords}>
                 {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
               </Text>
@@ -92,16 +94,8 @@ export default function LocationsScreen() {
 
       <CreateFooter
         label={t('createLocation')}
-        onPress={() => setCreateVisible(true)}
+        onPress={() => router.push(ENestedRoute.CREATE_LOCATION)}
         colors={colors}
-      />
-
-      <CreateLocationModal
-        visible={createVisible}
-        colors={colors}
-        t={t}
-        onClose={() => setCreateVisible(false)}
-        onCreate={addLocation}
       />
 
       <LocationDetailModal

@@ -28,10 +28,8 @@ import { formatPhoneDisplay, formatPhoneInput } from '../../utils/phoneFormat';
 import { formatZipInput } from '../../utils/zipFormat';
 import { FormDropdown } from '../common/FormDropdown';
 import { FormTextField } from '../common/FormTextField';
-import {
-  formatContactAddress,
-  formatContactDisplayName,
-} from '../../utils/contactFormat';
+import { formatAddressLines } from '../../utils/addressFormat';
+import { formatContactDisplayName } from '../../utils/contactFormat';
 
 type TContactDetailStyles = ReturnType<typeof createStyles>;
 
@@ -361,7 +359,7 @@ export function ContactDetailModal({
                   label={t('address')}
                   // Blank parts collapse away, so a contact with no address at
                   // all leaves the formatter empty rather than showing gaps.
-                  value={formatContactAddress(contact) || t('none')}
+                  value={formatAddressLines(contact) || t('none')}
                   styles={styles}
                 />
                 <InfoRow

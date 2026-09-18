@@ -14,6 +14,7 @@ import {
   type FieldValues,
 } from 'react-hook-form';
 
+import { useFieldLayout } from '../../hooks/useFieldLayout';
 import type {
   TColorTokens,
   TTranslate,
@@ -63,12 +64,15 @@ export function FormTextField<TValues extends FieldValues>({
 }: IFormTextFieldProps<TValues>) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { field, fieldState } = useController({ control, name });
+  // Only reports inside a `FormScreen`; `undefined` elsewhere, e.g. the detail
+  // modals.
+  const handleLayout = useFieldLayout(name);
 
   const fieldLabel = t(label);
   const error = translateFieldError(t, fieldState.error?.message);
 
   return (
-    <View style={styles.field}>
+    <View onLayout={handleLayout} style={styles.field}>
       <Text style={styles.fieldLabel}>{fieldLabel}</Text>
       <TextInput
         // Screen readers announce the failure alongside the field rather than

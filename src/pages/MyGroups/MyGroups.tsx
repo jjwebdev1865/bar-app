@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,11 +7,9 @@ import { CreateFooter } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { useGroupsStore } from '../../stores/groupsStore';
-import {
-  CreateGroupModal,
-  GroupDetailModal,
-} from '../../components/MyGroups';
+import { GroupDetailModal } from '../../components/MyGroups';
 import type { TColorTokens, TGroup } from '../../types/common.types';
+import { ENestedRoute } from '../../types/navigation.types';
 
 function memberPreview(group: TGroup) {
   return group.contacts.map((contact) => contact.firstName).join(', ');
@@ -23,11 +22,10 @@ function groupAccessibilityLabel(group: TGroup) {
 export default function GroupsScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const router = useRouter();
   const groups = useGroupsStore((state) => state.groups);
-  const addGroup = useGroupsStore((state) => state.addGroup);
   const updateGroup = useGroupsStore((state) => state.updateGroup);
   const removeGroup = useGroupsStore((state) => state.removeGroup);
-  const [createVisible, setCreateVisible] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   const selectedGroup =
@@ -75,16 +73,8 @@ export default function GroupsScreen() {
 
       <CreateFooter
         label={t('createGroup')}
-        onPress={() => setCreateVisible(true)}
+        onPress={() => router.push(ENestedRoute.CREATE_GROUP)}
         colors={colors}
-      />
-
-      <CreateGroupModal
-        visible={createVisible}
-        colors={colors}
-        t={t}
-        onClose={() => setCreateVisible(false)}
-        onCreate={addGroup}
       />
 
       <GroupDetailModal

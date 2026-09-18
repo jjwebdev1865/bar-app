@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Text,
   View,
+  type KeyboardTypeOptions,
+  type TextInputProps,
 } from 'react-native';
 import { useForm } from 'react-hook-form';
 
@@ -22,10 +24,12 @@ import {
   type TLocationFormValues,
 } from '../../validation/locationSchema';
 import { FormTextField } from '../common/FormTextField';
+import { formatAddressLines } from '../../utils/addressFormat';
 import {
   countFavoriteContacts,
   formatFavoriteOfLabel,
 } from '../../utils/locationFormat';
+import { formatZipInput } from '../../utils/zipFormat';
 
 type TLocationDetailStyles = ReturnType<typeof createStyles>;
 
@@ -34,11 +38,23 @@ type TActionButtonVariant = 'primary' | 'secondary' | 'danger';
 interface IEditField {
   key: keyof TLocationFormValues;
   label: TTranslationKey;
+  keyboardType?: KeyboardTypeOptions;
+  autoCapitalize?: TextInputProps['autoCapitalize'];
+  format?: (value: string) => string;
 }
 
 const EDIT_FIELDS: IEditField[] = [
-  { key: 'name', label: 'locationName' },
-  { key: 'address', label: 'address' },
+  { key: 'name', label: 'locationName', autoCapitalize: 'words' },
+  { key: 'addressLine1', label: 'addressLine1', autoCapitalize: 'words' },
+  { key: 'addressLine2', label: 'addressLine2', autoCapitalize: 'words' },
+  { key: 'city', label: 'city', autoCapitalize: 'words' },
+  { key: 'state', label: 'state', autoCapitalize: 'words' },
+  {
+    key: 'zip',
+    label: 'zip',
+    keyboardType: 'number-pad',
+    format: formatZipInput,
+  },
 ];
 
 interface ILocationDetailModalProps {
@@ -67,7 +83,11 @@ interface IActionButtonProps {
 function toFormValues(location: TBarLocation): TLocationFormValues {
   return {
     name: location.name,
-    address: location.address,
+    addressLine1: location.addressLine1,
+    addressLine2: location.addressLine2,
+    city: location.city,
+    state: location.state,
+    zip: location.zip,
   };
 }
 
@@ -151,7 +171,14 @@ export function LocationDetailModal({
     mode: 'onTouched',
     // Real values arrive via `reset` once a location is selected; these just
     // keep every input controlled from the first render.
-    defaultValues: { name: '', address: '' },
+    defaultValues: {
+      name: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      zip: '',
+    },
   });
 
   useEffect(() => {
@@ -176,7 +203,7 @@ export function LocationDetailModal({
     // `locationFormSchema` trims on parse, so these are already clean.
     // Coordinates are not editable here — the create flow assigns them, so an
     // edit carries the existing pair through untouched.
-    onSave({ ...location!, name: values.name, address: values.address });
+    onSave({ ...location!, ...values });
     setIsEditing(false);
   }
 
@@ -225,7 +252,9 @@ export function LocationDetailModal({
                   control={control}
                   name={field.key}
                   label={field.label}
-                  autoCapitalize="words"
+                  keyboardType={field.keyboardType}
+                  autoCapitalize={field.autoCapitalize}
+                  format={field.format}
                   colors={colors}
                   t={t}
                 />
@@ -239,7 +268,9 @@ export function LocationDetailModal({
                 />
                 <InfoRow
                   label={t('address')}
-                  value={location.address}
+                  // Blank parts collapse away, so a location with only a street
+                  // line reads as one line rather than a gapped block.
+                  value={formatAddressLines(location) || t('none')}
                   styles={styles}
                 />
                 <InfoRow

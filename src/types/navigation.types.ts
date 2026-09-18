@@ -41,10 +41,16 @@ export enum EDrawerScreen {
  */
 export enum ENestedRoute {
   CREATE_CONTACT = '/contacts/new',
+  CREATE_GROUP = '/groups/new',
+  CREATE_LOCATION = '/locations/new',
 }
 
-/** File-route names inside the contacts stack (`app/contacts/`). */
-export enum EContactsScreen {
+/**
+ * File-route names inside a section stack (`app/contacts/`, `app/groups/`,
+ * `app/locations/`). All three stacks have identical screen names, so one enum
+ * serves `SectionStack` rather than three copies.
+ */
+export enum ESectionScreen {
   LIST = 'index',
   NEW = 'new',
 }

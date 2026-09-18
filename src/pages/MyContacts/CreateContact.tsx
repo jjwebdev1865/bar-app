@@ -1,29 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'expo-router';
-import { useHeaderHeight } from 'expo-router/react-navigation';
-import { useEffect, useMemo, useRef } from 'react';
-import { useForm, useWatch, type FieldErrors } from 'react-hook-form';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  type KeyboardTypeOptions,
-  type LayoutChangeEvent,
-  type TextInputProps,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Fragment, useEffect, useMemo } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import type { KeyboardTypeOptions, TextInputProps } from 'react-native';
 
-import { FormDropdown, FormTextField } from '../../components/common';
-import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
+import {
+  FormDropdown,
+  FormScreen,
+  FormTextField,
+} from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
 import { useContactsStore } from '../../stores/contactsStore';
 import { useLocationsStore } from '../../stores/locationsStore';
 import { useToastStore } from '../../stores/toastStore';
-import type { TColorTokens, TTranslationKey } from '../../types/common.types';
+import type { TTranslationKey } from '../../types/common.types';
 import { EAppRoute } from '../../types/navigation.types';
 import { formatPhoneInput } from '../../utils/phoneFormat';
 import { formatZipInput } from '../../utils/zipFormat';
@@ -94,22 +83,11 @@ const FAVORITE_BAR_AFTER: TContactFieldName = 'phone';
 
 export default function CreateContactScreen() {
   const { colors, t } = useSettings();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const router = useRouter();
-  // The stack header sits above this screen, so the keyboard has that much less
-  // room to push into.
-  const headerHeight = useHeaderHeight();
   const locations = useLocationsStore((state) => state.locations);
   const existingContacts = useContactsStore((state) => state.contacts);
   const addContact = useContactsStore((state) => state.addContact);
   const showToast = useToastStore((state) => state.showToast);
   const defaultBarId = locations[0]?.id ?? '';
-
-  const scrollRef = useRef<ScrollView>(null);
-  // Filled by each field's `onLayout` so an invalid submit can scroll to the
-  // offending field. The footer is pinned, so without this a validation failure
-  // further up the form reads as a button that does nothing.
-  const fieldOffsets = useRef<Partial<Record<TContactFieldName, number>>>({});
 
   // Rebuilt whenever the contact list changes so the duplicate-name check sees
   // the current roster — `useForm` re-reads its resolver on every render.
@@ -158,33 +136,7 @@ export default function CreateContactScreen() {
     [locations],
   );
 
-  // `router.back()` alone would strand the user here when this screen is the
-  // first in the stack — reachable via the `barsignal://` scheme, since
-  // `/contacts/new` is a real deep-linkable route.
-  function leaveForm() {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-
-    router.replace(EAppRoute.CONTACTS);
-  }
-
-  function recordFieldOffset(key: TContactFieldName, event: LayoutChangeEvent) {
-    fieldOffsets.current[key] = event.nativeEvent.layout.y;
-  }
-
-  function scrollToFirstError(formErrors: FieldErrors<TContactFormValues>) {
-    const firstInvalid = CONTACT_FIELDS.find((field) => formErrors[field.key]);
-    const offset = firstInvalid
-      ? fieldOffsets.current[firstInvalid.key]
-      : undefined;
-
-    if (offset !== undefined) {
-      scrollRef.current?.scrollTo({ y: offset, animated: true });
-    }
-  }
-
+  // `FormScreen` leaves the route once this resolves.
   function handleCreate(values: TContactFormValues) {
     // `contactFormSchema` trims on parse, so these are already clean.
     addContact({
@@ -202,153 +154,48 @@ export default function CreateContactScreen() {
       favoriteBarId: values.favoriteBarId,
     });
     showToast('contactCreated');
-    leaveForm();
   }
 
-  const submit = handleSubmit(handleCreate, scrollToFirstError);
-
   return (
-    <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.screen}>
-      <KeyboardAvoidingView
-        // Android resizes the window itself; iOS needs the padding, offset by
-        // the header so the footer clears the keyboard rather than hiding
-        // behind it.
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={headerHeight}
-        style={styles.keyboardAvoider}
-      >
-        <ScrollView
-          ref={scrollRef}
-          style={styles.body}
-          contentContainerStyle={styles.bodyContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          {CONTACT_FIELDS.map((field) => (
-            <View
-              key={field.key}
-              onLayout={(event) => recordFieldOffset(field.key, event)}
-              style={styles.fieldSlot}
-            >
-              <FormTextField
-                control={control}
-                name={field.key}
-                label={field.label}
-                keyboardType={field.keyboardType}
-                autoCapitalize={field.autoCapitalize}
-                format={field.format}
-                colors={colors}
-                t={t}
-              />
+    <FormScreen
+      handleSubmit={handleSubmit}
+      onSubmit={handleCreate}
+      submitLabel="addContact"
+      cancelLabel="cancel"
+      fallbackRoute={EAppRoute.CONTACTS}
+      colors={colors}
+      t={t}
+    >
+      {CONTACT_FIELDS.map((field) => (
+        // A `Fragment` rather than a wrapper `View`: each field has to stay a
+        // direct child of the scroll content for `useFieldLayout` to measure
+        // its offset against the form. Spacing is unaffected — the scroll
+        // content already carries the gap.
+        <Fragment key={field.key}>
+          <FormTextField
+            control={control}
+            name={field.key}
+            label={field.label}
+            keyboardType={field.keyboardType}
+            autoCapitalize={field.autoCapitalize}
+            format={field.format}
+            colors={colors}
+            t={t}
+          />
 
-              {field.key === FAVORITE_BAR_AFTER ? (
-                <FormDropdown
-                  control={control}
-                  name="favoriteBarId"
-                  label="favoriteBar"
-                  placeholder="chooseLocation"
-                  options={barOptions}
-                  colors={colors}
-                  t={t}
-                />
-              ) : null}
-            </View>
-          ))}
-        </ScrollView>
-
-        <View style={styles.actions}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={leaveForm}
-            style={({ pressed }) => [
-              styles.secondaryButton,
-              pressed && styles.buttonPressed,
-            ]}
-          >
-            <Text style={styles.secondaryLabel}>{t('cancel')}</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            // Stays pressable: `handleSubmit` renders each failure inline and
-            // scrolls to the first one, rather than leaving a dead button.
-            onPress={submit}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && styles.buttonPressed,
-            ]}
-          >
-            <Text style={styles.primaryLabel}>{t('addContact')}</Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          {field.key === FAVORITE_BAR_AFTER ? (
+            <FormDropdown
+              control={control}
+              name="favoriteBarId"
+              label="favoriteBar"
+              placeholder="chooseLocation"
+              options={barOptions}
+              colors={colors}
+              t={t}
+            />
+          ) : null}
+        </Fragment>
+      ))}
+    </FormScreen>
   );
 }
-
-const createStyles = (colors: TColorTokens) => {
-  const actionButton = {
-    flex: 1,
-    minHeight: 48,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    borderColor: colors.border,
-  } as const;
-
-  const actionLabel = {
-    fontSize: 16,
-    fontWeight: '800',
-  } as const;
-
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    keyboardAvoider: {
-      flex: 1,
-    },
-    body: {
-      flex: 1,
-    },
-    bodyContent: {
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 24,
-      gap: 14,
-    },
-    fieldSlot: {
-      gap: 14,
-    },
-    actions: {
-      flexDirection: 'row',
-      gap: 10,
-      paddingHorizontal: 20,
-      paddingTop: 12,
-      paddingBottom: 12,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      backgroundColor: colors.panel,
-      borderTopColor: colors.border,
-    },
-    secondaryButton: {
-      ...actionButton,
-      backgroundColor: colors.background,
-    },
-    primaryButton: {
-      ...actionButton,
-      backgroundColor: colors.accent,
-    },
-    buttonPressed: {
-      opacity: 0.8,
-    },
-    secondaryLabel: {
-      ...actionLabel,
-      color: colors.text,
-    },
-    primaryLabel: {
-      ...actionLabel,
-      color: colors.onAccent,
-    },
-  });
-};
