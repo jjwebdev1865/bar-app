@@ -6,4 +6,5 @@ export * from './FormChecklist';
 export * from './FormDropdown';
 export * from './FormScreen';
 export * from './FormTextField';
+export * from './IdleTimeoutBoundary';
 export * from './Toast';

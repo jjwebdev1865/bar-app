@@ -22,6 +22,12 @@ export enum EAppRoute {
   GROUPS = '/groups',
   LOCATIONS = '/locations',
   SETTINGS = '/settings',
+  /**
+   * Belongs here rather than in `ENestedRoute`: `app/login.tsx` sits directly
+   * in `app/`, so it is a drawer-level file route even though `AppLayout` hides
+   * it from the menu.
+   */
+  LOGIN = '/login',
 }
 
 /** File-route names, matching the filenames in `app/`. */
@@ -31,6 +37,7 @@ export enum EDrawerScreen {
   GROUPS = 'groups',
   LOCATIONS = 'locations',
   SETTINGS = 'settings',
+  LOGIN = 'login',
 }
 
 /**

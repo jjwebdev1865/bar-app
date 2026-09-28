@@ -32,6 +32,21 @@ interface IFormTextFieldProps<TValues extends FieldValues> {
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: TextInputProps['autoCapitalize'];
   /**
+   * Masks the input, for passwords.
+   *
+   * **Never pair this with `format`.** A formatter rewrites what the user
+   * typed, and on a field whose text is invisible there is no way to notice it
+   * happened — let alone undo it.
+   */
+  secureTextEntry?: boolean;
+  /**
+   * Autofill hint, e.g. `"username"` / `"password"`. Without one, iOS Keychain
+   * and Android Autofill don't recognise a credential field and the user types
+   * it by hand. React Native unifies this prop across both platforms, so a
+   * single value covers them.
+   */
+  autoComplete?: TextInputProps['autoComplete'];
+  /**
    * Rewrites each keystroke before it reaches the form, e.g. a phone mask. The
    * masked text becomes the stored value, so the schema validates exactly what
    * the user sees.
@@ -60,6 +75,8 @@ export function FormTextField<TValues extends FieldValues>({
   t,
   keyboardType,
   autoCapitalize,
+  secureTextEntry,
+  autoComplete,
   format,
 }: IFormTextFieldProps<TValues>) {
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -83,6 +100,8 @@ export function FormTextField<TValues extends FieldValues>({
         onBlur={field.onBlur}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
+        secureTextEntry={secureTextEntry}
+        autoComplete={autoComplete}
         placeholderTextColor={colors.textMuted}
         style={[styles.input, Boolean(error) && styles.inputInvalid]}
       />

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 
-import { MOCK_LOCATIONS } from '../data/locations';
 import type { TBarLocation } from '../types/common.types';
 import { useContactsStore } from './contactsStore';
 
@@ -12,8 +11,14 @@ interface ILocationsStore {
 }
 
 /**
- * Single source of truth for bar locations. Seeded from `MOCK_LOCATIONS` until
- * real persistence exists — state still resets on app reload.
+ * Single source of truth for bar locations.
+ *
+ * **Starts empty**, like `contactsStore` and `groupsStore` — the app now opens
+ * with no domain data at all. Still in-memory, so a reload empties it again.
+ *
+ * With no locations, a new contact's `favoriteBarId` is `''` (rendered as
+ * "none"); `contactFormSchema` allows that, so contacts can be created before
+ * any bar exists.
  *
  * Select atomically (`useLocationsStore((state) => state.locations)`) rather than
  * returning a new object from the selector; zustand v5 no longer shallow-compares
@@ -26,7 +31,7 @@ interface ILocationsStore {
  * groups; don't add a reverse edge.
  */
 export const useLocationsStore = create<ILocationsStore>((set) => ({
-  locations: [...MOCK_LOCATIONS],
+  locations: [],
   addLocation: (location) =>
     set((state) => ({ locations: [...state.locations, location] })),
   updateLocation: (location) =>

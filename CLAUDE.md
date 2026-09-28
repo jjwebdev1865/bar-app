@@ -17,12 +17,14 @@ React Native 0.86, zustand 5 for shared state, i18next for localization
 - `src/context/SettingsContext.tsx` — app-wide theme mode + language + `t()`
   translation helper
 - `src/stores/*.ts` — zustand stores holding the shared domain state
-  (`contactsStore`, `groupsStore`, `locationsStore`), seeded from `src/data/*.ts`
+  (`contactsStore`, `groupsStore`, `locationsStore`) — all three start empty
 - `src/pages/*` — screen implementations; they read domain state from
   `src/stores/*` and keep only UI state (open modal, selected row) in `useState`
 - `src/components/_MyContacts`, `_MyGroups`, `_MyLocations`, `common` —
   create/detail modals and shared UI (Dropdown, CreateModal, CreateFooter)
-- `src/data/*.ts` — static mock seed data (contacts, groups, locations)
+- `src/data/user.ts` — the one hardcoded login credential pair (`MOCK_USER`).
+  The contact/group/location mocks are gone: the domain stores start empty so
+  everything on screen is something the signed-in user created
 - `src/theme/theme.ts`, `src/i18n/` — theming and localization resources
 - `src/constants/` — shared constant values (e.g. `safeAreaEdges.ts`)
 
@@ -47,8 +49,12 @@ zustand store, not in screen-level `useState`. Conventions:
   `contactsStore.clearFavoriteBar` to blank the dangling ids — which in turn
   re-syncs the group copies. Full dependency direction is locations →
   contacts → groups; don't add a reverse edge.
-- Stores are in-memory only. There is no persistence yet, so all state
-  (including theme/language in `SettingsContext`) resets on app reload.
+- Stores are in-memory only and start empty. There is no persistence yet, so
+  all state (including theme/language in `SettingsContext`) resets on app
+  reload — a reload is a full reset back to the login screen with no data.
+- Creation order matters while empty: a group requires at least one member
+  (`groupFormSchema`), so contacts have to exist first. A contact does not
+  require a favorite bar, so it can be created before any location.
 
 **Current functionality**: Home screen lets you pick a group + location and
 "activate a signal" (broadcast intent to meet up) with an elapsed-time

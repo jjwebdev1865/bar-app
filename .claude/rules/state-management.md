@@ -16,8 +16,9 @@ paths:
 - Stores live in `src/stores/` as `<domain>Store.ts` (`contactsStore.ts`, `groupsStore.ts`)
 - Plain module-level `create()` — no provider wrapper. The data is app-global and
   singular, so per-subtree store instances would be ceremony.
-- Seed initial state from `src/data/*.ts` mocks with a copy (`[...MOCK_CONTACTS]`),
-  never the imported array itself
+- Domain stores start empty (`contacts: []`, `groups: []`, `locations: []`).
+  There is no mock seed data left — if you ever reintroduce a fixture, copy it
+  (`[...MOCK_X]`) rather than using the imported array itself
 - Type the store with an `I<Domain>Store` interface holding state fields first,
   then actions
 - All mutations go through store actions — never mutate state outside a `set()`

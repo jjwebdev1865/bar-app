@@ -64,6 +64,31 @@ export type TContact = TPostalAddress & {
 // `TLocationFormValues`) are inferred from the zod schemas in
 // `src/validation/` and stay co-located with them.
 
+/**
+ * The signed-in user.
+ *
+ * Only the username exists because that is the only credential the login form
+ * collects and nothing verifies it yet — there is no backend to return an id,
+ * a display name or a token. This is the shape that grows when step 04 lands,
+ * and `TContact` is deliberately *not* reused: a contact is somebody in your
+ * address book, not the account holding the session.
+ */
+export type TAuthUser = {
+  username: string;
+};
+
+/**
+ * A username/password pair, as typed on the login form and as held by the mock
+ * account in `src/data/user.ts`.
+ *
+ * Kept separate from `TAuthUser` on purpose: the session user must never carry
+ * a password field, or it becomes something a screen can render by accident.
+ */
+export type TCredentials = {
+  username: string;
+  password: string;
+};
+
 export type TGroup = {
   id: string;
   name: string;

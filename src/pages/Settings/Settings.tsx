@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LANGUAGE_OPTIONS } from '../../i18n';
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
+import { useAuthStore } from '../../stores/authStore';
 import { EThemeModeOptions } from '../../theme/theme';
 import type { TColorTokens, TLanguage } from '../../types/common.types';
 import { Dropdown } from '../../components/common';
@@ -14,6 +15,11 @@ export default function SettingsScreen() {
     useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [languageOpen, setLanguageOpen] = useState(false);
+  // This screen only exists inside `AppLayout`'s signed-in guard, so `user` is
+  // never null while it renders. Selected defensively anyway — the fallback is
+  // cheaper than an assertion that has to stay true.
+  const username = useAuthStore((state) => state.user?.username ?? '');
+  const signOut = useAuthStore((state) => state.signOut);
 
   const isDark = themeMode === EThemeModeOptions.DARK;
 
@@ -65,6 +71,29 @@ export default function SettingsScreen() {
           {t('languageHint')}
         </Text>
       </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>{t('account')}</Text>
+
+        <View style={styles.row}>
+          <View style={styles.rowCopy}>
+            <Text style={styles.rowLabel}>{username}</Text>
+            <Text style={styles.hint}>{t('signOutHint')}</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            // Clearing the user flips `AppLayout`'s guards, which unmounts this
+            // screen and lands on login. Nothing to navigate to by hand.
+            onPress={signOut}
+            style={({ pressed }) => [
+              styles.signOutButton,
+              pressed && styles.signOutButtonPressed,
+            ]}
+          >
+            <Text style={styles.signOutLabel}>{t('signOut')}</Text>
+          </Pressable>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -114,5 +143,23 @@ const createStyles = (colors: TColorTokens) =>
     },
     languageHint: {
       marginTop: 12,
+    },
+    signOutButton: {
+      minHeight: 44,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      borderColor: colors.danger,
+      backgroundColor: colors.background,
+    },
+    signOutButtonPressed: {
+      opacity: 0.8,
+    },
+    signOutLabel: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.danger,
     },
   });

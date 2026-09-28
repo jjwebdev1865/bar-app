@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 
-import { MOCK_CONTACTS } from '../data/contacts';
 import type { TContact } from '../types/common.types';
 import { useGroupsStore } from './groupsStore';
 
@@ -13,8 +12,16 @@ interface IContactsStore {
 }
 
 /**
- * Single source of truth for the contact list. Seeded from `MOCK_CONTACTS`
- * until real persistence exists — state still resets on app reload.
+ * Single source of truth for the contact list.
+ *
+ * **Starts empty.** There is no `MOCK_CONTACTS` seed any more — the roster is
+ * whatever the signed-in user creates on the Contacts screen, so a fresh launch
+ * shows the `noContacts` empty state until they add someone. Contacts are the
+ * first domain to become per-account (phone-number matching is the V1 plan), and
+ * a shared fixture that every account sees would have to be unlearned the moment
+ * real data lands.
+ *
+ * Still in-memory, like every store here, so a reload empties it again.
  *
  * Select atomically (`useContactsStore((state) => state.contacts)`) rather than
  * returning a new object from the selector; zustand v5 no longer shallow-compares
@@ -24,7 +31,7 @@ interface IContactsStore {
  * each group and would otherwise show stale names.
  */
 export const useContactsStore = create<IContactsStore>((set, get) => ({
-  contacts: [...MOCK_CONTACTS],
+  contacts: [],
   addContact: (contact) =>
     set((state) => ({ contacts: [...state.contacts, contact] })),
   updateContact: (contact) => {

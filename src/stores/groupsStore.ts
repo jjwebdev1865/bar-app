@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 
-import { MOCK_GROUPS } from '../data/groups';
 import type { TContact, TGroup } from '../types/common.types';
 
 interface IGroupsStore {
@@ -13,8 +12,14 @@ interface IGroupsStore {
 }
 
 /**
- * Single source of truth for groups. Seeded from `MOCK_GROUPS` until real
- * persistence exists — state still resets on app reload.
+ * Single source of truth for groups.
+ *
+ * **Starts empty**, like `contactsStore` and `locationsStore` — the app now
+ * opens with no domain data at all, so everything on screen is something the
+ * signed-in user made. Still in-memory, so a reload empties it again.
+ *
+ * A group needs at least one member (`groupFormSchema`), so with no contacts
+ * yet there is nothing to create a group from — contacts come first.
  *
  * `TGroup.contacts` holds full contact copies rather than IDs, so those copies
  * go stale whenever a contact changes. `applyContactUpdate` /
@@ -23,7 +28,7 @@ interface IGroupsStore {
  * place is what stops the two stores from drifting apart.
  */
 export const useGroupsStore = create<IGroupsStore>((set) => ({
-  groups: [...MOCK_GROUPS],
+  groups: [],
   addGroup: (group) => set((state) => ({ groups: [...state.groups, group] })),
   updateGroup: (group) =>
     set((state) => ({
