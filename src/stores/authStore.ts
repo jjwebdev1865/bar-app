@@ -19,10 +19,12 @@ interface IAuthStore {
  * redirects to whatever is left, dropping their history entries as it goes.
  * Nothing needs to call `router` alongside a `signIn` / `signOut`.
  *
- * **Starts `null`, so the app opens on the login screen.** Like every other
- * store here it is in-memory, so a reload signs the user out — the same
- * "no persistence yet" caveat that applies to contacts, groups and theme,
- * except that here it is visible on launch rather than after a save.
+ * **Starts `null`, so the app opens on the login screen.** This store is not
+ * persisted — a reload signs the user out, while the domain stores (contacts,
+ * groups, locations) now hydrate from AsyncStorage and keep their data. That
+ * asymmetry is deliberate: a session behind a `MOCK_USER` `===` check is not
+ * something to write to disk and trust on the next launch. Persisting the
+ * session is part of real auth (step 04), not of saving the user's data.
  *
  * **`signIn` checks against `MOCK_USER`, and that is all it checks.** A plain
  * `===` against a pair sitting in the bundle is a fixture, not authentication —
@@ -41,9 +43,12 @@ interface IAuthStore {
  * returns a primitive, so it compares cleanly under zustand v5.
  *
  * No cross-store fan-out either. Unlike contacts → groups → locations, nothing
- * else keys off the user yet — the domain stores still hold shared mock data
- * rather than per-account data. When they become per-account, clearing them is
- * what `signOut` grows.
+ * else keys off the user yet — the saved data belongs to the device, not to an
+ * account, so `signOut` leaves it on disk and the next sign-in finds it again.
+ * With one `MOCK_USER` that is invisible. The moment a second account can exist
+ * it is wrong, and this is where it gets fixed: `signOut` grows a clear, and
+ * the persist keys grow a per-account namespace (`persistKey` in
+ * `persistStorage.ts` is the one place that builds them).
  */
 export const useAuthStore = create<IAuthStore>((set) => ({
   user: null,

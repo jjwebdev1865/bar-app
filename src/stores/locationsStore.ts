@@ -1,7 +1,9 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 import type { TBarLocation } from '../types/common.types';
 import { useContactsStore } from './contactsStore';
+import { createPersistStorage, persistKey } from './persistStorage';
 
 interface ILocationsStore {
   locations: TBarLocation[];
@@ -10,11 +12,23 @@ interface ILocationsStore {
   removeLocation: (locationId: string) => void;
 }
 
+/** The only field written to disk — the actions are functions. */
+type TPersistedLocations = Pick<ILocationsStore, 'locations'>;
+
+/**
+ * Bump when the persisted shape changes in a way old saves cannot satisfy, and
+ * add a `migrate` alongside it. Until then a version mismatch drops the save.
+ */
+const LOCATIONS_PERSIST_VERSION = 1;
+
 /**
  * Single source of truth for bar locations.
  *
- * **Starts empty**, like `contactsStore` and `groupsStore` — the app now opens
- * with no domain data at all. Still in-memory, so a reload empties it again.
+ * **Starts empty and persists to the device**, like `contactsStore` and
+ * `groupsStore` — a first launch has no domain data at all, and a reload
+ * brings the saved bars back. Only `locations` is written (`partialize`); the
+ * actions are functions and cannot be JSON. Hydration is async, so the first
+ * render after launch still sees `[]`.
  *
  * With no locations, a new contact's `favoriteBarId` is `''` (rendered as
  * "none"); `contactFormSchema` allows that, so contacts can be created before
@@ -30,22 +44,34 @@ interface ILocationsStore {
  * bar keeps a dangling id. Dependency direction is locations → contacts →
  * groups; don't add a reverse edge.
  */
-export const useLocationsStore = create<ILocationsStore>((set) => ({
-  locations: [],
-  addLocation: (location) =>
-    set((state) => ({ locations: [...state.locations, location] })),
-  updateLocation: (location) =>
-    set((state) => ({
-      locations: state.locations.map((existing) =>
-        existing.id === location.id ? location : existing,
-      ),
-    })),
-  removeLocation: (locationId) => {
-    set((state) => ({
-      locations: state.locations.filter(
-        (existing) => existing.id !== locationId,
-      ),
-    }));
-    useContactsStore.getState().clearFavoriteBar(locationId);
-  },
-}));
+export const useLocationsStore = create<ILocationsStore>()(
+  persist(
+    (set) => ({
+      locations: [],
+      addLocation: (location) =>
+        set((state) => ({ locations: [...state.locations, location] })),
+      updateLocation: (location) =>
+        set((state) => ({
+          locations: state.locations.map((existing) =>
+            existing.id === location.id ? location : existing,
+          ),
+        })),
+      removeLocation: (locationId) => {
+        set((state) => ({
+          locations: state.locations.filter(
+            (existing) => existing.id !== locationId,
+          ),
+        }));
+        useContactsStore.getState().clearFavoriteBar(locationId);
+      },
+    }),
+    {
+      name: persistKey('locations'),
+      version: LOCATIONS_PERSIST_VERSION,
+      storage: createPersistStorage<TPersistedLocations>(),
+      partialize: (state): TPersistedLocations => ({
+        locations: state.locations,
+      }),
+    },
+  ),
+);

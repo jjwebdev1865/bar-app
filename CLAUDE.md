@@ -49,9 +49,18 @@ zustand store, not in screen-level `useState`. Conventions:
   `contactsStore.clearFavoriteBar` to blank the dangling ids — which in turn
   re-syncs the group copies. Full dependency direction is locations →
   contacts → groups; don't add a reverse edge.
-- Stores are in-memory only and start empty. There is no persistence yet, so
-  all state (including theme/language in `SettingsContext`) resets on app
-  reload — a reload is a full reset back to the login screen with no data.
+- Stores start empty on a first launch, and all three domain stores
+  (`contactsStore`, `groupsStore`, `locationsStore`) then **persist**: each is
+  wrapped in zustand's `persist` middleware writing to AsyncStorage via
+  `src/stores/persistStorage.ts`, under its own `bar-signal:<domain>` key. A
+  reload brings contacts, groups and locations back intact, including the
+  contact copies inside each group. `authStore` and `SettingsContext`
+  (theme/language) are still in-memory, so a reload lands back on the login
+  screen with the default theme — the saved data is there once you sign in.
+- Persisting a store: wrap it in `persist`, name the key with
+  `persistKey('<domain>')`, and `partialize` down to the data fields — actions
+  are functions and must never be JSON-encoded. Hydration is asynchronous, so
+  a persisted store renders its initial value for one frame.
 - Creation order matters while empty: a group requires at least one member
   (`groupFormSchema`), so contacts have to exist first. A contact does not
   require a favorite bar, so it can be created before any location.
