@@ -12,7 +12,11 @@ import { useLocationsStore } from '../../stores/locationsStore';
 import { Dropdown } from '../../components/common';
 import { useElapsedTimer } from '../../hooks/useElapsedTimer';
 import { formatElapsedTime } from '../../utils/timeFormat';
-import type { TColorTokens } from '../../types';
+import type {
+  TColorTokens,
+  THomeSignalStage,
+  TTranslationKey,
+} from '../../types';
 import {
   EAppRoute,
   ENestedRoute,
@@ -23,6 +27,19 @@ import {
   BarStool,
   CancelSignalModal,
 } from '../../components/_Home';
+
+/**
+ * What the copy under the button says at each gate. Keyed by stage alongside
+ * the art in `BarStool`, so the two are changed together or not at all.
+ */
+const SETUP_HINTS: Record<
+  Exclude<THomeSignalStage, 'ready'>,
+  TTranslationKey
+> = {
+  contacts: 'homeNoContactsHint',
+  groups: 'homeNoGroupsHint',
+  locations: 'homeNoLocationsHint',
+};
 
 export default function HomeScreen() {
   const { colors, t } = useSettings();
@@ -46,11 +63,27 @@ export default function HomeScreen() {
     reset,
   } = useElapsedTimer();
   const [confirmCancelVisible, setConfirmCancelVisible] = useState(false);
+  // Flipped by a tap on the stool with something still unpicked. Kept as a
+  // single flag rather than one error per dropdown because the errors are
+  // derived from the selections below — picking a value clears its own message
+  // without any further bookkeeping.
+  const [selectionErrorsVisible, setSelectionErrorsVisible] = useState(false);
 
   const contacts = useContactsStore((state) => state.contacts);
   const groups = useGroupsStore((state) => state.groups);
   const locations = useLocationsStore((state) => state.locations);
-  const hasContacts = contacts.length > 0;
+
+  // The screen gates setup one missing piece at a time, in the order the
+  // pieces depend on each other: a group needs a member, and a signal needs
+  // somewhere to send that group. Only the last gate hands over the selectors.
+  const stage: THomeSignalStage =
+    contacts.length === 0
+      ? 'contacts'
+      : groups.length === 0
+        ? 'groups'
+        : locations.length === 0
+          ? 'locations'
+          : 'ready';
 
   const groupOptions = useMemo(
     () => groups.map((group) => ({ value: group.id, label: group.name })),
@@ -73,12 +106,23 @@ export default function HomeScreen() {
   const selectedLocation =
     locations.find((location) => location.id === selectedLocationId) ?? null;
 
+  const groupError = selectionErrorsVisible && !selectedGroup;
+  const locationError = selectionErrorsVisible && !selectedLocation;
+
   function activateSignal() {
     if (signalActive) {
       return;
     }
 
+    // A signal with no group has no one to reach and one with no location has
+    // nowhere to send them, so both have to be picked before the timer starts.
+    if (!selectedGroup || !selectedLocation) {
+      setSelectionErrorsVisible(true);
+      return;
+    }
+
     console.log('Bar Signal Activated');
+    setSelectionErrorsVisible(false);
     setOpenDropdown(null);
     start();
   }
@@ -95,6 +139,32 @@ export default function HomeScreen() {
     router.push(
       {
         pathname: ENestedRoute.CREATE_CONTACT,
+        params: { [RETURN_TO_PARAM]: EAppRoute.HOME },
+      },
+      { withAnchor: true },
+    );
+  }
+
+  function addFirstGroup() {
+    // Same `withAnchor` / `returnTo` reasoning as `addFirstContact` — the tap
+    // handle is a Home affordance, so saving the group lands back on Home
+    // rather than on the groups list the form lives in.
+    router.push(
+      {
+        pathname: ENestedRoute.CREATE_GROUP,
+        params: { [RETURN_TO_PARAM]: EAppRoute.HOME },
+      },
+      { withAnchor: true },
+    );
+  }
+
+  function addFirstLocation() {
+    // Same `withAnchor` / `returnTo` reasoning as `addFirstContact` — the keg
+    // is a Home affordance, so saving the bar lands back on Home rather than
+    // on the locations list the form lives in.
+    router.push(
+      {
+        pathname: ENestedRoute.CREATE_LOCATION,
         params: { [RETURN_TO_PARAM]: EAppRoute.HOME },
       },
       { withAnchor: true },
@@ -138,43 +208,65 @@ export default function HomeScreen() {
             <BarStool
               activateSignal={activateSignal}
               addFirstContact={addFirstContact}
+              addFirstGroup={addFirstGroup}
+              addFirstLocation={addFirstLocation}
               t={t}
               colors={colors}
-              contactsReady={hasContacts}
+              stage={stage}
             />
 
-            {hasContacts ? (
+            {stage === 'ready' ? (
+              // Reaching `ready` means both lists are non-empty, so neither
+              // dropdown can open onto nothing.
               <View style={styles.selectors}>
-                <Dropdown
-                  label={t('selectGroup')}
-                  placeholder={t('chooseGroup')}
-                  options={groupOptions}
-                  value={selectedGroup?.id ?? null}
-                  open={openDropdown === 'group'}
-                  onOpenChange={(open) =>
-                    setOpenDropdown(open ? 'group' : null)
-                  }
-                  onChange={setSelectedGroupId}
-                  colors={colors}
-                />
+                <View style={styles.field}>
+                  <Dropdown
+                    label={t('selectGroup')}
+                    placeholder={t('chooseGroup')}
+                    options={groupOptions}
+                    value={selectedGroup?.id ?? null}
+                    open={openDropdown === 'group'}
+                    onOpenChange={(open) =>
+                      setOpenDropdown(open ? 'group' : null)
+                    }
+                    onChange={setSelectedGroupId}
+                    colors={colors}
+                  />
+                  {groupError ? (
+                    <Text
+                      accessibilityLiveRegion="polite"
+                      style={styles.errorText}
+                    >
+                      {t('groupRequired')}
+                    </Text>
+                  ) : null}
+                </View>
 
-                <Dropdown
-                  label={t('selectLocation')}
-                  placeholder={t('chooseLocation')}
-                  options={locationOptions}
-                  value={selectedLocation?.id ?? null}
-                  open={openDropdown === 'location'}
-                  onOpenChange={(open) =>
-                    setOpenDropdown(open ? 'location' : null)
-                  }
-                  onChange={setSelectedLocationId}
-                  colors={colors}
-                />
+                <View style={styles.field}>
+                  <Dropdown
+                    label={t('selectLocation')}
+                    placeholder={t('chooseLocation')}
+                    options={locationOptions}
+                    value={selectedLocation?.id ?? null}
+                    open={openDropdown === 'location'}
+                    onOpenChange={(open) =>
+                      setOpenDropdown(open ? 'location' : null)
+                    }
+                    onChange={setSelectedLocationId}
+                    colors={colors}
+                  />
+                  {locationError ? (
+                    <Text
+                      accessibilityLiveRegion="polite"
+                      style={styles.errorText}
+                    >
+                      {t('locationRequired')}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
             ) : (
-              <Text style={styles.noContactsHint}>
-                {t('homeNoContactsHint')}
-              </Text>
+              <Text style={styles.setupHint}>{t(SETUP_HINTS[stage])}</Text>
             )}
           </>
         )}
@@ -233,7 +325,15 @@ const createStyles = (colors: TColorTokens, headerHeight: number) =>
       marginTop: 36,
       zIndex: 1,
     },
-    noContactsHint: {
+    field: {
+      gap: 6,
+    },
+    errorText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.danger,
+    },
+    setupHint: {
       width: '100%',
       maxWidth: 360,
       marginTop: 36,

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 import {
   FormChecklist,
@@ -38,6 +38,12 @@ export default function CreateGroupScreen() {
     defaultValues: emptyValues(),
   });
 
+  // `groupFormSchema` already rejects an empty roster, but a checklist shows
+  // its own requirement — nothing is ticked — so the button says so up front
+  // instead of waiting for a submit to explain it.
+  const selectedContactIds = useWatch({ control, name: 'contactIds' });
+  const hasMembers = selectedContactIds.length > 0;
+
   const memberOptions = useMemo(
     () =>
       availableContacts.map((contact) => ({
@@ -68,6 +74,7 @@ export default function CreateGroupScreen() {
       onSubmit={handleCreate}
       submitLabel="addGroup"
       cancelLabel="cancel"
+      submitDisabled={!hasMembers}
       fallbackRoute={EAppRoute.GROUPS}
       colors={colors}
       t={t}

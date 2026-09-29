@@ -44,6 +44,15 @@ interface IFormScreenProps<TValues extends FieldValues> {
   onSubmit: SubmitHandler<TValues>;
   submitLabel: TTranslationKey;
   cancelLabel: TTranslationKey;
+  /**
+   * Blocks the submit button outright, for the rare field whose requirement is
+   * visible on screen before it is submitted — an unticked checklist says so
+   * itself, where a text field's error has to be rendered to be read.
+   *
+   * Leave it unset otherwise. The default is a live button that reports every
+   * failure inline, which is what a user needs to fix a form.
+   */
+  submitDisabled?: boolean;
   /** Where the form lands when there is nothing to go back to. */
   fallbackRoute: EAppRoute;
   colors: TColorTokens;
@@ -71,6 +80,7 @@ export function FormScreen<TValues extends FieldValues>({
   onSubmit,
   submitLabel,
   cancelLabel,
+  submitDisabled = false,
   fallbackRoute,
   colors,
   t,
@@ -199,15 +209,27 @@ export function FormScreen<TValues extends FieldValues>({
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            // Stays pressable: `handleSubmit` renders each failure inline and
-            // scrolls to the first one, rather than leaving a dead button.
+            accessibilityState={{ disabled: submitDisabled }}
+            disabled={submitDisabled}
+            // Pressable by default: `handleSubmit` renders each failure inline
+            // and scrolls to the first one, rather than leaving a dead button.
+            // Only `submitDisabled` closes it, and only where the form already
+            // shows what is missing.
             onPress={submit}
             style={({ pressed }) => [
               styles.primaryButton,
+              submitDisabled && styles.primaryButtonDisabled,
               pressed && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.primaryLabel}>{t(submitLabel)}</Text>
+            <Text
+              style={[
+                styles.primaryLabel,
+                submitDisabled && styles.primaryLabelDisabled,
+              ]}
+            >
+              {t(submitLabel)}
+            </Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -267,6 +289,10 @@ const createStyles = (colors: TColorTokens) => {
       ...actionButton,
       backgroundColor: colors.accent,
     },
+    primaryButtonDisabled: {
+      backgroundColor: colors.panel,
+      borderColor: colors.border,
+    },
     buttonPressed: {
       opacity: 0.8,
     },
@@ -277,6 +303,9 @@ const createStyles = (colors: TColorTokens) => {
     primaryLabel: {
       ...actionLabel,
       color: colors.onAccent,
+    },
+    primaryLabelDisabled: {
+      color: colors.textMuted,
     },
   });
 };

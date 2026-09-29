@@ -7,5 +7,6 @@
  * `src/constants/`.
  */
 export type * from './common.types';
+export type * from './home.types';
 export type * from './myContacts.types';
 export type * from './navigation.types';
