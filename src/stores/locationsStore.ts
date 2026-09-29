@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import type { TBarLocation } from '../types/common.types';
+import type { TBarLocation } from '../types';
 import { useContactsStore } from './contactsStore';
 import { createPersistStorage, persistKey } from './persistStorage';
 

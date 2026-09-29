@@ -12,8 +12,8 @@ import { useSettings } from '../../context/SettingsContext';
 import { useContactsStore } from '../../stores/contactsStore';
 import { useLocationsStore } from '../../stores/locationsStore';
 import { useToastStore } from '../../stores/toastStore';
-import type { TTranslationKey } from '../../types/common.types';
-import { EAppRoute } from '../../types/navigation.types';
+import type { TTranslationKey } from '../../types';
+import { EAppRoute } from '../../constants/routes';
 import { formatPhoneInput } from '../../utils/phoneFormat';
 import { formatZipInput } from '../../utils/zipFormat';
 import {
@@ -100,13 +100,15 @@ export default function CreateContactScreen() {
     control,
     handleSubmit,
     trigger,
+    reset,
     formState: { errors },
   } = useForm<TContactFormValues>({
     resolver,
     // Errors appear once a field has been left, then keep up as it is retyped.
     mode: 'onTouched',
     // No reset-on-open effect: the route unmounts when it is popped, so every
-    // push starts from a fresh form.
+    // push starts from a fresh form. `handleCreate` clears it on the way out
+    // anyway, so a push that somehow reuses this instance still opens empty.
     defaultValues: emptyValues(defaultBarId),
   });
 
@@ -154,6 +156,9 @@ export default function CreateContactScreen() {
       favoriteBarId: values.favoriteBarId,
     });
     showToast('contactCreated');
+    // Clears the values, the errors and the touched flags together, so nothing
+    // from this contact can bleed into the next one.
+    reset(emptyValues(defaultBarId));
   }
 
   return (

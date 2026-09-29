@@ -1,4 +1,4 @@
-import type { TPostalAddress } from '../types/common.types';
+import type { TPostalAddress } from '../types';
 
 /**
  * The address as display lines, blanks dropped. Every part is optional, so a

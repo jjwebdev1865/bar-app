@@ -7,7 +7,7 @@ import type {
   TColorTokens,
   TGroup,
   TTranslate,
-} from '../../types/common.types';
+} from '../../types';
 
 interface IActiveSignalProps {
   requestCancelSignal: () => void;

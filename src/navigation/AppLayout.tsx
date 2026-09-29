@@ -22,8 +22,8 @@ import {
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
 import { useAuthStore } from '../stores/authStore';
 import { EThemeModeOptions } from '../theme/theme';
-import type { TColorTokens } from '../types/common.types';
-import { EDrawerScreen } from '../types/navigation.types';
+import type { TColorTokens } from '../types';
+import { EDrawerScreen } from '../constants/routes';
 import { createHeaderOptions } from './headerOptions';
 
 interface IDrawerMenuProps extends DrawerContentComponentProps {}

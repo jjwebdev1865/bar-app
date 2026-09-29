@@ -1,16 +1,23 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
+import { useContactsStore } from '../../stores/contactsStore';
 import { useGroupsStore } from '../../stores/groupsStore';
 import { useLocationsStore } from '../../stores/locationsStore';
 import { Dropdown } from '../../components/common';
 import { useElapsedTimer } from '../../hooks/useElapsedTimer';
 import { formatElapsedTime } from '../../utils/timeFormat';
-import type { TColorTokens } from '../../types/common.types';
+import type { TColorTokens } from '../../types';
+import {
+  EAppRoute,
+  ENestedRoute,
+  RETURN_TO_PARAM,
+} from '../../constants/routes';
 import {
   ActiveSignal,
   BarStool,
@@ -19,6 +26,7 @@ import {
 
 export default function HomeScreen() {
   const { colors, t } = useSettings();
+  const router = useRouter();
   const headerHeight = useHeaderHeight();
   const styles = useMemo(
     () => createStyles(colors, headerHeight),
@@ -39,8 +47,10 @@ export default function HomeScreen() {
   } = useElapsedTimer();
   const [confirmCancelVisible, setConfirmCancelVisible] = useState(false);
 
+  const contacts = useContactsStore((state) => state.contacts);
   const groups = useGroupsStore((state) => state.groups);
   const locations = useLocationsStore((state) => state.locations);
+  const hasContacts = contacts.length > 0;
 
   const groupOptions = useMemo(
     () => groups.map((group) => ({ value: group.id, label: group.name })),
@@ -71,6 +81,24 @@ export default function HomeScreen() {
     console.log('Bar Signal Activated');
     setOpenDropdown(null);
     start();
+  }
+
+  function addFirstContact() {
+    // `withAnchor` because this crosses into the contacts stack from outside
+    // it. A bare push builds that stack as `[new]` alone, which leaves nothing
+    // to unwind: the form stays mounted, still filled in, and opening Contacts
+    // from the drawer later lands on it instead of on the list.
+    //
+    // `returnTo` because the bottle is a Home affordance. The user came from
+    // Home to add the contact that turns it into the stool, so that is where
+    // saving it puts them back — not on the contacts list this form lives in.
+    router.push(
+      {
+        pathname: ENestedRoute.CREATE_CONTACT,
+        params: { [RETURN_TO_PARAM]: EAppRoute.HOME },
+      },
+      { withAnchor: true },
+    );
   }
 
   function requestCancelSignal() {
@@ -107,33 +135,47 @@ export default function HomeScreen() {
           />
         ) : (
           <>
-            <BarStool activateSignal={activateSignal} t={t} colors={colors} />
+            <BarStool
+              activateSignal={activateSignal}
+              addFirstContact={addFirstContact}
+              t={t}
+              colors={colors}
+              contactsReady={hasContacts}
+            />
 
-            <View style={styles.selectors}>
-              <Dropdown
-                label={t('selectGroup')}
-                placeholder={t('chooseGroup')}
-                options={groupOptions}
-                value={selectedGroup?.id ?? null}
-                open={openDropdown === 'group'}
-                onOpenChange={(open) => setOpenDropdown(open ? 'group' : null)}
-                onChange={setSelectedGroupId}
-                colors={colors}
-              />
+            {hasContacts ? (
+              <View style={styles.selectors}>
+                <Dropdown
+                  label={t('selectGroup')}
+                  placeholder={t('chooseGroup')}
+                  options={groupOptions}
+                  value={selectedGroup?.id ?? null}
+                  open={openDropdown === 'group'}
+                  onOpenChange={(open) =>
+                    setOpenDropdown(open ? 'group' : null)
+                  }
+                  onChange={setSelectedGroupId}
+                  colors={colors}
+                />
 
-              <Dropdown
-                label={t('selectLocation')}
-                placeholder={t('chooseLocation')}
-                options={locationOptions}
-                value={selectedLocation?.id ?? null}
-                open={openDropdown === 'location'}
-                onOpenChange={(open) =>
-                  setOpenDropdown(open ? 'location' : null)
-                }
-                onChange={setSelectedLocationId}
-                colors={colors}
-              />
-            </View>
+                <Dropdown
+                  label={t('selectLocation')}
+                  placeholder={t('chooseLocation')}
+                  options={locationOptions}
+                  value={selectedLocation?.id ?? null}
+                  open={openDropdown === 'location'}
+                  onOpenChange={(open) =>
+                    setOpenDropdown(open ? 'location' : null)
+                  }
+                  onChange={setSelectedLocationId}
+                  colors={colors}
+                />
+              </View>
+            ) : (
+              <Text style={styles.noContactsHint}>
+                {t('homeNoContactsHint')}
+              </Text>
+            )}
           </>
         )}
       </View>
@@ -190,5 +232,14 @@ const createStyles = (colors: TColorTokens, headerHeight: number) =>
       gap: 16,
       marginTop: 36,
       zIndex: 1,
+    },
+    noContactsHint: {
+      width: '100%',
+      maxWidth: 360,
+      marginTop: 36,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+      color: colors.textMuted,
     },
   });

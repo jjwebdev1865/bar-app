@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useFooterStore } from '../../stores/footerStore';
 import { useToastStore } from '../../stores/toastStore';
-import type { TColorTokens, TTranslate } from '../../types/common.types';
+import type { TColorTokens, TTranslate } from '../../types';
 
 interface IToastProps {
   colors: TColorTokens;

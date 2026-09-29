@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { TColorTokens, TTranslate } from '../../types/common.types';
+import type { TColorTokens, TTranslate } from '../../types';
 
 interface ICancelSignalModalProps {
   visible: boolean;

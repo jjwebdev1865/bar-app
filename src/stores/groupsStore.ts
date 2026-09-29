@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import type { TContact, TGroup } from '../types/common.types';
+import type { TContact, TGroup } from '../types';
 import { createPersistStorage, persistKey } from './persistStorage';
 
 interface IGroupsStore {

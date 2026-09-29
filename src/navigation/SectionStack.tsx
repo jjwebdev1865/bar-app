@@ -3,9 +3,13 @@ import { DrawerToggleButton } from 'expo-router/drawer';
 import { useMemo } from 'react';
 
 import { useSettings } from '../context/SettingsContext';
-import type { TTranslationKey } from '../types/common.types';
-import { ESectionScreen } from '../types/navigation.types';
+import type { TTranslationKey } from '../types';
+import { ESectionScreen } from '../constants/routes';
 import { createHeaderOptions } from './headerOptions';
+
+export const unstable_settings = {
+  anchor: ESectionScreen.LIST,
+};
 
 interface ISectionStackProps {
   /** Header title for the section's list screen (`index`). */

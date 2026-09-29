@@ -8,9 +8,8 @@ import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { useContactsStore } from '../../stores/contactsStore';
 import { CreateFooter } from '../../components/common';
 import { ContactDetailModal } from '../../components/MyContacts';
-import type { TColorTokens, TContact } from '../../types/common.types';
-import { ENestedRoute } from '../../types/navigation.types';
-import type { TContactSection } from '../../types/MyContacts.types';
+import { ENestedRoute } from '../../constants/routes';
+import type { TColorTokens, TContact, TContactSection } from '../../types';
 import { formatContactDisplayName } from '../../utils/contactFormat';
 import { formatPhoneDisplay } from '../../utils/phoneFormat';
 

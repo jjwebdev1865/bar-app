@@ -1,4 +1,4 @@
-import type { TTranslate } from '../types/common.types';
+import type { TTranslate } from '../types';
 
 /** Formats a duration in whole seconds as e.g. "2 minutes 5 seconds". */
 export function formatElapsedTime(totalSeconds: number, t: TTranslate) {

@@ -8,8 +8,8 @@ import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { useGroupsStore } from '../../stores/groupsStore';
 import { GroupDetailModal } from '../../components/MyGroups';
-import type { TColorTokens, TGroup } from '../../types/common.types';
-import { ENestedRoute } from '../../types/navigation.types';
+import type { TColorTokens, TGroup } from '../../types';
+import { ENestedRoute } from '../../constants/routes';
 
 function memberPreview(group: TGroup) {
   return group.contacts.map((contact) => contact.firstName).join(', ');

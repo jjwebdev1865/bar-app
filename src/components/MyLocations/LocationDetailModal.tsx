@@ -18,7 +18,7 @@ import type {
   TColorTokens,
   TTranslate,
   TTranslationKey,
-} from '../../types/common.types';
+} from '../../types';
 import {
   locationFormSchema,
   type TLocationFormValues,

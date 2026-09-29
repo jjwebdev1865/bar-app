@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { TTranslationKey } from '../types/common.types';
+import type { TTranslationKey } from '../types';
 
 interface IToastStore {
   messageKey: TTranslationKey | null;

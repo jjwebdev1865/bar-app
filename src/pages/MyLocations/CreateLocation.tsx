@@ -6,8 +6,8 @@ import { FormScreen, FormTextField } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
 import { useLocationsStore } from '../../stores/locationsStore';
 import { useToastStore } from '../../stores/toastStore';
-import type { TTranslationKey } from '../../types/common.types';
-import { EAppRoute } from '../../types/navigation.types';
+import type { TTranslationKey } from '../../types';
+import { EAppRoute } from '../../constants/routes';
 import { formatZipInput } from '../../utils/zipFormat';
 import {
   locationFormSchema,

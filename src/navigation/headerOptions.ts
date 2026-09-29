@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import type { TColorTokens } from '../types/common.types';
+import type { TColorTokens } from '../types';
 
 /**
  * Header appearance shared by the drawer and by any stack nested inside it.

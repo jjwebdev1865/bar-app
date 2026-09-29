@@ -16,7 +16,7 @@ import { FormTextField } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
 import { MOCK_USER } from '../../data/user';
 import { useAuthStore } from '../../stores/authStore';
-import type { TColorTokens } from '../../types/common.types';
+import type { TColorTokens } from '../../types';
 import { msg, translateFieldError } from '../../validation/messages';
 import {
   loginFormSchema,

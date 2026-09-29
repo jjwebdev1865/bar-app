@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 
-import type { TColorTokens } from '../../types/common.types';
+import type { TColorTokens } from '../../types';
 
 interface ICreateModalProps {
   visible: boolean;

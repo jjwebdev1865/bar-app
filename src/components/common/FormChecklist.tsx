@@ -12,7 +12,7 @@ import type {
   TColorTokens,
   TTranslate,
   TTranslationKey,
-} from '../../types/common.types';
+} from '../../types';
 import { translateFieldError } from '../../validation/messages';
 import type { TDropdownOption } from './Dropdown';
 

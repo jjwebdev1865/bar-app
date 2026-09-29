@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import { MOCK_USER } from '../data/user';
-import type { TAuthUser, TCredentials } from '../types/common.types';
+import type { TAuthUser, TCredentials } from '../types';
 
 interface IAuthStore {
   user: TAuthUser | null;

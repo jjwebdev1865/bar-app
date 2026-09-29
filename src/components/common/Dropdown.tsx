@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { TColorTokens } from '../../types/common.types';
+import type { TColorTokens } from '../../types';
 
 export type TDropdownOption = {
   value: string;

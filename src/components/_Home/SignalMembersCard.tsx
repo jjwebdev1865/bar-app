@@ -6,7 +6,7 @@ import type {
   TColorTokens,
   TContact,
   TTranslate,
-} from '../../types/common.types';
+} from '../../types';
 
 interface ISignalMembersCardProps {
   contacts: TContact[];

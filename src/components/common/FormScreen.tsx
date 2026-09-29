@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useCallback, useMemo, useRef, type ReactNode } from 'react';
 import {
@@ -27,8 +27,12 @@ import type {
   TColorTokens,
   TTranslate,
   TTranslationKey,
-} from '../../types/common.types';
-import type { EAppRoute } from '../../types/navigation.types';
+} from '../../types';
+import {
+  RETURN_TO_PARAM,
+  toAppRoute,
+  type EAppRoute,
+} from '../../constants/routes';
 
 interface IFormScreenProps<TValues extends FieldValues> {
   /**
@@ -40,7 +44,7 @@ interface IFormScreenProps<TValues extends FieldValues> {
   onSubmit: SubmitHandler<TValues>;
   submitLabel: TTranslationKey;
   cancelLabel: TTranslationKey;
-  /** Where Cancel lands when there is nothing to go back to. */
+  /** Where the form lands when there is nothing to go back to. */
   fallbackRoute: EAppRoute;
   colors: TColorTokens;
   t: TTranslate;
@@ -74,6 +78,10 @@ export function FormScreen<TValues extends FieldValues>({
 }: IFormScreenProps<TValues>) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
+  // Set by whoever pushed this form from outside its own section — see
+  // `RETURN_TO_PARAM`. Absent for the ordinary list -> form push.
+  const searchParams = useLocalSearchParams();
+  const returnRoute = toAppRoute(searchParams[RETURN_TO_PARAM]);
   // The stack header sits above this screen, so the keyboard has that much less
   // room to push into.
   const headerHeight = useHeaderHeight();
@@ -97,6 +105,31 @@ export function FormScreen<TValues extends FieldValues>({
   // first in the stack — reachable via the `barsignal://` scheme, since these
   // forms are real deep-linkable routes.
   function leaveForm() {
+    // TEMPORARY — diagnosing why a form opened from Home lands on the contacts
+    // list instead of back on Home. Remove once that is settled.
+    if (__DEV__) {
+      console.log('[FormScreen] leaveForm', {
+        searchParams,
+        returnRoute,
+        canDismiss: router.canDismiss(),
+        canGoBack: router.canGoBack(),
+      });
+    }
+
+    // Pushed from another section: unwind the stack this push opened, so the
+    // form unmounts and its section is left sitting on its list, then hand the
+    // drawer back to the screen the user actually started from. Both actions
+    // land in expo-router's queue and flush before the next render, so the list
+    // screen underneath never gets a frame of its own.
+    if (returnRoute) {
+      if (router.canDismiss()) {
+        router.dismissAll();
+      }
+
+      router.navigate(returnRoute);
+      return;
+    }
+
     if (router.canGoBack()) {
       router.back();
       return;

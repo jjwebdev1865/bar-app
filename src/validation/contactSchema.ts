@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { TContact, TTranslationKey } from '../types/common.types';
+import type { TContact, TTranslationKey } from '../types';
 import { PHONE_DIGIT_COUNT, phoneDigits } from '../utils/phoneFormat';
 import { isValidZip } from '../utils/zipFormat';
 import { msg } from './messages';

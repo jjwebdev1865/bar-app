@@ -1,4 +1,4 @@
-import type { TTranslate, TTranslationKey } from '../types/common.types';
+import type { TTranslate, TTranslationKey } from '../types';
 
 /**
  * Tags a translation key as a zod error message.

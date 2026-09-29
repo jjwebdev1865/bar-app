@@ -9,7 +9,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useFooterStore } from '../../stores/footerStore';
-import type { TColorTokens } from '../../types/common.types';
+import type { TColorTokens } from '../../types';
 
 interface ICreateFooterProps {
   label: string;

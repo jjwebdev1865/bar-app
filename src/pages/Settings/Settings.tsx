@@ -6,14 +6,24 @@ import { LANGUAGE_OPTIONS } from '../../i18n';
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { useAuthStore } from '../../stores/authStore';
-import { EThemeModeOptions } from '../../theme/theme';
-import type { TColorTokens, TLanguage } from '../../types/common.types';
+import { EThemeModeOptions, HERO_OPTIONS } from '../../theme/theme';
+import type { THero } from '../../theme/theme';
+import type { TColorTokens, TLanguage } from '../../types';
 import { Dropdown } from '../../components/common';
 
 export default function SettingsScreen() {
-  const { colors, themeMode, setThemeMode, language, setLanguage, t } =
-    useSettings();
+  const {
+    colors,
+    themeMode,
+    setThemeMode,
+    hero,
+    setHero,
+    language,
+    setLanguage,
+    t,
+  } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [heroOpen, setHeroOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   // This screen only exists inside `AppLayout`'s signed-in guard, so `user` is
   // never null while it renders. Selected defensively anyway — the fallback is
@@ -22,6 +32,11 @@ export default function SettingsScreen() {
   const signOut = useAuthStore((state) => state.signOut);
 
   const isDark = themeMode === EThemeModeOptions.DARK;
+
+  function selectHero(next: string) {
+    setHero(next as THero);
+    setHeroOpen(false);
+  }
 
   function selectLanguage(next: string) {
     setLanguage(next as TLanguage);
@@ -51,6 +66,19 @@ export default function SettingsScreen() {
             trackColor={{ false: colors.border, true: colors.accent }}
             thumbColor={colors.white}
             ios_backgroundColor={colors.border}
+          />
+        </View>
+
+        <View style={styles.heroDropdown}>
+          <Dropdown
+            label={t('favoriteHero')}
+            placeholder={t('favoriteHero')}
+            options={HERO_OPTIONS}
+            value={hero}
+            open={heroOpen}
+            onOpenChange={setHeroOpen}
+            onChange={selectHero}
+            colors={colors}
           />
         </View>
       </View>
@@ -140,6 +168,9 @@ const createStyles = (colors: TColorTokens) =>
       fontSize: 13,
       lineHeight: 18,
       color: colors.textMuted,
+    },
+    heroDropdown: {
+      marginTop: 16,
     },
     languageHint: {
       marginTop: 12,

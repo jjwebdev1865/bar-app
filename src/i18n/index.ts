@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import type { TLanguage, TTranslationKey } from '../types/common.types';
+import type { TLanguage, TTranslationKey } from '../types';
 import en from './locales/en.json';
 import es from './locales/es.json';
 // Side-effect import: applies the `i18next` module augmentation that types

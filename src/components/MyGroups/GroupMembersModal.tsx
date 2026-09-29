@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useContactsStore } from '../../stores/contactsStore';
-import type { TColorTokens, TTranslate } from '../../types/common.types';
+import type { TColorTokens, TTranslate } from '../../types';
 import { CreateModal } from '../common/CreateModal';
 import { formatContactDisplayName } from '../../utils/contactFormat';
 

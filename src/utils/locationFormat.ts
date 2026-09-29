@@ -2,7 +2,7 @@ import type {
   TBarLocation,
   TContact,
   TTranslate,
-} from '../types/common.types';
+} from '../types';
 
 /** How many contacts have this location set as their favorite bar. */
 export function countFavoriteContacts(

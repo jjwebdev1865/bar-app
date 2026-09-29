@@ -19,7 +19,7 @@ import type {
   TContact,
   TTranslate,
   TTranslationKey,
-} from '../../types/common.types';
+} from '../../types';
 import {
   contactFormSchema,
   type TContactFormValues,

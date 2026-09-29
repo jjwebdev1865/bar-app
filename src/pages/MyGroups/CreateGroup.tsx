@@ -11,7 +11,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { useContactsStore } from '../../stores/contactsStore';
 import { useGroupsStore } from '../../stores/groupsStore';
 import { useToastStore } from '../../stores/toastStore';
-import { EAppRoute } from '../../types/navigation.types';
+import { EAppRoute } from '../../constants/routes';
 import { formatContactDisplayName } from '../../utils/contactFormat';
 import {
   groupFormSchema,

@@ -13,8 +13,8 @@ import type {
   TBarLocation,
   TColorTokens,
   TTranslate,
-} from '../../types/common.types';
-import { ENestedRoute } from '../../types/navigation.types';
+} from '../../types';
+import { ENestedRoute } from '../../constants/routes';
 import { formatAddressSummary } from '../../utils/addressFormat';
 import {
   countFavoriteContacts,

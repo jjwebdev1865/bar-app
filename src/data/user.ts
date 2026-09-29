@@ -1,4 +1,4 @@
-import type { TCredentials } from '../types/common.types';
+import type { TCredentials } from '../types';
 
 /**
  * The one account that can sign in — now the only seed data left in `src/data`,

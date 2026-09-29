@@ -19,7 +19,7 @@ import type {
   TColorTokens,
   TTranslate,
   TTranslationKey,
-} from '../../types/common.types';
+} from '../../types';
 import { translateFieldError } from '../../validation/messages';
 
 interface IFormTextFieldProps<TValues extends FieldValues> {

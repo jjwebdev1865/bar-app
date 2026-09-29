@@ -15,7 +15,7 @@ import type {
   TColorTokens,
   TGroup,
   TTranslate,
-} from '../../types/common.types';
+} from '../../types';
 import {
   groupFormSchema,
   type TGroupFormValues,

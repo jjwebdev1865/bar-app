@@ -1,4 +1,4 @@
-import type { TContact } from '../types/common.types';
+import type { TContact } from '../types';
 
 /** Renders `First "Nickname" Last`, or `First Last` when there's no nickname. */
 export function formatContactDisplayName(
