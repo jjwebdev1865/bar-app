@@ -118,6 +118,26 @@ both locale files in the same key order.
   meaningful against an in-memory fixture, and real auth (step 04) is where
   that belongs.
 
+## Update (2026-09-30, same day): Show/Hide toggle on every masked field
+
+Added to `src/components/common/FormTextField.tsx` rather than to `Login` or
+`CreateAccount` individually — every `secureTextEntry` field in the app is one
+of the four password fields across these two screens, so the toggle belongs on
+the shared component, not duplicated three times.
+
+- `secureTextEntry` now draws an inline "Show"/"Hide" `Pressable` inside the
+  field (`styles.toggleButton`, absolutely positioned over `styles.input`,
+  which gains `paddingRight` via `styles.inputWithToggle` so the toggle never
+  overlaps typed text) when the prop is `true`.
+- Reveal state (`isRevealed`) is local `useState`, not form state — it is
+  swapped straight into the `TextInput`'s own `secureTextEntry` prop
+  (`secureTextEntry && !isRevealed`) and never touches `field.value`.
+- Two new i18n keys, `showPassword` / `hidePassword`, appended after
+  `usernameTaken` in both `en.json` and `es.json`.
+- The toggle's `accessibilityLabel` combines the action with the field's own
+  label (e.g. "Show confirm password") — the visible "Show"/"Hide" text alone
+  doesn't say which field it acts on when a screen has two masked fields.
+
 ## Follow-on work
 
 - When step 04 lands a real backend, `signUp` (and `signIn`, and

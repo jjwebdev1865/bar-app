@@ -114,5 +114,7 @@
   "confirmPasswordRequired": "Confirm your password",
   "passwordMismatch": "Passwords do not match",
   "passwordWeak": "Password must be at least 8 characters and include a letter and a number",
-  "usernameTaken": "That username is already taken"
+  "usernameTaken": "That username is already taken",
+  "showPassword": "Show",
+  "hidePassword": "Hide"
 }

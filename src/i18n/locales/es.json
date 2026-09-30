@@ -114,5 +114,7 @@
   "confirmPasswordRequired": "Confirma tu contraseña",
   "passwordMismatch": "Las contraseñas no coinciden",
   "passwordWeak": "La contraseña debe tener al menos 8 caracteres e incluir una letra y un número",
-  "usernameTaken": "Ese usuario ya está en uso"
+  "usernameTaken": "Ese usuario ya está en uso",
+  "showPassword": "Mostrar",
+  "hidePassword": "Ocultar"
 }

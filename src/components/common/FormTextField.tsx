@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -32,7 +33,10 @@ interface IFormTextFieldProps<TValues extends FieldValues> {
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: TextInputProps['autoCapitalize'];
   /**
-   * Masks the input, for passwords.
+   * Masks the input, for passwords. Also draws a Show/Hide toggle inside the
+   * field — every masked field in this app is a password the user just typed
+   * (login, create-account), where a way to check it before submitting is the
+   * point, not an edge case.
    *
    * **Never pair this with `format`.** A formatter rewrites what the user
    * typed, and on a field whose text is invisible there is no way to notice it
@@ -84,27 +88,46 @@ export function FormTextField<TValues extends FieldValues>({
   // Only reports inside a `FormScreen`; `undefined` elsewhere, e.g. the detail
   // modals.
   const handleLayout = useFieldLayout(name);
+  // Local, not form state — a value must never survive to the submitted form.
+  const [isRevealed, setIsRevealed] = useState(false);
 
   const fieldLabel = t(label);
   const error = translateFieldError(t, fieldState.error?.message);
+  const toggleActionLabel = t(isRevealed ? 'hidePassword' : 'showPassword');
 
   return (
     <View onLayout={handleLayout} style={styles.field}>
       <Text style={styles.fieldLabel}>{fieldLabel}</Text>
-      <TextInput
-        // Screen readers announce the failure alongside the field rather than
-        // relying on the error text below being reached separately.
-        accessibilityLabel={error ? `${fieldLabel}, ${error}` : fieldLabel}
-        value={field.value}
-        onChangeText={(text) => field.onChange(format ? format(text) : text)}
-        onBlur={field.onBlur}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        secureTextEntry={secureTextEntry}
-        autoComplete={autoComplete}
-        placeholderTextColor={colors.textMuted}
-        style={[styles.input, Boolean(error) && styles.inputInvalid]}
-      />
+      <View style={styles.inputRow}>
+        <TextInput
+          accessibilityLabel={error ? `${fieldLabel}, ${error}` : fieldLabel}
+          value={field.value}
+          onChangeText={(text) => field.onChange(format ? format(text) : text)}
+          onBlur={field.onBlur}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          secureTextEntry={secureTextEntry && !isRevealed}
+          autoComplete={autoComplete}
+          placeholderTextColor={colors.textMuted}
+          style={[
+            styles.input,
+            secureTextEntry && styles.inputWithToggle,
+            Boolean(error) && styles.inputInvalid,
+          ]}
+        />
+        {secureTextEntry ? (
+          <Pressable
+            accessibilityRole="button"
+            // The visible "Show"/"Hide" text alone doesn't say what it acts on —
+            // there can be two such buttons on one screen (password, confirm).
+            accessibilityLabel={`${toggleActionLabel} ${fieldLabel}`}
+            onPress={() => setIsRevealed((prev) => !prev)}
+            style={styles.toggleButton}
+          >
+            <Text style={styles.toggleLabel}>{toggleActionLabel}</Text>
+          </Pressable>
+        ) : null}
+      </View>
       {error ? (
         <Text accessibilityLiveRegion="polite" style={styles.errorText}>
           {error}
@@ -139,8 +162,27 @@ const createStyles = (colors: TColorTokens) => {
       color: colors.accentMuted,
     },
     input,
+    inputWithToggle: {
+      paddingRight: 64,
+    },
     inputInvalid: {
       borderColor: colors.danger,
+    },
+    inputRow: {
+      justifyContent: 'center',
+    },
+    toggleButton: {
+      position: 'absolute',
+      right: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 12,
+    },
+    toggleLabel: {
+      fontSize: 12,
+      fontWeight: '800',
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      color: colors.accent,
     },
     errorText: {
       fontSize: 13,
