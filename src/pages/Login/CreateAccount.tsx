@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { FormTextField } from '../../components/common';
 import { EAppRoute } from '../../constants/routes';
@@ -52,6 +52,9 @@ export default function CreateAccountScreen() {
       mode: 'onTouched',
       defaultValues: emptyValues(),
     });
+
+  const watchedValues = useWatch({ control });
+  const isFormValid = registerFormSchema.safeParse(watchedValues).success;
 
   function handleCreateAccount(values: TRegisterFormValues) {
     clearErrors('username');
@@ -123,10 +126,13 @@ export default function CreateAccountScreen() {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ disabled: !isFormValid }}
+            disabled={!isFormValid}
             onPress={handleSubmit(handleCreateAccount)}
             style={({ pressed }) => [
               styles.submitButton,
-              pressed && styles.submitButtonPressed,
+              !isFormValid && styles.submitButtonDisabled,
+              pressed && isFormValid && styles.submitButtonPressed,
             ]}
           >
             <Text style={styles.submitLabel}>{t('createAccount')}</Text>
@@ -189,6 +195,10 @@ const createStyles = (colors: TColorTokens) =>
       justifyContent: 'center',
       marginTop: 6,
       backgroundColor: colors.accent,
+    },
+    submitButtonDisabled: {
+      backgroundColor: colors.accentMuted,
+      opacity: 0.6,
     },
     submitButtonPressed: {
       opacity: 0.8,

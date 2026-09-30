@@ -138,6 +138,31 @@ the shared component, not duplicated three times.
   label (e.g. "Show confirm password") — the visible "Show"/"Hide" text alone
   doesn't say which field it acts on when a screen has two masked fields.
 
+## Update (2026-09-30, same day): submit disabled until the form is valid
+
+`CreateAccount`'s submit button now renders `disabled` (and
+`accessibilityState={{ disabled: true }}`, `styles.submitButtonDisabled`) until
+`registerFormSchema` passes against the current values. This is a deliberate
+departure from `Login`/`FormScreen`'s "always pressable, errors render inline"
+convention: a rejected sign-in is one guess with nothing else to check first,
+but registration has four independent rules (non-empty username, length,
+complexity, confirm-password match) — disabling reads as "not yet" instead of
+surfacing four inline errors at once the moment the button is pressed.
+
+- Validity is computed with `useWatch({ control })` fed straight into
+  `registerFormSchema.safeParse(...).success`, **not** `formState.isValid`.
+  `isValid` only refreshes on the events `mode: 'onTouched'` triggers (blur,
+  then change), so it would lag a field the user hasn't blurred yet — a
+  freshly-focused `password` field could still read as valid from a stale
+  computation. Re-parsing on every keystroke keeps the button in sync
+  regardless of touched state.
+- Inline field errors are untouched — they still only appear per-field via
+  `mode: 'onTouched'`, so a blank fresh screen still doesn't render four red
+  messages before anyone has typed anything; only the button reacts early.
+- `username`-taken is still a runtime check against `authStore`, not part of
+  `registerFormSchema` — the button can go enabled on a username the account
+  list will still reject at submit time, same as before this change.
+
 ## Follow-on work
 
 - When step 04 lands a real backend, `signUp` (and `signIn`, and
