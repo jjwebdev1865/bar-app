@@ -106,5 +106,13 @@
   "usernameRequired": "El usuario es obligatorio",
   "passwordRequired": "La contraseña es obligatoria",
   "credentialsInvalid": "El usuario o la contraseña no son correctos",
-  "signedOutIdle": "Sesión cerrada por inactividad"
+  "signedOutIdle": "Sesión cerrada por inactividad",
+  "createAccount": "Crear cuenta",
+  "createAccountPrompt": "¿No tienes una cuenta?",
+  "backToSignIn": "¿Ya tienes una cuenta? Inicia sesión",
+  "confirmPassword": "Confirmar contraseña",
+  "confirmPasswordRequired": "Confirma tu contraseña",
+  "passwordMismatch": "Las contraseñas no coinciden",
+  "passwordWeak": "La contraseña debe tener al menos 8 caracteres e incluir una letra y un número",
+  "usernameTaken": "Ese usuario ya está en uso"
 }

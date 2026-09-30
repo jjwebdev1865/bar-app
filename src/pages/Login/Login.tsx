@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
@@ -13,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm } from 'react-hook-form';
 
 import { FormTextField } from '../../components/common';
+import { EAppRoute } from '../../constants/routes';
 import { useSettings } from '../../context/SettingsContext';
 import { MOCK_USERS } from '../../data/user';
 import { useAuthStore } from '../../stores/authStore';
@@ -46,6 +48,7 @@ const emptyValues = (): TLoginFormValues => ({
 export default function LoginScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const router = useRouter();
   const signIn = useAuthStore((state) => state.signIn);
 
   const { control, handleSubmit, setError, clearErrors, formState } =
@@ -150,6 +153,20 @@ export default function LoginScreen() {
             <Text style={styles.submitLabel}>{t('signIn')}</Text>
           </Pressable>
 
+          <View style={styles.createAccountRow}>
+            <Text style={styles.createAccountPrompt}>
+              {t('createAccountPrompt')}
+            </Text>
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => router.push(EAppRoute.CREATE_ACCOUNT)}
+            >
+              <Text style={styles.createAccountLink}>
+                {t('createAccount')}
+              </Text>
+            </Pressable>
+          </View>
+
           {/*
             Reads the credentials out of `MOCK_USERS` rather than repeating them
             in the copy, so the fixture stays the single source of truth — and
@@ -230,6 +247,21 @@ const createStyles = (colors: TColorTokens) =>
       fontSize: 16,
       fontWeight: '800',
       color: colors.onAccent,
+    },
+    createAccountRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 6,
+      marginTop: 4,
+    },
+    createAccountPrompt: {
+      fontSize: 14,
+      color: colors.textMuted,
+    },
+    createAccountLink: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.accent,
     },
     hint: {
       fontSize: 13,

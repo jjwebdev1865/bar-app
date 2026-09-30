@@ -32,6 +32,8 @@ export enum EAppRoute {
    * it from the menu.
    */
   LOGIN = '/login',
+  /** Same reasoning as `LOGIN` — reachable while signed out, hidden from the menu. */
+  CREATE_ACCOUNT = '/create-account',
 }
 
 /** File-route names, matching the filenames in `app/`. */
@@ -42,6 +44,7 @@ export enum EDrawerScreen {
   LOCATIONS = 'locations',
   SETTINGS = 'settings',
   LOGIN = 'login',
+  CREATE_ACCOUNT = 'create-account',
 }
 
 /**

@@ -170,16 +170,26 @@ function AppDrawer() {
           removes this screen, which is what sends the user to the drawer's
           anchor route (Home) — no `router` call at the submit site.
 
-          The three options survive the guard because being unreachable from
-          the menu is not the same as being absent: while signed out this is the
-          *only* screen, and it must not offer a hamburger, a menu item or an
-          edge swipe into an app the user has not entered.
+          The three options survive the guard on both screens because being
+          unreachable from the menu is not the same as being absent: while
+          signed out these are the *only* screens, and neither must offer a
+          hamburger, a menu item or an edge swipe into an app the user has not
+          entered.
         */}
         <Drawer.Protected guard={!isSignedIn}>
           <Drawer.Screen
             name={EDrawerScreen.LOGIN}
             options={{
               title: t('signIn'),
+              drawerItemStyle: styles.hiddenDrawerItem,
+              headerShown: false,
+              swipeEnabled: false,
+            }}
+          />
+          <Drawer.Screen
+            name={EDrawerScreen.CREATE_ACCOUNT}
+            options={{
+              title: t('createAccount'),
               drawerItemStyle: styles.hiddenDrawerItem,
               headerShown: false,
               swipeEnabled: false,
