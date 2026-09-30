@@ -36,6 +36,8 @@
   "profilePhone": "Teléfono",
   "notAvailable": "N/D",
   "profileHint": "Esto es lo que ven tus contactos. Editar llega después.",
+  "profileAddress": "Dirección",
+  "addAddress": "Añadir dirección",
   "signOutHint": "Cerrar sesión te devuelve a la pantalla de inicio de sesión. Todavía no se guarda nada.",
   "selectGroup": "Grupo",
   "selectLocation": "Ubicación",

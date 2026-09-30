@@ -38,6 +38,18 @@
 - New i18n keys (`navProfile`, `bio`, `profileName`, `profileUsername`,
   `profileEmail`, `profilePhone`, `notAvailable`, `profileHint`) in both
   `en.json` and `es.json`.
+- **2026-09-30 addendum 4**: added an "Address" card below Bio. `TAuthUser`
+  grew an optional `address?: TPostalAddress` (reusing the same shape
+  contacts/locations use, not a bespoke one). No sign-in path sets it, so
+  every account currently sees an "Add address" button instead of a
+  formatted address (`formatAddressLines`). The button has no edit flow yet —
+  pressing it only `console.log`s, as a placeholder until one exists. New
+  i18n keys: `profileAddress`, `addAddress`.
+- **2026-09-30 addendum 5**: `TNamedCredentials` grew an optional
+  `address?: TPostalAddress`, following the same `signIn` → `TAuthUser.address`
+  path as email/phone. Only the `jjiracek` fixture sets one (191 Vine Street,
+  Apt 214, Columbus, Ohio 43215), so that account's Bio screen now shows the
+  formatted address instead of the "Add address" button.
 - Does **not** cover: editing profile fields, an avatar/photo, or any backend
   — this is a display-only screen against the same `MOCK_USERS`/`authStore`
   fixture called out in `src/data/user.ts`.
@@ -53,7 +65,9 @@
 
 ## Follow-on work
 
-- Editing profile fields (name, avatar, email, phone) once there's a backend
-  to persist them to (see `V1_goals.md`).
-- Populating `TAuthUser.email`/`phone` from a real sign-in path once step 04
-  lands, so the Bio card stops always showing "N/A" for both.
+- Editing profile fields (name, avatar, email, phone, address) once there's
+  a backend to persist them to (see `V1_goals.md`).
+- Populating `TAuthUser.email`/`phone`/`address` from a real sign-in path
+  once step 04 lands, so the Bio/Address cards stop always falling back.
+- Wiring the "Add address" button to an actual entry flow once one exists,
+  replacing the placeholder `console.log`.

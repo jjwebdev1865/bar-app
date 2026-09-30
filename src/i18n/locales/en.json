@@ -36,6 +36,8 @@
   "profilePhone": "Phone",
   "notAvailable": "N/A",
   "profileHint": "This is what your contacts see. Editing comes later.",
+  "profileAddress": "Address",
+  "addAddress": "Add address",
   "signOutHint": "Signing out returns you to the login screen. Nothing is saved yet.",
   "selectGroup": "Group",
   "selectLocation": "Location",

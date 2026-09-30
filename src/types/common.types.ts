@@ -79,6 +79,10 @@ export type TContact = TPostalAddress & {
  * `Profile` has a real field to read once real auth (step 04) populates them,
  * rather than the screen inventing its own shape for data that doesn't
  * exist yet.
+ *
+ * `address` is optional for the same reason, and reuses `TPostalAddress`
+ * rather than a bespoke shape — a user's mailing address is the same kind of
+ * data a contact or location holds.
  */
 export type TAuthUser = {
   username: string;
@@ -86,6 +90,7 @@ export type TAuthUser = {
   lastName: string;
   email?: string;
   phone?: string;
+  address?: TPostalAddress;
 };
 
 /**
@@ -105,15 +110,16 @@ export type TCredentials = {
  * account and everything `CreateAccount` adds to `authStore.createdUsers` is
  * one of these, so `signIn` never has to fall back to a nameless session.
  *
- * `email`/`phone` are optional: `CreateAccount` doesn't collect either yet,
- * only the `MOCK_USERS` fixtures set them, and both flow into
- * `TAuthUser.email`/`phone` on sign-in.
+ * `email`/`phone`/`address` are optional: `CreateAccount` doesn't collect any
+ * of them yet, only the `MOCK_USERS` fixtures set them, and all three flow
+ * into the matching `TAuthUser` field on sign-in.
  */
 export type TNamedCredentials = TCredentials & {
   firstName: string;
   lastName: string;
   email?: string;
   phone?: string;
+  address?: TPostalAddress;
 };
 
 export type TGroup = {

@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { useSettings } from '../../context/SettingsContext';
 import { useAuthStore } from '../../stores/authStore';
+import { formatAddressLines } from '../../utils/addressFormat';
 import { formatPhoneDisplay } from '../../utils/phoneFormat';
 import type { TColorTokens } from '../../types';
 
@@ -21,10 +22,20 @@ export default function ProfileScreen() {
   // falls back to "N/A" here.
   const email = useAuthStore((state) => state.user?.email ?? '');
   const phone = useAuthStore((state) => state.user?.phone ?? '');
+  // Same reasoning as email/phone — no sign-in path sets this yet, so the
+  // "add address" button below is what every account sees today.
+  const address = useAuthStore((state) => state.user?.address);
   const fullName = `${firstName} ${lastName}`.trim();
   const notAvailable = t('notAvailable');
   const emailDisplay = email || notAvailable;
   const phoneDisplay = phone ? formatPhoneDisplay(phone) : notAvailable;
+  const addressDisplay = address ? formatAddressLines(address) : '';
+
+  function handleAddAddressPress() {
+    // Placeholder: no edit flow exists yet, so pressing this just proves the
+    // button is wired up until one does.
+    console.log('[Profile] Add address pressed');
+  }
 
   return (
     <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.screen}>
@@ -50,6 +61,24 @@ export default function ProfileScreen() {
           <Text style={styles.rowValue}>{phoneDisplay}</Text>
         </View>
         <Text style={styles.hint}>{t('profileHint')}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>{t('profileAddress')}</Text>
+        {addressDisplay ? (
+          <Text style={styles.addressText}>{addressDisplay}</Text>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleAddAddressPress}
+            style={({ pressed }) => [
+              styles.addAddressButton,
+              pressed && styles.addAddressButtonPressed,
+            ]}
+          >
+            <Text style={styles.addAddressLabel}>{t('addAddress')}</Text>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -98,5 +127,29 @@ const createStyles = (colors: TColorTokens) =>
       fontSize: 13,
       lineHeight: 18,
       color: colors.textMuted,
+    },
+    addressText: {
+      fontSize: 16,
+      fontWeight: '600',
+      lineHeight: 22,
+      color: colors.text,
+    },
+    addAddressButton: {
+      minHeight: 44,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      borderColor: colors.accent,
+      backgroundColor: colors.background,
+    },
+    addAddressButtonPressed: {
+      opacity: 0.8,
+    },
+    addAddressLabel: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.accent,
     },
   });

@@ -27,6 +27,13 @@ export const MOCK_USERS: TNamedCredentials[] = [
     lastName: 'Jiracek',
     email: 'jim.jiracek2@gmail.com',
     phone: '5152501444',
+    address: {
+      addressLine1: '191 Vine Street',
+      addressLine2: 'Apt 214',
+      city: 'Columbus',
+      state: 'Ohio',
+      zip: '43215',
+    },
   },
   {
     username: 'jjiracekSlalom',

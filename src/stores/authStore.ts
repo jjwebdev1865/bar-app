@@ -90,6 +90,7 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
         lastName: match.lastName,
         email: match.email,
         phone: match.phone,
+        address: match.address,
       },
     });
     return true;
