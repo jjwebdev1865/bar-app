@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import { MOCK_USERS } from '../data/user';
-import type { TAuthUser, TCredentials } from '../types';
+import type { TAuthUser, TCredentials, TNamedCredentials } from '../types';
 
 interface IAuthStore {
   user: TAuthUser | null;
@@ -10,11 +10,11 @@ interface IAuthStore {
    * here rather than pushed into `MOCK_USERS` — that array is a bundled
    * fixture, not something a running app can write back to.
    */
-  createdUsers: TCredentials[];
+  createdUsers: TNamedCredentials[];
   /** True when the credentials matched and `user` was set. */
   signIn: (credentials: TCredentials) => boolean;
   /** True when the username was free and the account was created + signed in. */
-  signUp: (credentials: TCredentials) => boolean;
+  signUp: (details: TNamedCredentials) => boolean;
   signOut: () => void;
 }
 
@@ -83,10 +83,16 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
     }
 
     // `user` holds no password. What the form collected stops here.
-    set({ user: { username } });
+    set({
+      user: {
+        username,
+        firstName: match.firstName,
+        lastName: match.lastName,
+      },
+    });
     return true;
   },
-  signUp: ({ username, password }) => {
+  signUp: ({ username, password, firstName, lastName }) => {
     // Unlike `signIn`, a taken username *is* safe to name specifically — the
     // person submitting the form is choosing it, not guessing at someone
     // else's, so there is nothing to enumerate.
@@ -98,8 +104,11 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
     }
 
     set((state) => ({
-      createdUsers: [...state.createdUsers, { username, password }],
-      user: { username },
+      createdUsers: [
+        ...state.createdUsers,
+        { username, password, firstName, lastName },
+      ],
+      user: { username, firstName, lastName },
     }));
     return true;
   },

@@ -67,14 +67,17 @@ export type TContact = TPostalAddress & {
 /**
  * The signed-in user.
  *
- * Only the username exists because that is the only credential the login form
- * collects and nothing verifies it yet — there is no backend to return an id,
- * a display name or a token. This is the shape that grows when step 04 lands,
- * and `TContact` is deliberately *not* reused: a contact is somebody in your
+ * `firstName`/`lastName` are required here because every account behind
+ * `signIn`/`signUp` — the `MOCK_USERS` fixtures and anything added through
+ * `CreateAccount` — is a `TNamedCredentials`, so there is no path that signs a
+ * session in without a name to attach. Never holds a password: `TContact` is
+ * deliberately *not* reused here either — a contact is somebody in your
  * address book, not the account holding the session.
  */
 export type TAuthUser = {
   username: string;
+  firstName: string;
+  lastName: string;
 };
 
 /**
@@ -87,6 +90,16 @@ export type TAuthUser = {
 export type TCredentials = {
   username: string;
   password: string;
+};
+
+/**
+ * A `TCredentials` pair plus the name behind it — every `MOCK_USERS` fixture
+ * account and everything `CreateAccount` adds to `authStore.createdUsers` is
+ * one of these, so `signIn` never has to fall back to a nameless session.
+ */
+export type TNamedCredentials = TCredentials & {
+  firstName: string;
+  lastName: string;
 };
 
 export type TGroup = {

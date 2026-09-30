@@ -6,10 +6,15 @@ import { msg } from './messages';
 const PASSWORD_COMPLEXITY = /^(?=.*[A-Za-z])(?=.*\d).+$/;
 
 /**
- * Credentials for the `CreateAccount` screen.
+ * Details for the `CreateAccount` screen.
  *
- * Two departures from `loginFormSchema`, both because this form is choosing a
- * credential rather than repeating one back:
+ * `firstName`/`lastName` reuse `contactFormSchema`'s rule verbatim (required,
+ * `.trim()`, `firstNameRequired`/`lastNameRequired`) — they're a person's name
+ * here too, not a new kind of field.
+ *
+ * The rest is credentials, and departs from `loginFormSchema` in two ways,
+ * both because this form is choosing a credential rather than repeating one
+ * back:
  *
  * **`password` carries a minimum length and a complexity rule.** Login can't
  * honestly enforce either — a correct legacy password must still work, and a
@@ -28,6 +33,8 @@ const PASSWORD_COMPLEXITY = /^(?=.*[A-Za-z])(?=.*\d).+$/;
  */
 export const registerFormSchema = z
   .object({
+    firstName: z.string().trim().min(1, msg('firstNameRequired')),
+    lastName: z.string().trim().min(1, msg('lastNameRequired')),
     username: z.string().trim().min(1, msg('usernameRequired')),
     password: z
       .string()

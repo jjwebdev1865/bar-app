@@ -25,6 +25,8 @@ import {
 } from '../../validation/registerSchema';
 
 const emptyValues = (): TRegisterFormValues => ({
+  firstName: '',
+  lastName: '',
   username: '',
   password: '',
   confirmPassword: '',
@@ -63,6 +65,8 @@ export default function CreateAccountScreen() {
     // field itself — the person is choosing it, not guessing at someone
     // else's account.
     const accepted = signUp({
+      firstName: values.firstName,
+      lastName: values.lastName,
       username: values.username,
       password: values.password,
     });
@@ -91,6 +95,26 @@ export default function CreateAccountScreen() {
             <Text style={styles.brand}>{t('appName')}</Text>
             <Text style={styles.title}>{t('createAccount')}</Text>
           </View>
+
+          <FormTextField
+            control={control}
+            name="firstName"
+            label="firstName"
+            autoCapitalize="words"
+            autoComplete="given-name"
+            colors={colors}
+            t={t}
+          />
+
+          <FormTextField
+            control={control}
+            name="lastName"
+            label="lastName"
+            autoCapitalize="words"
+            autoComplete="family-name"
+            colors={colors}
+            t={t}
+          />
 
           <FormTextField
             control={control}

@@ -1,4 +1,4 @@
-import type { TCredentials } from '../types';
+import type { TNamedCredentials } from '../types';
 
 /**
  * The accounts that can sign in — the only seed data left in `src/data`, since
@@ -13,12 +13,29 @@ import type { TCredentials } from '../types';
  * so the two disappear together.
  *
  * Multiple entries exist so more than one signed-in identity can be exercised
- * on the same device. The domain stores (contacts/groups/locations) are not
- * yet namespaced per account — see `authStore`'s doc comment — so every one of
- * these still shares the same persisted data until that follow-up lands.
+ * on the same device — the same person across three consulting identities,
+ * which is why every entry shares one name. The domain stores
+ * (contacts/groups/locations) are not yet namespaced per account — see
+ * `authStore`'s doc comment — so every one of these still shares the same
+ * persisted data until that follow-up lands.
  */
-export const MOCK_USERS: TCredentials[] = [
-  { username: 'jjiracek', password: 'Password1!' },
-  { username: 'jjiracekSlalom', password: 'Password1!' },
-  { username: 'jjiracekArcos', password: 'Password1!' },
+export const MOCK_USERS: TNamedCredentials[] = [
+  {
+    username: 'jjiracek',
+    password: 'Password1!',
+    firstName: 'Jim',
+    lastName: 'Jiracek',
+  },
+  {
+    username: 'jjiracekSlalom',
+    password: 'Password1!',
+    firstName: 'James',
+    lastName: 'Jiracek',
+  },
+  {
+    username: 'jjiracekArcos',
+    password: 'Password1!',
+    firstName: 'Jimbo',
+    lastName: 'Jiracek',
+  },
 ];

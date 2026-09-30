@@ -163,6 +163,60 @@ surfacing four inline errors at once the moment the button is pressed.
   `registerFormSchema` — the button can go enabled on a username the account
   list will still reject at submit time, same as before this change.
 
+## Update (2026-09-30, same day): first name / last name
+
+`CreateAccount` now collects `firstName` and `lastName`, rendered first — above
+`username` — since they're the fields describing who the account belongs to
+rather than the credential itself.
+
+- `registerFormSchema` gained `firstName`/`lastName`, both required and
+  `.trim()`ed, reusing `contactFormSchema`'s exact rule and message keys
+  (`firstNameRequired`/`lastNameRequired`) rather than inventing new ones — a
+  name is a name regardless of which form collects it. No new i18n keys were
+  needed.
+- The two fields use `autoComplete="given-name"` / `"family-name"` and
+  `autoCapitalize="words"`, matching `CreateContact`'s convention for the same
+  pair.
+- **`TAuthUser`** (`common.types.ts`) gained optional `firstName?`/`lastName?`.
+  Optional, not required, because a `MOCK_USERS` fixture sign-in still has no
+  name to supply — only a `CreateAccount` signup can set them.
+- **`authStore`**: `createdUsers` is now `TCreatedAccount[]`
+  (`TCredentials & { firstName; lastName }`, defined locally in the store —
+  it's an implementation detail of what gets held in memory, not a shape
+  anything outside the store constructs). `signUp`'s parameter grew to match,
+  and both the pushed `createdUsers` entry and the `user` it signs in now carry
+  the name.
+- **`signIn` also restores the name** when the matched account is a
+  `TCreatedAccount` (checked with a `hasName` type guard), so a created account
+  that signs out and back in keeps its name rather than losing it the way a
+  `MOCK_USERS` sign-in always has to.
+- The name is collected and stored, not merely validated and discarded — no
+  screen renders it yet (a follow-on, not part of this change).
+
+## Update (2026-09-30, same day): names on the `MOCK_USERS` fixtures too
+
+The prior update left `TAuthUser.firstName`/`lastName` optional because a
+`MOCK_USERS` sign-in had no name to supply. That gap is closed instead of kept:
+all three `MOCK_USERS` entries (`jjiracek`, `jjiracekSlalom`, `jjiracekArcos` —
+the same person's three consulting identities) now carry `firstName: 'James'`,
+`lastName: 'Jiracek'`.
+
+This let the shapes simplify rather than stay patched:
+
+- The store-local `TCreatedAccount` type is gone. `TCredentials & { firstName;
+  lastName }` is now `TNamedCredentials`, exported from `common.types.ts`
+  instead of defined inside `authStore.ts` — it's no longer only a
+  `createdUsers` implementation detail once `MOCK_USERS` is typed with it too,
+  so it belongs with the other shared types.
+- `MOCK_USERS` (`src/data/user.ts`) is now `TNamedCredentials[]`, not
+  `TCredentials[]`.
+- **`TAuthUser.firstName`/`lastName` are required**, not optional — every
+  account behind `signIn`/`signUp` is now a `TNamedCredentials`, so there is no
+  longer a code path that signs in a session with no name to attach.
+- `signIn`'s `hasName` type guard is gone — with `MOCK_USERS` and
+  `createdUsers` the same shape, the matched account always has a name, so
+  `signIn` sets `firstName`/`lastName` unconditionally instead of branching.
+
 ## Follow-on work
 
 - When step 04 lands a real backend, `signUp` (and `signIn`, and
