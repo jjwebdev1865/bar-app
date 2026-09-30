@@ -42,6 +42,12 @@ function DrawerMenu(props: IDrawerMenuProps) {
   const insets = useSafeAreaInsets();
   const isSignedIn = useAuthStore((state) => state.user !== null);
   const signOut = useAuthStore((state) => state.signOut);
+  // Profile and Settings are hidden from DrawerItemList (see their
+  // drawerItemStyle) and rendered here instead, so both stay pinned above
+  // sign-out rather than scrolling with the rest of the menu.
+  const focusedRouteName = props.state.routes[props.state.index]?.name;
+  const isProfileFocused = focusedRouteName === EDrawerScreen.PROFILE;
+  const isSettingsFocused = focusedRouteName === EDrawerScreen.SETTINGS;
 
   function handleSignOut() {
     // Closed first: signing out swaps the drawer's screens for the login route,
@@ -50,6 +56,14 @@ function DrawerMenu(props: IDrawerMenuProps) {
     // itself a navigation action the drawer would close for.
     props.navigation.closeDrawer();
     signOut();
+  }
+
+  function handleProfilePress() {
+    props.navigation.navigate(EDrawerScreen.PROFILE);
+  }
+
+  function handleSettingsPress() {
+    props.navigation.navigate(EDrawerScreen.SETTINGS);
   }
 
   return (
@@ -64,21 +78,63 @@ function DrawerMenu(props: IDrawerMenuProps) {
       {/*
         This component still renders while signed out, when login is the only
         screen. The drawer is unreachable there — no toggle, no swipe — but a
-        sign-out row with nobody to sign out is nonsense either way.
+        profile/settings/sign-out footer with nothing to show is nonsense
+        either way.
       */}
       {isSignedIn ? (
-        <View style={[styles.drawerFooter, getDrawerFooterStyle(insets.bottom)]}>
+        <>
+          {/* Siblings above the bordered footer, not inside it — profile and
+              settings are pinned to the bottom of the drawer but aren't
+              sign-out actions. */}
           <Pressable
             accessibilityRole="button"
-            onPress={handleSignOut}
+            onPress={handleProfilePress}
             style={({ pressed }) => [
-              styles.signOutItem,
-              pressed && styles.signOutItemPressed,
+              styles.pinnedItem,
+              isProfileFocused && styles.pinnedItemActive,
+              pressed && styles.pinnedItemPressed,
             ]}
           >
-            <Text style={styles.signOutLabel}>{t('signOut')}</Text>
+            <Text
+              style={[
+                styles.pinnedItemLabel,
+                isProfileFocused && styles.pinnedItemLabelActive,
+              ]}
+            >
+              {t('navProfile')}
+            </Text>
           </Pressable>
-        </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleSettingsPress}
+            style={({ pressed }) => [
+              styles.pinnedItem,
+              isSettingsFocused && styles.pinnedItemActive,
+              pressed && styles.pinnedItemPressed,
+            ]}
+          >
+            <Text
+              style={[
+                styles.pinnedItemLabel,
+                isSettingsFocused && styles.pinnedItemLabelActive,
+              ]}
+            >
+              {t('navSettings')}
+            </Text>
+          </Pressable>
+          <View style={[styles.drawerFooter, getDrawerFooterStyle(insets.bottom)]}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleSignOut}
+              style={({ pressed }) => [
+                styles.signOutItem,
+                pressed && styles.signOutItemPressed,
+              ]}
+            >
+              <Text style={styles.signOutLabel}>{t('signOut')}</Text>
+            </Pressable>
+          </View>
+        </>
       ) : null}
     </View>
   );
@@ -156,11 +212,32 @@ function AppDrawer() {
               headerShown: false,
             }}
           />
+          {/*
+            Rendered by DrawerMenu's footer instead of DrawerItemList, so it
+            stays pinned above settings/sign-out rather than scrolling with
+            the rest of the menu. Hidden here, not removed — the screen
+            itself is still reachable through navigation.
+          */}
+          <Drawer.Screen
+            name={EDrawerScreen.PROFILE}
+            options={{
+              title: t('navProfile'),
+              drawerLabel: t('navProfile'),
+              drawerItemStyle: styles.hiddenDrawerItem,
+            }}
+          />
+          {/*
+            Rendered by DrawerMenu's footer instead of DrawerItemList, so it
+            stays pinned above sign-out rather than scrolling with the rest
+            of the menu. Hidden here, not removed — the screen itself is
+            still reachable through navigation.
+          */}
           <Drawer.Screen
             name={EDrawerScreen.SETTINGS}
             options={{
               title: t('navSettings'),
               drawerLabel: t('navSettings'),
+              drawerItemStyle: styles.hiddenDrawerItem,
             }}
           />
         </Drawer.Protected>
@@ -262,6 +339,33 @@ const createStyles = (colors: TColorTokens) =>
       fontSize: 16,
       fontWeight: '700',
       color: colors.danger,
+    },
+    // Mirrors the DrawerItem look-and-feel (active tint/background) so it
+    // reads as part of the menu despite living outside DrawerItemList.
+    // Horizontal margin matches drawerFooter's own paddingHorizontal, since
+    // this row is a sibling of the footer rather than a child of it. Shared
+    // by both the profile and settings rows.
+    pinnedItem: {
+      minHeight: 48,
+      borderRadius: 8,
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      marginHorizontal: 10,
+      marginBottom: 4,
+    },
+    pinnedItemActive: {
+      backgroundColor: colors.accent,
+    },
+    pinnedItemPressed: {
+      opacity: 0.7,
+    },
+    pinnedItemLabel: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.accentMuted,
+    },
+    pinnedItemLabelActive: {
+      color: colors.onAccent,
     },
     brand: {
       fontSize: 22,

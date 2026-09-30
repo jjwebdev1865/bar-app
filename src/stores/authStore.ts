@@ -88,6 +88,8 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
         username,
         firstName: match.firstName,
         lastName: match.lastName,
+        email: match.email,
+        phone: match.phone,
       },
     });
     return true;

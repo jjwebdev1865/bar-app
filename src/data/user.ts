@@ -25,17 +25,21 @@ export const MOCK_USERS: TNamedCredentials[] = [
     password: 'Password1!',
     firstName: 'Jim',
     lastName: 'Jiracek',
+    email: 'jim.jiracek2@gmail.com',
+    phone: '5152501444',
   },
   {
     username: 'jjiracekSlalom',
     password: 'Password1!',
     firstName: 'James',
     lastName: 'Jiracek',
+    email: 'james.jiracek@slalom.com',
   },
   {
     username: 'jjiracekArcos',
     password: 'Password1!',
     firstName: 'Jimbo',
     lastName: 'Jiracek',
+    email: 'jjiracek@arcos-inc.com',
   },
 ];

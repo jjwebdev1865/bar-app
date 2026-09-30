@@ -25,6 +25,7 @@ export enum EAppRoute {
   CONTACTS = '/contacts',
   GROUPS = '/groups',
   LOCATIONS = '/locations',
+  PROFILE = '/profile',
   SETTINGS = '/settings',
   /**
    * Belongs here rather than in `ENestedRoute`: `app/login.tsx` sits directly
@@ -42,6 +43,7 @@ export enum EDrawerScreen {
   CONTACTS = 'contacts',
   GROUPS = 'groups',
   LOCATIONS = 'locations',
+  PROFILE = 'profile',
   SETTINGS = 'settings',
   LOGIN = 'login',
   CREATE_ACCOUNT = 'create-account',

@@ -73,11 +73,19 @@ export type TContact = TPostalAddress & {
  * session in without a name to attach. Never holds a password: `TContact` is
  * deliberately *not* reused here either — a contact is somebody in your
  * address book, not the account holding the session.
+ *
+ * `email`/`phone` are optional and currently always unset — no sign-in path
+ * (`MOCK_USERS`, `CreateAccount`) collects either yet. They exist here so
+ * `Profile` has a real field to read once real auth (step 04) populates them,
+ * rather than the screen inventing its own shape for data that doesn't
+ * exist yet.
  */
 export type TAuthUser = {
   username: string;
   firstName: string;
   lastName: string;
+  email?: string;
+  phone?: string;
 };
 
 /**
@@ -96,10 +104,16 @@ export type TCredentials = {
  * A `TCredentials` pair plus the name behind it — every `MOCK_USERS` fixture
  * account and everything `CreateAccount` adds to `authStore.createdUsers` is
  * one of these, so `signIn` never has to fall back to a nameless session.
+ *
+ * `email`/`phone` are optional: `CreateAccount` doesn't collect either yet,
+ * only the `MOCK_USERS` fixtures set them, and both flow into
+ * `TAuthUser.email`/`phone` on sign-in.
  */
 export type TNamedCredentials = TCredentials & {
   firstName: string;
   lastName: string;
+  email?: string;
+  phone?: string;
 };
 
 export type TGroup = {
