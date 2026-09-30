@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 
 import { FormTextField } from '../../components/common';
 import { useSettings } from '../../context/SettingsContext';
-import { MOCK_USER } from '../../data/user';
+import { MOCK_USERS } from '../../data/user';
 import { useAuthStore } from '../../stores/authStore';
 import type { TColorTokens } from '../../types';
 import { msg, translateFieldError } from '../../validation/messages';
@@ -70,7 +70,7 @@ export default function LoginScreen() {
     clearErrors('root');
 
     // TODO (see `src/features/mvp/04_event_creation_api.md`): exchange these
-    // for a real session. `signIn` only compares against `MOCK_USER`.
+    // for a real session. `signIn` only compares against `MOCK_USERS`.
     //
     // Logged without the password — not its value and not its length. A
     // throwaway log in a stub is how a credential reaches a device log.
@@ -151,14 +151,17 @@ export default function LoginScreen() {
           </Pressable>
 
           {/*
-            Reads the credentials out of `MOCK_USER` rather than repeating them
+            Reads the credentials out of `MOCK_USERS` rather than repeating them
             in the copy, so the fixture stays the single source of truth — and
-            so this line dies with it when real accounts land.
+            so this line dies with it when real accounts land. Every entry
+            shares one password, so only the usernames need joining.
           */}
           <Text style={styles.hint}>
             {t('signInHint', {
-              username: MOCK_USER.username,
-              password: MOCK_USER.password,
+              usernames: MOCK_USERS.map((account) => account.username).join(
+                ', ',
+              ),
+              password: MOCK_USERS[0].password,
             })}
           </Text>
         </ScrollView>

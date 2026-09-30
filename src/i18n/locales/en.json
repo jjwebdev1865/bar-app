@@ -47,7 +47,7 @@
   "state": "State",
   "zip": "ZIP code",
   "signIn": "Sign in",
-  "signInHint": "Demo account: {{username}} / {{password}}. Nothing is connected yet.",
+  "signInHint": "Demo accounts: {{usernames}} / {{password}}. Nothing is connected yet.",
   "favoriteBar": "Favorite bar",
   "none": "None",
   "editContact": "Edit contact",

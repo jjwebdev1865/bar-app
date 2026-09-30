@@ -22,7 +22,7 @@ React Native 0.86, zustand 5 for shared state, i18next for localization
   `src/stores/*` and keep only UI state (open modal, selected row) in `useState`
 - `src/components/_MyContacts`, `_MyGroups`, `_MyLocations`, `common` —
   create/detail modals and shared UI (Dropdown, CreateModal, CreateFooter)
-- `src/data/user.ts` — the one hardcoded login credential pair (`MOCK_USER`).
+- `src/data/user.ts` — the hardcoded login credential pairs (`MOCK_USERS`).
   The contact/group/location mocks are gone: the domain stores start empty so
   everything on screen is something the signed-in user created
 - `src/theme/theme.ts`, `src/i18n/` — theming and localization resources

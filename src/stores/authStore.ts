@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { MOCK_USER } from '../data/user';
+import { MOCK_USERS } from '../data/user';
 import type { TAuthUser, TCredentials } from '../types';
 
 interface IAuthStore {
@@ -22,12 +22,12 @@ interface IAuthStore {
  * **Starts `null`, so the app opens on the login screen.** This store is not
  * persisted — a reload signs the user out, while the domain stores (contacts,
  * groups, locations) now hydrate from AsyncStorage and keep their data. That
- * asymmetry is deliberate: a session behind a `MOCK_USER` `===` check is not
+ * asymmetry is deliberate: a session behind a `MOCK_USERS` `===` check is not
  * something to write to disk and trust on the next launch. Persisting the
  * session is part of real auth (step 04), not of saving the user's data.
  *
- * **`signIn` checks against `MOCK_USER`, and that is all it checks.** A plain
- * `===` against a pair sitting in the bundle is a fixture, not authentication —
+ * **`signIn` checks against `MOCK_USERS`, and that is all it checks.** A plain
+ * `===` against a list sitting in the bundle is a fixture, not authentication —
  * it makes the gate demonstrable, not secure. Real credentials are step 04
  * (`src/features/mvp/04_event_creation_api.md`), and `src/data/user.ts` gets
  * deleted rather than improved when they land.
@@ -44,19 +44,26 @@ interface IAuthStore {
  *
  * No cross-store fan-out either. Unlike contacts → groups → locations, nothing
  * else keys off the user yet — the saved data belongs to the device, not to an
- * account, so `signOut` leaves it on disk and the next sign-in finds it again.
- * With one `MOCK_USER` that is invisible. The moment a second account can exist
- * it is wrong, and this is where it gets fixed: `signOut` grows a clear, and
- * the persist keys grow a per-account namespace (`persistKey` in
- * `persistStorage.ts` is the one place that builds them).
+ * account, so `signOut` leaves it on disk and the next sign-in finds it again,
+ * and every account in `MOCK_USERS` currently sees the same saved contacts,
+ * groups and locations. That is still wrong now that a second (and third)
+ * account exists, and this is where it gets fixed: `signOut` grows a clear,
+ * and the persist keys grow a per-account namespace (`persistKey` in
+ * `persistStorage.ts` is the one place that builds them) — tracked as a
+ * follow-up rather than done here, since it touches every persisted store.
  */
 export const useAuthStore = create<IAuthStore>((set) => ({
   user: null,
   signIn: ({ username, password }) => {
     // Both halves are compared, and the caller is told only that the pair
-    // failed — never which half. Reporting "no such user" separately from
-    // "wrong password" turns a login form into a way to enumerate accounts.
-    if (username !== MOCK_USER.username || password !== MOCK_USER.password) {
+    // failed — never which half, and never which account was closest.
+    // Reporting "no such user" separately from "wrong password" turns a login
+    // form into a way to enumerate accounts.
+    const match = MOCK_USERS.find(
+      (candidate) =>
+        candidate.username === username && candidate.password === password,
+    );
+    if (!match) {
       return false;
     }
 

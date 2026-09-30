@@ -47,7 +47,7 @@
   "state": "Estado",
   "zip": "Código postal",
   "signIn": "Iniciar sesión",
-  "signInHint": "Cuenta de demostración: {{username}} / {{password}}. Todavía no hay nada conectado.",
+  "signInHint": "Cuentas de demostración: {{usernames}} / {{password}}. Todavía no hay nada conectado.",
   "favoriteBar": "Bar favorito",
   "none": "Ninguno",
   "editContact": "Editar contacto",
