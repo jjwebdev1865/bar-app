@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import type { TBarLocation } from '../types';
+import { useAuthStore } from './authStore';
 import { useContactsStore } from './contactsStore';
 import { createPersistStorage, persistKey } from './persistStorage';
 
@@ -41,8 +42,9 @@ const LOCATIONS_PERSIST_VERSION = 1;
  * `TContact.favoriteBarId` holds a location *id*, not a copy, so `updateLocation`
  * needs no fan-out — renaming a bar is picked up the next time a consumer looks
  * the id up. `removeLocation` does need one, or every contact that favored the
- * bar keeps a dangling id. Dependency direction is locations → contacts →
- * groups; don't add a reverse edge.
+ * bar keeps a dangling id. Same reasoning applies to `authStore.user.favoriteBarId`
+ * — the Profile screen's Favorites section. Dependency direction is locations →
+ * contacts → groups, and locations → authStore; don't add a reverse edge.
  */
 export const useLocationsStore = create<ILocationsStore>()(
   persist(
@@ -63,6 +65,7 @@ export const useLocationsStore = create<ILocationsStore>()(
           ),
         }));
         useContactsStore.getState().clearFavoriteBar(locationId);
+        useAuthStore.getState().clearFavoriteBar(locationId);
       },
     }),
     {

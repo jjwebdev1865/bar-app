@@ -16,6 +16,19 @@ interface IAuthStore {
   /** True when the username was free and the account was created + signed in. */
   signUp: (details: TNamedCredentials) => boolean;
   signOut: () => void;
+  /** No-op when nobody is signed in. Set from the Profile screen's Favorites section. */
+  setFavoriteBar: (locationId: string) => void;
+  /**
+   * Drops `favoriteBarId` when it points at a now-deleted location, leaving
+   * `''` (rendered as "none"). Called by `locationsStore.removeLocation`,
+   * never from a screen — the same fan-out rule as
+   * `contactsStore.clearFavoriteBar`.
+   */
+  clearFavoriteBar: (locationId: string) => void;
+  /** No-op when nobody is signed in. Set from the Profile screen's Favorites section. */
+  setFavoriteDrink: (favoriteDrink: string) => void;
+  /** No-op when nobody is signed in. Set from the Profile screen's Favorites section. */
+  setFavoriteShot: (favoriteShot: string) => void;
 }
 
 /**
@@ -91,6 +104,8 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
         email: match.email,
         phone: match.phone,
         address: match.address,
+        favoriteDrink: match.favoriteDrink,
+        favoriteShot: match.favoriteShot,
       },
     });
     return true;
@@ -116,4 +131,18 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
     return true;
   },
   signOut: () => set({ user: null }),
+  setFavoriteBar: (locationId) =>
+    set((state) =>
+      state.user ? { user: { ...state.user, favoriteBarId: locationId } } : state,
+    ),
+  clearFavoriteBar: (locationId) =>
+    set((state) =>
+      state.user?.favoriteBarId === locationId
+        ? { user: { ...state.user, favoriteBarId: '' } }
+        : state,
+    ),
+  setFavoriteDrink: (favoriteDrink) =>
+    set((state) => (state.user ? { user: { ...state.user, favoriteDrink } } : state)),
+  setFavoriteShot: (favoriteShot) =>
+    set((state) => (state.user ? { user: { ...state.user, favoriteShot } } : state)),
 }));

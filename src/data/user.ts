@@ -34,6 +34,8 @@ export const MOCK_USERS: TNamedCredentials[] = [
       state: 'Ohio',
       zip: '43215',
     },
+    favoriteDrink: 'Miller Lite',
+    favoriteShot: 'Fireball',
   },
   {
     username: 'jjiracekSlalom',

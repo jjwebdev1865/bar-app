@@ -83,6 +83,16 @@ export type TContact = TPostalAddress & {
  * `address` is optional for the same reason, and reuses `TPostalAddress`
  * rather than a bespoke shape — a user's mailing address is the same kind of
  * data a contact or location holds.
+ *
+ * `favoriteBarId` is unlike the fields above: no fixture sets it, and it isn't
+ * waiting on real auth. It's set directly from the Profile screen's Favorites
+ * section through `authStore.setFavoriteBar`, pointing at a `TBarLocation.id`
+ * the same way `TContact.favoriteBarId` does. It resets on sign-out/sign-in
+ * like the rest of `user`, since nothing about `authStore` is persisted yet.
+ *
+ * `favoriteDrink`/`favoriteShot` are free-text, same reasoning as
+ * `favoriteBarId` — set directly from the Favorites section's text inputs via
+ * `authStore.setFavoriteDrink`/`setFavoriteShot`, no fixture, no backend yet.
  */
 export type TAuthUser = {
   username: string;
@@ -91,6 +101,9 @@ export type TAuthUser = {
   email?: string;
   phone?: string;
   address?: TPostalAddress;
+  favoriteBarId?: string;
+  favoriteDrink?: string;
+  favoriteShot?: string;
 };
 
 /**
@@ -113,6 +126,11 @@ export type TCredentials = {
  * `email`/`phone`/`address` are optional: `CreateAccount` doesn't collect any
  * of them yet, only the `MOCK_USERS` fixtures set them, and all three flow
  * into the matching `TAuthUser` field on sign-in.
+ *
+ * `favoriteDrink`/`favoriteShot` are likewise optional and flow the same way,
+ * though unlike the fields above they're also writable after sign-in from the
+ * Profile screen's Favorites section (`authStore.setFavoriteDrink`/
+ * `setFavoriteShot`) — a fixture value is just the starting point.
  */
 export type TNamedCredentials = TCredentials & {
   firstName: string;
@@ -120,6 +138,8 @@ export type TNamedCredentials = TCredentials & {
   email?: string;
   phone?: string;
   address?: TPostalAddress;
+  favoriteDrink?: string;
+  favoriteShot?: string;
 };
 
 export type TGroup = {
