@@ -6,6 +6,14 @@ import type { TAuthUser, TCredentials, TNamedCredentials } from '../types';
 interface IAuthStore {
   user: TAuthUser | null;
   /**
+   * True for one render after `signUp` succeeds; Home reads it to redirect
+   * straight on to the Bartender Bot's welcome screen, then clears it via
+   * `clearJustSignedUp`. Not set by `signIn` — only a brand-new account gets
+   * the greeting, not a returning one.
+   */
+  justSignedUp: boolean;
+  clearJustSignedUp: () => void;
+  /**
    * Accounts created through the `CreateAccount` screen this session. Held
    * here rather than pushed into `MOCK_USERS` — that array is a bundled
    * fixture, not something a running app can write back to.
@@ -81,6 +89,8 @@ interface IAuthStore {
  */
 export const useAuthStore = create<IAuthStore>((set, get) => ({
   user: null,
+  justSignedUp: false,
+  clearJustSignedUp: () => set({ justSignedUp: false }),
   createdUsers: [],
   signIn: ({ username, password }) => {
     // Both halves are compared, and the caller is told only that the pair
@@ -127,10 +137,11 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
         { username, password, firstName, lastName },
       ],
       user: { username, firstName, lastName },
+      justSignedUp: true,
     }));
     return true;
   },
-  signOut: () => set({ user: null }),
+  signOut: () => set({ user: null, justSignedUp: false }),
   setFavoriteBar: (locationId) =>
     set((state) =>
       state.user ? { user: { ...state.user, favoriteBarId: locationId } } : state,

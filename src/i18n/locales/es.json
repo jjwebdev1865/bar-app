@@ -133,5 +133,8 @@
   "hidePassword": "Ocultar",
   "bartenderBot": "Bartender Bot",
   "openBartenderBot": "Abrir Bartender Bot",
-  "bartenderBotHello": "Hola Mundo"
+  "bartenderBotHello": "Hola Mundo",
+  "bartenderBotWelcomeGreeting": "\u00a1Hola! Bienvenido a The Bar Signal \ud83c\udf7b",
+  "bartenderBotWelcomeIntro": "Soy tu Bartender Bot \u2014 pronto te contar\u00e9 m\u00e1s sobre este proyecto. Por ahora, vamos a completar tu perfil.",
+  "bartenderBotGoToProfile": "Ir al perfil"
 }

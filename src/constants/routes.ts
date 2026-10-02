@@ -85,6 +85,14 @@ export enum ESectionScreen {
 export const RETURN_TO_PARAM = 'returnTo';
 
 /**
+ * Query param marking a `/bartender-bot` push as the one-time new-account
+ * greeting rather than the plain "Hello World" the floating button opens.
+ * `CreateAccount` sets it; the screen reads it to switch copy and show the
+ * "Go to Profile" button.
+ */
+export const BARTENDER_BOT_WELCOME_PARAM = 'welcome';
+
+/**
  * Narrows a raw `returnTo` param to a known route. Search params are strings
  * off a URL and can say anything, so an unrecognised value is discarded rather
  * than navigated to.
