@@ -130,5 +130,8 @@
   "passwordWeak": "Password must be at least 8 characters and include a letter and a number",
   "usernameTaken": "That username is already taken",
   "showPassword": "Show",
-  "hidePassword": "Hide"
+  "hidePassword": "Hide",
+  "bartenderBot": "Bartender Bot",
+  "openBartenderBot": "Open Bartender Bot",
+  "bartenderBotHello": "Hello World"
 }

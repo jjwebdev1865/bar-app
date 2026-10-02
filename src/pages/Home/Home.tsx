@@ -25,6 +25,7 @@ import {
 import {
   ActiveSignal,
   BarStool,
+  BartenderBotButton,
   CancelSignalModal,
 } from '../../components/_Home';
 
@@ -171,6 +172,10 @@ export default function HomeScreen() {
     );
   }
 
+  function openBartenderBot() {
+    router.push(EAppRoute.BARTENDER_BOT);
+  }
+
   function requestCancelSignal() {
     setConfirmCancelVisible(true);
   }
@@ -278,6 +283,12 @@ export default function HomeScreen() {
         onConfirm={confirmCancelSignal}
         colors={colors}
         t={t}
+      />
+
+      <BartenderBotButton
+        onPress={openBartenderBot}
+        label={t('openBartenderBot')}
+        colors={colors}
       />
     </SafeAreaView>
   );

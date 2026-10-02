@@ -35,6 +35,8 @@ export enum EAppRoute {
   LOGIN = '/login',
   /** Same reasoning as `LOGIN` — reachable while signed out, hidden from the menu. */
   CREATE_ACCOUNT = '/create-account',
+  /** Reachable only from Home's floating button, not from the drawer menu. */
+  BARTENDER_BOT = '/bartender-bot',
 }
 
 /** File-route names, matching the filenames in `app/`. */
@@ -47,6 +49,7 @@ export enum EDrawerScreen {
   SETTINGS = 'settings',
   LOGIN = 'login',
   CREATE_ACCOUNT = 'create-account',
+  BARTENDER_BOT = 'bartender-bot',
 }
 
 /**
