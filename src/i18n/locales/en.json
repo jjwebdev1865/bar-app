@@ -137,13 +137,15 @@
   "bartenderBotWelcomeGreeting": "Hello! Welcome to The Bar Signal \ud83c\udf7b",
   "bartenderBotWelcomeIntro": "I'm your Bartender Bot \u2014 I'll tell you more about this project soon. For now, let's get your profile filled out.",
   "bartenderBotAskFavoriteDrink": "What's your favorite drink?",
-  "favoriteDrinkSaved": "Favorite drink saved",
   "bartenderBotAskFavoriteShot": "What's your favorite shot?",
-  "favoriteShotSaved": "Favorite shot saved",
-  "submit": "Submit",
+  "submit": "Send",
   "bartenderBotAskEmail": "Would you like to add an email address?",
-  "emailSaved": "Email saved",
   "bartenderBotAskPhone": "Would you like to add a phone number?",
-  "phoneSaved": "Phone number saved",
-  "skip": "Skip"
+  "skip": "Skip",
+  "chatYouLabel": "You",
+  "bartenderBotTyping": "Bartender Bot is typing",
+  "bartenderBotSkippedAnswer": "Skipped",
+  "bartenderBotFinishing": "Alright, your profile is on its way to being ready! Let me set everything up for you — hold on a second, friend 🍻",
+  "bartenderBotGoHome": "Go to Home",
+  "bartenderBotGoProfile": "Go to Profile"
 }

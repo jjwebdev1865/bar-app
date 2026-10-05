@@ -178,3 +178,117 @@
   since `'shot'` is the last step and has nowhere further to skip *to*.
 - No new i18n keys — both reuse the existing `skip` key.
 
+## Phase 3 ✅ — chat-style transcript
+
+**Date**: 2026-10-05
+
+**Status**: Phase 3 complete.
+
+### Scope
+
+- Replaces the "swap the whole screen per step" questionnaire with a chat
+  transcript: every bot prompt and every user answer (or skip) is now a
+  bubble appended to a scrolling list, with an input bar docked to the
+  bottom instead of a single centered field. Applies to both the welcome
+  questionnaire and the plain floating-button entry point — the latter now
+  renders its `bartenderBotHello` copy as a single bot bubble in the same
+  transcript UI rather than a centered `Text`.
+- New components under `src/components/BartenderBot/` (barrel
+  [index.ts](../../components/BartenderBot/index.ts)):
+  [ChatBubble.tsx](../../components/BartenderBot/ChatBubble.tsx) (one message,
+  left/panel-colored for the bot, right/accent-colored for the user),
+  [TypingIndicator.tsx](../../components/BartenderBot/TypingIndicator.tsx) (a
+  bot-styled "•••" bubble shown while the next question is pending),
+  [ChatTranscript.tsx](../../components/BartenderBot/ChatTranscript.tsx) (a
+  `FlatList` of bubbles that auto-scrolls to the end on every new message or
+  typing-state change), and
+  [ChatComposer.tsx](../../components/BartenderBot/ChatComposer.tsx) (the
+  bottom-docked `TextInput` + Skip/Submit row, wrapped in a
+  `KeyboardAvoidingView` so it clears the keyboard).
+- New shared types in
+  [bartenderBot.types.ts](../../types/bartenderBot.types.ts): `TChatSender`,
+  `TChatMessage`, `TWelcomeStepId` (renamed from the page-local
+  `TWelcomeStep`), and `TWelcomeStepConfig` — exported through the `src/types`
+  barrel per the usual convention.
+- [BartenderBot.tsx](../../pages/BartenderBot/BartenderBot.tsx) was rewritten
+  around this transcript: the four near-identical JSX blocks for
+  email/phone/drink/shot (phases 1–2) collapse into one `stepConfigs` record
+  keyed by `TWelcomeStepId`, each entry holding its prompt key, field label
+  key, keyboard type, optional input formatter, validator, store setter,
+  saved-toast key, and the next step. `ChatComposer` renders generically off
+  whichever step is current rather than branching per field. This is the
+  non-trivial refactor this phase's scope note is for — no behavior changed
+  for any individual question (same validators, same store setters, same
+  toasts), only how the four steps share their rendering.
+- Pacing: advancing to a step shows the typing indicator for a fixed
+  `BOT_TYPING_DELAY_MS` (600ms) before the next bot bubble lands and the
+  composer re-enables for it, so the bot's side of the conversation reads as
+  responses rather than instant screen swaps. The same delay runs after the
+  final step (`'shot'`) completes, before `router.push(EAppRoute.HOME)`, so
+  the last answer bubble isn't ripped away the instant it appears.
+- Skipping a step now appends a `bartenderBotSkippedAnswer` ("Skipped") user
+  bubble before advancing, so the transcript stays a complete record of what
+  happened rather than silently jumping ahead.
+- New i18n keys (`chatYouLabel`, `bartenderBotTyping`,
+  `bartenderBotSkippedAnswer`) in both `en.json` and `es.json` — the first two
+  back each bubble's/typing-indicator's `accessibilityLabel` ("Bartender Bot:
+  …" / "You: …", "Bartender Bot is typing"), reusing the existing
+  `bartenderBot` key for the bot's half of that label.
+
+### Not covered (deferred)
+
+- Any real bot logic/NLP — the transcript is still a fixed four-step
+  questionnaire, just presented as chat.
+- Persisting the transcript across remounts/navigation — it resets the same
+  way the old step state did.
+- Entrance animations beyond the typing-indicator pause, and voice input.
+
+## Update (2026-10-05, same day): drop the per-submission success toast
+
+- Submitting an answer no longer raises a toast (`emailSaved`, `phoneSaved`,
+  `favoriteDrinkSaved`, `favoriteShotSaved`) on top of appending the user's
+  bubble to the transcript — the bubble itself is the confirmation that the
+  answer landed, so the toast was redundant in the chat UI. Skipping a step
+  was already toast-free; submitting now matches it.
+- `TWelcomeStepConfig` dropped its `savedToastKey` field, `BartenderBot.tsx`
+  dropped its `useToastStore`/`showToast` usage, and the four now-unused
+  `*Saved` i18n keys were removed from `en.json` and `es.json` rather than
+  left dangling.
+
+## Update (2026-10-05, same day): Submit button reads "Send"
+
+- The `submit` i18n key's English copy changed from "Submit" to "Send" — a
+  chat composer sends a message, it doesn't submit a form. `es.json` already
+  read "Enviar" ("Send"), so only `en.json` changed.
+
+## Update (2026-10-05, same day): friendly sign-off, lands on Profile again
+
+- `finishWelcome` (reached when the favorite-shot step is submitted *or*
+  skipped) now pushes one more bot bubble — `bartenderBotFinishing` — before
+  navigating anywhere: a friendly "your profile is on its way, hold on a
+  second" line, following the typing-indicator pause the same way every other
+  bot bubble does. A second `BOT_TYPING_DELAY_MS` pause follows the message
+  before the navigation fires, so it has a moment to be read.
+- That navigation now targets `EAppRoute.PROFILE` instead of
+  `EAppRoute.HOME` — this reverses the "land on Home after the shot, not
+  Profile" decision from earlier in phase 2, since the questionnaire now ends
+  with copy that explicitly promises the profile is being finished, which
+  reads oddly if the very next screen isn't Profile.
+- New i18n key (`bartenderBotFinishing`) in both `en.json` and `es.json`.
+
+## Update (2026-10-05, same day): let the user choose Home or Profile
+
+- Replaces the auto-navigate-to-Profile behavior from the update above:
+  once `bartenderBotFinishing` lands, the composer area is replaced by a new
+  [FinishActions.tsx](../../components/BartenderBot/FinishActions.tsx) —
+  two docked buttons, "Go to Home" and "Go to Profile" — instead of
+  `finishWelcome` silently calling `router.push` on a timer. Nothing
+  navigates until the user picks one.
+- `BartenderBotScreen` grew an `isFinished` boolean flipped once the sign-off
+  bubble lands; the render picks between `ChatComposer` (a step is active),
+  `FinishActions` (`isFinished`), or nothing, the same three-way branch
+  shape the step/finished state already implied.
+- New i18n keys (`bartenderBotGoHome`, `bartenderBotGoProfile`) in both
+  `en.json` and `es.json`.
+
+

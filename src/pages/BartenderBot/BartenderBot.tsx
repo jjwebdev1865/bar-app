@@ -1,21 +1,27 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
+import { ChatComposer, ChatTranscript, FinishActions } from '../../components/BartenderBot';
 import { BARTENDER_BOT_WELCOME_PARAM, EAppRoute } from '../../constants/routes';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
 import { useSettings } from '../../context/SettingsContext';
 import { useAuthStore } from '../../stores/authStore';
-import { useToastStore } from '../../stores/toastStore';
-import type { TColorTokens } from '../../types';
-import { formatPhoneInput, phoneDigits, PHONE_DIGIT_COUNT } from '../../utils/phoneFormat';
-
-/** Steps of the welcome questionnaire, asked one at a time, in order. */
-type TWelcomeStep = 'email' | 'phone' | 'drink' | 'shot';
+import type {
+  TChatMessage,
+  TChatSender,
+  TColorTokens,
+  TWelcomeStepConfig,
+  TWelcomeStepId,
+} from '../../types';
+import { formatPhoneInput, PHONE_DIGIT_COUNT, phoneDigits } from '../../utils/phoneFormat';
 
 const EMAIL_SCHEMA = z.email();
+
+/** How long the typing indicator sits before the next bot bubble lands. */
+const BOT_TYPING_DELAY_MS = 600;
 
 export default function BartenderBotScreen() {
   const { colors, t } = useSettings();
@@ -28,249 +34,183 @@ export default function BartenderBotScreen() {
   const setPhone = useAuthStore((state) => state.setPhone);
   const setFavoriteDrink = useAuthStore((state) => state.setFavoriteDrink);
   const setFavoriteShot = useAuthStore((state) => state.setFavoriteShot);
-  const showToast = useToastStore((state) => state.showToast);
-  const [step, setStep] = useState<TWelcomeStep>('email');
-  const [draftEmail, setDraftEmail] = useState('');
-  const [draftPhone, setDraftPhone] = useState('');
-  const [draftDrink, setDraftDrink] = useState('');
-  const [draftShot, setDraftShot] = useState('');
-  const isEmailValid = EMAIL_SCHEMA.safeParse(draftEmail.trim()).success;
-  const isPhoneValid = phoneDigits(draftPhone).length === PHONE_DIGIT_COUNT;
-  const isDrinkValid = draftDrink.trim().length > 0;
-  const isShotValid = draftShot.trim().length > 0;
 
-  function skipEmail() {
-    setStep('phone');
+  const [messages, setMessages] = useState<TChatMessage[]>(() =>
+    isWelcome
+      ? [
+          { id: 'greeting', sender: 'bot', text: t('bartenderBotWelcomeGreeting') },
+          { id: 'intro', sender: 'bot', text: t('bartenderBotWelcomeIntro') },
+        ]
+      : [{ id: 'hello', sender: 'bot', text: t('bartenderBotHello') }],
+  );
+  const [currentStepId, setCurrentStepId] = useState<TWelcomeStepId | null>(null);
+  const [isBotTyping, setIsBotTyping] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [draftValue, setDraftValue] = useState('');
+
+  const nextMessageIndex = useRef(0);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasStartedRef = useRef(false);
+
+  useEffect(
+    () => () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  function pushMessage(sender: TChatSender, text: string) {
+    nextMessageIndex.current += 1;
+    setMessages((previous) => [
+      ...previous,
+      { id: `msg-${nextMessageIndex.current}`, sender, text },
+    ]);
   }
 
-  function submitEmail() {
-    if (!isEmailValid) {
+  // Config-driven so the four questions share one render path instead of one
+  // near-identical JSX block each.
+  const stepConfigs: Record<TWelcomeStepId, TWelcomeStepConfig> = useMemo(
+    () => ({
+      email: {
+        id: 'email',
+        promptKey: 'bartenderBotAskEmail',
+        fieldLabelKey: 'email',
+        keyboardType: 'email-address',
+        autoCapitalize: 'none',
+        isValid: (value) => EMAIL_SCHEMA.safeParse(value.trim()).success,
+        onSubmitValue: (value) => setEmail(value.trim()),
+        next: 'phone',
+      },
+      phone: {
+        id: 'phone',
+        promptKey: 'bartenderBotAskPhone',
+        fieldLabelKey: 'phone',
+        keyboardType: 'phone-pad',
+        format: formatPhoneInput,
+        isValid: (value) => phoneDigits(value).length === PHONE_DIGIT_COUNT,
+        onSubmitValue: (value) => setPhone(value),
+        next: 'drink',
+      },
+      drink: {
+        id: 'drink',
+        promptKey: 'bartenderBotAskFavoriteDrink',
+        fieldLabelKey: 'favoriteDrink',
+        isValid: (value) => value.trim().length > 0,
+        onSubmitValue: (value) => setFavoriteDrink(value.trim()),
+        next: 'shot',
+      },
+      shot: {
+        id: 'shot',
+        promptKey: 'bartenderBotAskFavoriteShot',
+        fieldLabelKey: 'favoriteShot',
+        isValid: (value) => value.trim().length > 0,
+        onSubmitValue: (value) => setFavoriteShot(value.trim()),
+        next: null,
+      },
+    }),
+    [setEmail, setPhone, setFavoriteDrink, setFavoriteShot],
+  );
+
+  function advanceToStep(step: TWelcomeStepId) {
+    setIsBotTyping(true);
+    typingTimeoutRef.current = setTimeout(() => {
+      pushMessage('bot', t(stepConfigs[step].promptKey));
+      setCurrentStepId(step);
+      setDraftValue('');
+      setIsBotTyping(false);
+    }, BOT_TYPING_DELAY_MS);
+  }
+
+  function finishWelcome() {
+    setCurrentStepId(null);
+    setIsBotTyping(true);
+    typingTimeoutRef.current = setTimeout(() => {
+      pushMessage('bot', t('bartenderBotFinishing'));
+      setIsBotTyping(false);
+      setIsFinished(true);
+    }, BOT_TYPING_DELAY_MS);
+  }
+
+  useEffect(() => {
+    if (!isWelcome || hasStartedRef.current) {
       return;
     }
 
-    setEmail(draftEmail.trim());
-    showToast('emailSaved');
-    setStep('phone');
-  }
+    hasStartedRef.current = true;
+    advanceToStep('email');
+    // Runs once, on mount, for the welcome questionnaire only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isWelcome]);
 
-  function skipPhone() {
-    setStep('drink');
-  }
+  const currentStep = currentStepId ? stepConfigs[currentStepId] : null;
 
-  function submitPhone() {
-    if (!isPhoneValid) {
+  function handleSkip() {
+    if (!currentStep) {
       return;
     }
 
-    setPhone(draftPhone);
-    showToast('phoneSaved');
-    setStep('drink');
+    pushMessage('user', t('bartenderBotSkippedAnswer'));
+    if (currentStep.next) {
+      advanceToStep(currentStep.next);
+    } else {
+      finishWelcome();
+    }
   }
 
-  function submitFavoriteDrink() {
-    if (!isDrinkValid) {
+  function handleSubmit() {
+    if (!currentStep || !currentStep.isValid(draftValue)) {
       return;
     }
 
-    setFavoriteDrink(draftDrink.trim());
-    showToast('favoriteDrinkSaved');
-    setStep('shot');
-  }
-
-  function skipFavoriteDrink() {
-    setStep('shot');
-  }
-
-  function submitFavoriteShot() {
-    if (!isShotValid) {
-      return;
+    const value = draftValue.trim();
+    currentStep.onSubmitValue(draftValue);
+    pushMessage('user', value);
+    if (currentStep.next) {
+      advanceToStep(currentStep.next);
+    } else {
+      finishWelcome();
     }
-
-    setFavoriteShot(draftShot.trim());
-    showToast('favoriteShotSaved');
-    router.push(EAppRoute.HOME);
-  }
-
-  function skipFavoriteShot() {
-    router.push(EAppRoute.HOME);
-  }
-
-  if (!isWelcome) {
-    return (
-      <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.container}>
-        <Text style={styles.message}>{t('bartenderBotHello')}</Text>
-      </SafeAreaView>
-    );
   }
 
   return (
     <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.container}>
-      <Text style={styles.message}>{t('bartenderBotWelcomeGreeting')}</Text>
-      <Text style={styles.intro}>{t('bartenderBotWelcomeIntro')}</Text>
-      {step === 'email' ? (
-        <>
-          <Text style={styles.fieldLabel}>{t('bartenderBotAskEmail')}</Text>
-          <TextInput
-            accessibilityLabel={t('email')}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={draftEmail}
-            onChangeText={setDraftEmail}
-            placeholder={t('email')}
-            placeholderTextColor={colors.textMuted}
-            style={styles.textInput}
-          />
-          <View style={styles.buttonRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={skipEmail}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                styles.rowButton,
-                pressed && styles.profileButtonPressed,
-              ]}
-            >
-              <Text style={styles.secondaryButtonLabel}>{t('skip')}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !isEmailValid }}
-              disabled={!isEmailValid}
-              onPress={submitEmail}
-              style={({ pressed }) => [
-                styles.profileButton,
-                styles.rowButton,
-                !isEmailValid && styles.profileButtonDisabled,
-                pressed && isEmailValid && styles.profileButtonPressed,
-              ]}
-            >
-              <Text style={styles.profileButtonLabel}>{t('submit')}</Text>
-            </Pressable>
-          </View>
-        </>
-      ) : step === 'phone' ? (
-        <>
-          <Text style={styles.fieldLabel}>{t('bartenderBotAskPhone')}</Text>
-          <TextInput
-            accessibilityLabel={t('phone')}
-            keyboardType="phone-pad"
-            value={draftPhone}
-            onChangeText={(value) => setDraftPhone(formatPhoneInput(value))}
-            placeholder={t('phone')}
-            placeholderTextColor={colors.textMuted}
-            style={styles.textInput}
-          />
-          <View style={styles.buttonRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={skipPhone}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                styles.rowButton,
-                pressed && styles.profileButtonPressed,
-              ]}
-            >
-              <Text style={styles.secondaryButtonLabel}>{t('skip')}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !isPhoneValid }}
-              disabled={!isPhoneValid}
-              onPress={submitPhone}
-              style={({ pressed }) => [
-                styles.profileButton,
-                styles.rowButton,
-                !isPhoneValid && styles.profileButtonDisabled,
-                pressed && isPhoneValid && styles.profileButtonPressed,
-              ]}
-            >
-              <Text style={styles.profileButtonLabel}>{t('submit')}</Text>
-            </Pressable>
-          </View>
-        </>
-      ) : step === 'drink' ? (
-        <>
-          <Text style={styles.fieldLabel}>
-            {t('bartenderBotAskFavoriteDrink')}
-          </Text>
-          <TextInput
-            accessibilityLabel={t('favoriteDrink')}
-            value={draftDrink}
-            onChangeText={setDraftDrink}
-            placeholder={t('favoriteDrink')}
-            placeholderTextColor={colors.textMuted}
-            style={styles.textInput}
-          />
-          <View style={styles.buttonRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={skipFavoriteDrink}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                styles.rowButton,
-                pressed && styles.profileButtonPressed,
-              ]}
-            >
-              <Text style={styles.secondaryButtonLabel}>{t('skip')}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !isDrinkValid }}
-              disabled={!isDrinkValid}
-              onPress={submitFavoriteDrink}
-              style={({ pressed }) => [
-                styles.profileButton,
-                styles.rowButton,
-                !isDrinkValid && styles.profileButtonDisabled,
-                pressed && isDrinkValid && styles.profileButtonPressed,
-              ]}
-            >
-              <Text style={styles.profileButtonLabel}>{t('submit')}</Text>
-            </Pressable>
-          </View>
-        </>
-      ) : (
-        <>
-          <Text style={styles.fieldLabel}>
-            {t('bartenderBotAskFavoriteShot')}
-          </Text>
-          <TextInput
-            accessibilityLabel={t('favoriteShot')}
-            value={draftShot}
-            onChangeText={setDraftShot}
-            placeholder={t('favoriteShot')}
-            placeholderTextColor={colors.textMuted}
-            style={styles.textInput}
-          />
-          <View style={styles.buttonRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={skipFavoriteShot}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                styles.rowButton,
-                pressed && styles.profileButtonPressed,
-              ]}
-            >
-              <Text style={styles.secondaryButtonLabel}>{t('skip')}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !isShotValid }}
-              disabled={!isShotValid}
-              onPress={submitFavoriteShot}
-              style={({ pressed }) => [
-                styles.profileButton,
-                styles.rowButton,
-                !isShotValid && styles.profileButtonDisabled,
-                pressed && isShotValid && styles.profileButtonPressed,
-              ]}
-            >
-              <Text style={styles.profileButtonLabel}>{t('submit')}</Text>
-            </Pressable>
-          </View>
-        </>
-      )}
+      <View style={styles.transcript}>
+        <ChatTranscript
+          botLabel={t('bartenderBot')}
+          colors={colors}
+          isBotTyping={isBotTyping}
+          messages={messages}
+          typingLabel={t('bartenderBotTyping')}
+          youLabel={t('chatYouLabel')}
+        />
+      </View>
+      {currentStep ? (
+        <ChatComposer
+          autoCapitalize={currentStep.autoCapitalize}
+          colors={colors}
+          fieldLabel={t(currentStep.fieldLabelKey)}
+          isSubmitDisabled={!currentStep.isValid(draftValue)}
+          keyboardType={currentStep.keyboardType}
+          onChangeText={(value) =>
+            setDraftValue(currentStep.format ? currentStep.format(value) : value)
+          }
+          onSkip={handleSkip}
+          onSubmit={handleSubmit}
+          skipLabel={t('skip')}
+          submitLabel={t('submit')}
+          value={draftValue}
+        />
+      ) : isFinished ? (
+        <FinishActions
+          colors={colors}
+          homeLabel={t('bartenderBotGoHome')}
+          onHome={() => router.push(EAppRoute.HOME)}
+          onProfile={() => router.push(EAppRoute.PROFILE)}
+          profileLabel={t('bartenderBotGoProfile')}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -279,93 +219,10 @@ const createStyles = (colors: TColorTokens) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 24,
       backgroundColor: colors.background,
     },
-    message: {
-      fontSize: 24,
-      fontWeight: '800',
-      textAlign: 'center',
-      color: colors.accent,
-    },
-    intro: {
-      marginTop: 16,
-      fontSize: 16,
-      textAlign: 'center',
-      color: colors.text,
-    },
-    fieldLabel: {
-      marginTop: 24,
-      fontSize: 12,
-      fontWeight: '800',
-      letterSpacing: 1.5,
-      textTransform: 'uppercase',
-      textAlign: 'center',
-      color: colors.accent,
-    },
-    textInput: {
-      marginTop: 8,
-      minHeight: 44,
-      width: '100%',
-      borderWidth: 1,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 16,
-      color: colors.text,
-      backgroundColor: colors.inputBackground,
-      borderColor: colors.inputBorder,
-    },
-    profileButton: {
-      minHeight: 48,
-      minWidth: 180,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 20,
-      marginTop: 16,
-      backgroundColor: colors.accent,
-    },
-    profileButtonDisabled: {
-      backgroundColor: colors.accentMuted,
-      opacity: 0.6,
-    },
-    profileButtonPressed: {
-      opacity: 0.8,
-    },
-    profileButtonLabel: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.onAccent,
-    },
-    secondaryButton: {
-      minHeight: 48,
-      minWidth: 180,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 20,
-      marginTop: 12,
-      borderWidth: 1,
-      borderColor: colors.accent,
-      backgroundColor: 'transparent',
-    },
-    secondaryButtonLabel: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.accent,
-    },
-    buttonRow: {
-      flexDirection: 'row',
-      width: '100%',
-      marginTop: 16,
-      gap: 12,
-    },
-    rowButton: {
+    transcript: {
       flex: 1,
-      minWidth: 0,
-      marginTop: 0,
     },
   });
+

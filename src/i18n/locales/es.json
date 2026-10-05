@@ -137,13 +137,15 @@
   "bartenderBotWelcomeGreeting": "\u00a1Hola! Bienvenido a The Bar Signal \ud83c\udf7b",
   "bartenderBotWelcomeIntro": "Soy tu Bartender Bot \u2014 pronto te contar\u00e9 m\u00e1s sobre este proyecto. Por ahora, vamos a completar tu perfil.",
   "bartenderBotAskFavoriteDrink": "\u00bfCu\u00e1l es tu trago favorito?",
-  "favoriteDrinkSaved": "Trago favorito guardado",
   "bartenderBotAskFavoriteShot": "\u00bfCu\u00e1l es tu chupito favorito?",
-  "favoriteShotSaved": "Chupito favorito guardado",
   "submit": "Enviar",
   "bartenderBotAskEmail": "\u00bfTe gustar\u00eda agregar un correo electr\u00f3nico?",
-  "emailSaved": "Correo electr\u00f3nico guardado",
   "bartenderBotAskPhone": "\u00bfTe gustar\u00eda agregar un n\u00famero de tel\u00e9fono?",
-  "phoneSaved": "N\u00famero de tel\u00e9fono guardado",
-  "skip": "Omitir"
+  "skip": "Omitir",
+  "chatYouLabel": "T\u00fa",
+  "bartenderBotTyping": "Bartender Bot est\u00e1 escribiendo",
+  "bartenderBotSkippedAnswer": "Omitido",
+  "bartenderBotFinishing": "\u00a1Listo! Tu perfil est\u00e1 en camino a quedar completo. D\u00e9jame organizarlo todo por ti \u2014 espera un segundo, amigo \ud83c\udf7b",
+  "bartenderBotGoHome": "Ir a Inicio",
+  "bartenderBotGoProfile": "Ir a Perfil"
 }
