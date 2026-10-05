@@ -51,6 +51,10 @@ const createStyles = (colors: TColorTokens) =>
 - Other non-props types/interfaces that are specific to a page go in `src/types/` with a camelCase filename (e.g., `src/types/workoutHistory.types.ts`)
 - Import shared types using `import type { ... }` from the `src/types` barrel
 
+## Layout
+
+- Multiple action buttons presented together (e.g. Skip/Submit, Cancel/Save) go in the same row by default — wrap them in a flex row container. Stack them on their own lines only when explicitly requested.
+
 ## Formatting
 
 - 2-space indentation
