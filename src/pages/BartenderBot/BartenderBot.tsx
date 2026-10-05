@@ -17,6 +17,7 @@ import type {
   TWelcomeStepId,
 } from '../../types';
 import { formatPhoneInput, PHONE_DIGIT_COUNT, phoneDigits } from '../../utils/phoneFormat';
+import { containsProfanity } from '../../utils/profanityFilter';
 
 const EMAIL_SCHEMA = z.email();
 
@@ -81,6 +82,7 @@ export default function BartenderBotScreen() {
         autoCapitalize: 'none',
         isValid: (value) => EMAIL_SCHEMA.safeParse(value.trim()).success,
         onSubmitValue: (value) => setEmail(value.trim()),
+        ackKeys: ['bartenderBotEmailAck1', 'bartenderBotEmailAck2', 'bartenderBotEmailAck3'],
         next: 'phone',
       },
       phone: {
@@ -91,6 +93,7 @@ export default function BartenderBotScreen() {
         format: formatPhoneInput,
         isValid: (value) => phoneDigits(value).length === PHONE_DIGIT_COUNT,
         onSubmitValue: (value) => setPhone(value),
+        ackKeys: ['bartenderBotPhoneAck1', 'bartenderBotPhoneAck2', 'bartenderBotPhoneAck3'],
         next: 'drink',
       },
       drink: {
@@ -99,6 +102,7 @@ export default function BartenderBotScreen() {
         fieldLabelKey: 'favoriteDrink',
         isValid: (value) => value.trim().length > 0,
         onSubmitValue: (value) => setFavoriteDrink(value.trim()),
+        ackKeys: ['bartenderBotDrinkAck1', 'bartenderBotDrinkAck2', 'bartenderBotDrinkAck3'],
         next: 'shot',
       },
       shot: {
@@ -107,6 +111,7 @@ export default function BartenderBotScreen() {
         fieldLabelKey: 'favoriteShot',
         isValid: (value) => value.trim().length > 0,
         onSubmitValue: (value) => setFavoriteShot(value.trim()),
+        ackKeys: ['bartenderBotShotAck1', 'bartenderBotShotAck2', 'bartenderBotShotAck3'],
         next: null,
       },
     }),
@@ -151,12 +156,19 @@ export default function BartenderBotScreen() {
       return;
     }
 
+    const step = currentStep;
     pushMessage('user', t('bartenderBotSkippedAnswer'));
-    if (currentStep.next) {
-      advanceToStep(currentStep.next);
-    } else {
-      finishWelcome();
-    }
+    setCurrentStepId(null);
+    setIsBotTyping(true);
+    typingTimeoutRef.current = setTimeout(() => {
+      pushMessage('bot', t('bartenderBotSkipAck'));
+      setIsBotTyping(false);
+      if (step.next) {
+        advanceToStep(step.next);
+      } else {
+        finishWelcome();
+      }
+    }, BOT_TYPING_DELAY_MS);
   }
 
   function handleSubmit() {
@@ -164,14 +176,35 @@ export default function BartenderBotScreen() {
       return;
     }
 
+    const step = currentStep;
     const value = draftValue.trim();
-    currentStep.onSubmitValue(draftValue);
-    pushMessage('user', value);
-    if (currentStep.next) {
-      advanceToStep(currentStep.next);
-    } else {
-      finishWelcome();
+
+    if (containsProfanity(value)) {
+      pushMessage('user', value);
+      setDraftValue('');
+      setIsBotTyping(true);
+      typingTimeoutRef.current = setTimeout(() => {
+        pushMessage('bot', t('bartenderBotProfanityWarning'));
+        setIsBotTyping(false);
+      }, BOT_TYPING_DELAY_MS);
+      // Stays on the same step — the composer re-enables once the answer is rewritten.
+      return;
     }
+
+    step.onSubmitValue(draftValue);
+    pushMessage('user', value);
+    setCurrentStepId(null);
+    setIsBotTyping(true);
+    typingTimeoutRef.current = setTimeout(() => {
+      const ackKey = step.ackKeys[Math.floor(Math.random() * step.ackKeys.length)];
+      pushMessage('bot', t(ackKey));
+      setIsBotTyping(false);
+      if (step.next) {
+        advanceToStep(step.next);
+      } else {
+        finishWelcome();
+      }
+    }, BOT_TYPING_DELAY_MS);
   }
 
   return (

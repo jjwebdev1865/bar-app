@@ -29,6 +29,8 @@ export type TWelcomeStepConfig = {
   format?: (value: string) => string;
   isValid: (value: string) => boolean;
   onSubmitValue: (value: string) => void;
+  /** Three answer-specific thank-yous; one is picked at random on submit. */
+  ackKeys: readonly [TTranslationKey, TTranslationKey, TTranslationKey];
   /** Next step to advance to, or `null` when this is the last step. */
   next: TWelcomeStepId | null;
 };

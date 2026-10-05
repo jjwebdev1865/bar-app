@@ -291,4 +291,90 @@
 - New i18n keys (`bartenderBotGoHome`, `bartenderBotGoProfile`) in both
   `en.json` and `es.json`.
 
+## Update (2026-10-05, same day): bot acknowledges a skip before moving on
+
+- `handleSkip` previously appended the `bartenderBotSkippedAnswer` ("Skipped")
+  user bubble and advanced straight to the next step (or `finishWelcome`)
+  with no reaction from the bot. It now clears `currentStepId`, runs the same
+  typing-indicator pause every other bot bubble uses, then appends a new
+  `bartenderBotSkipAck` bot bubble before calling `advanceToStep`/
+  `finishWelcome` — so skipping any of the four questions (email, phone,
+  drink, shot) reads as the bot responding rather than silently jumping
+  ahead.
+- New i18n key (`bartenderBotSkipAck`) in both `en.json` and `es.json`, reused
+  across all four steps rather than one key per question.
+
+## Update (2026-10-05, same day): bot thanks the user after a submitted answer
+
+- `handleSubmit` gets the same treatment `handleSkip` just did: it still
+  writes the value (`onSubmitValue`) and appends the user's answer bubble
+  immediately, but no longer advances straight to the next step. It clears
+  `currentStepId`, runs the typing-indicator pause, then appends a new
+  `bartenderBotSubmitAck` bot bubble before calling `advanceToStep`/
+  `finishWelcome` — so a submitted answer gets the same in-character
+  reaction a skipped one already does, for all four questions.
+- New i18n key (`bartenderBotSubmitAck`) in both `en.json` and `es.json`,
+  reused across all four steps.
+
+## Update (2026-10-05, same day): three answer-specific acks per step, picked at random
+
+- The single reused `bartenderBotSubmitAck` key is gone. `TWelcomeStepConfig`
+  (`src/types/bartenderBot.types.ts`) grew `ackKeys: readonly
+  [TTranslationKey, TTranslationKey, TTranslationKey]` — three thank-you
+  variants per step, each worded around what was actually answered (email,
+  phone, favorite drink, favorite shot) rather than one generic line shared
+  by all four.
+- `handleSubmit` now picks one of `step.ackKeys` at random
+  (`Math.floor(Math.random() * step.ackKeys.length)`) before appending it as
+  the bot's acknowledgment bubble, so the same question doesn't always get
+  the same reply across different signups.
+- New i18n keys — `bartenderBotEmailAck1`–`3`, `bartenderBotPhoneAck1`–`3`,
+  `bartenderBotDrinkAck1`–`3`, `bartenderBotShotAck1`–`3` (12 total) — in both
+  `en.json` and `es.json`.
+
+## Update (2026-10-05, same day): profanity filter blocks the step until the answer is rewritten
+
+- New [profanityFilter.ts](../../utils/profanityFilter.ts) utility:
+  `containsProfanity(value)` tokenizes the input and checks each word
+  (lowercased) against a small curated set of common swear words. It's a
+  casual-swearing filter, not a full moderation service — no external
+  dependency, matching how the rest of `src/utils/` stays dependency-free.
+- `handleSubmit` in
+  [BartenderBot.tsx](../../pages/BartenderBot/BartenderBot.tsx) now runs this
+  check before `step.onSubmitValue`/advancing: if the trimmed answer trips
+  the filter, it still appends the user's bubble (so the transcript shows
+  what was typed), clears `draftValue`, and — after the same typing-indicator
+  pause every bot reply uses — appends a new `bartenderBotProfanityWarning`
+  bot bubble asking the user to rephrase. Crucially, `currentStepId` is left
+  untouched: the composer stays on the same step instead of calling
+  `advanceToStep`/`finishWelcome`, and `isSubmitDisabled` goes back to
+  disabled (the cleared draft fails `step.isValid`) until a clean answer is
+  typed and submitted. The flow applies to all four steps (email, phone,
+  drink, shot) uniformly rather than only the two free-text ones.
+- `handleSkip` is unaffected — skipping bypasses the text field entirely, so
+  there's nothing to filter.
+- New i18n key (`bartenderBotProfanityWarning`) in both `en.json` and
+  `es.json`.
+
+### Not covered (deferred)
+
+- The word list is small and English-only; it isn't applied to any
+  language-aware stemming, and the `es.json` warning copy is a translation of
+  the message only, not a Spanish-language filter.
+- No equivalent filter exists anywhere else in the app (e.g. contact/group
+  names) — this update is scoped to the Bartender Bot questionnaire only.
+
+## Update (2026-10-05, same day): sign-off copy explains both buttons
+
+- `bartenderBotFinishing`'s copy changed from a generic "hold on a second"
+  line to one that explicitly names both `FinishActions` buttons — Home to
+  start using the app, Profile to keep setting it up — so the message
+  matches the two choices actually presented instead of implying the bot is
+  doing more work on the user's behalf. No key was added or removed, both
+  `en.json` and `es.json` had their existing `bartenderBotFinishing` string
+  edited in place.
+
+
+
+
 
