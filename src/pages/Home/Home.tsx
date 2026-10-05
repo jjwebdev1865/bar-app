@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -6,6 +6,7 @@ import { useHeaderHeight } from 'expo-router/react-navigation';
 
 import { useSettings } from '../../context/SettingsContext';
 import { HEADER_SCREEN_EDGES } from '../../constants/safeAreaEdges';
+import { useAuthStore } from '../../stores/authStore';
 import { useContactsStore } from '../../stores/contactsStore';
 import { useGroupsStore } from '../../stores/groupsStore';
 import { useLocationsStore } from '../../stores/locationsStore';
@@ -18,6 +19,7 @@ import type {
   TTranslationKey,
 } from '../../types';
 import {
+  BARTENDER_BOT_WELCOME_PARAM,
   EAppRoute,
   ENestedRoute,
   RETURN_TO_PARAM,
@@ -25,6 +27,7 @@ import {
 import {
   ActiveSignal,
   BarStool,
+  BartenderBotButton,
   CancelSignalModal,
 } from '../../components/_Home';
 
@@ -72,6 +75,18 @@ export default function HomeScreen() {
   const contacts = useContactsStore((state) => state.contacts);
   const groups = useGroupsStore((state) => state.groups);
   const locations = useLocationsStore((state) => state.locations);
+  const justSignedUp = useAuthStore((state) => state.justSignedUp);
+  const clearJustSignedUp = useAuthStore((state) => state.clearJustSignedUp);
+
+  useEffect(() => {
+    if (justSignedUp) {
+      clearJustSignedUp();
+      router.push({
+        pathname: EAppRoute.BARTENDER_BOT,
+        params: { [BARTENDER_BOT_WELCOME_PARAM]: '1' },
+      });
+    }
+  }, [justSignedUp, clearJustSignedUp, router]);
 
   // The screen gates setup one missing piece at a time, in the order the
   // pieces depend on each other: a group needs a member, and a signal needs
@@ -169,6 +184,10 @@ export default function HomeScreen() {
       },
       { withAnchor: true },
     );
+  }
+
+  function openBartenderBot() {
+    router.push(EAppRoute.BARTENDER_BOT);
   }
 
   function requestCancelSignal() {
@@ -278,6 +297,12 @@ export default function HomeScreen() {
         onConfirm={confirmCancelSignal}
         colors={colors}
         t={t}
+      />
+
+      <BartenderBotButton
+        onPress={openBartenderBot}
+        label={t('openBartenderBot')}
+        colors={colors}
       />
     </SafeAreaView>
   );

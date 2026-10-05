@@ -240,6 +240,13 @@ function AppDrawer() {
               drawerItemStyle: styles.hiddenDrawerItem,
             }}
           />
+          <Drawer.Screen
+            name={EDrawerScreen.BARTENDER_BOT}
+            options={{
+              title: t('bartenderBot'),
+              drawerItemStyle: styles.hiddenDrawerItem,
+            }}
+          />
         </Drawer.Protected>
 
         {/*

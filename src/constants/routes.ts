@@ -35,6 +35,8 @@ export enum EAppRoute {
   LOGIN = '/login',
   /** Same reasoning as `LOGIN` — reachable while signed out, hidden from the menu. */
   CREATE_ACCOUNT = '/create-account',
+  /** Reachable only from Home's floating button, not from the drawer menu. */
+  BARTENDER_BOT = '/bartender-bot',
 }
 
 /** File-route names, matching the filenames in `app/`. */
@@ -47,6 +49,7 @@ export enum EDrawerScreen {
   SETTINGS = 'settings',
   LOGIN = 'login',
   CREATE_ACCOUNT = 'create-account',
+  BARTENDER_BOT = 'bartender-bot',
 }
 
 /**
@@ -80,6 +83,14 @@ export enum ESectionScreen {
  * section says where the user came from, and `FormScreen` honours it.
  */
 export const RETURN_TO_PARAM = 'returnTo';
+
+/**
+ * Query param marking a `/bartender-bot` push as the one-time new-account
+ * greeting rather than the plain "Hello World" the floating button opens.
+ * `CreateAccount` sets it; the screen reads it to switch copy and show the
+ * "Go to Profile" button.
+ */
+export const BARTENDER_BOT_WELCOME_PARAM = 'welcome';
 
 /**
  * Narrows a raw `returnTo` param to a known route. Search params are strings

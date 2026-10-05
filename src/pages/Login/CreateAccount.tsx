@@ -78,6 +78,10 @@ export default function CreateAccountScreen() {
 
     // No `router` call on success, matching `Login`: `signUp` sets `user`,
     // which flips `AppLayout`'s guards and redirects to Home on its own.
+    // `signUp` also flips `justSignedUp`, which Home reads to push straight
+    // on to the Bartender Bot's welcome screen once it mounts — pushing that
+    // route from here would race the guard swap, since this screen and the
+    // signed-in set it's part of are not both mounted at the same instant.
   }
 
   return (

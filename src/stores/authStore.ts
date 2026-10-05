@@ -5,30 +5,18 @@ import type { TAuthUser, TCredentials, TNamedCredentials } from '../types';
 
 interface IAuthStore {
   user: TAuthUser | null;
-  /**
-   * Accounts created through the `CreateAccount` screen this session. Held
-   * here rather than pushed into `MOCK_USERS` — that array is a bundled
-   * fixture, not something a running app can write back to.
-   */
+  justSignedUp: boolean;
+  clearJustSignedUp: () => void;
   createdUsers: TNamedCredentials[];
-  /** True when the credentials matched and `user` was set. */
   signIn: (credentials: TCredentials) => boolean;
-  /** True when the username was free and the account was created + signed in. */
   signUp: (details: TNamedCredentials) => boolean;
   signOut: () => void;
-  /** No-op when nobody is signed in. Set from the Profile screen's Favorites section. */
   setFavoriteBar: (locationId: string) => void;
-  /**
-   * Drops `favoriteBarId` when it points at a now-deleted location, leaving
-   * `''` (rendered as "none"). Called by `locationsStore.removeLocation`,
-   * never from a screen — the same fan-out rule as
-   * `contactsStore.clearFavoriteBar`.
-   */
   clearFavoriteBar: (locationId: string) => void;
-  /** No-op when nobody is signed in. Set from the Profile screen's Favorites section. */
   setFavoriteDrink: (favoriteDrink: string) => void;
-  /** No-op when nobody is signed in. Set from the Profile screen's Favorites section. */
   setFavoriteShot: (favoriteShot: string) => void;
+  setEmail: (email: string) => void;
+  setPhone: (phone: string) => void;
 }
 
 /**
@@ -81,6 +69,8 @@ interface IAuthStore {
  */
 export const useAuthStore = create<IAuthStore>((set, get) => ({
   user: null,
+  justSignedUp: false,
+  clearJustSignedUp: () => set({ justSignedUp: false }),
   createdUsers: [],
   signIn: ({ username, password }) => {
     // Both halves are compared, and the caller is told only that the pair
@@ -127,10 +117,11 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
         { username, password, firstName, lastName },
       ],
       user: { username, firstName, lastName },
+      justSignedUp: true,
     }));
     return true;
   },
-  signOut: () => set({ user: null }),
+  signOut: () => set({ user: null, justSignedUp: false }),
   setFavoriteBar: (locationId) =>
     set((state) =>
       state.user ? { user: { ...state.user, favoriteBarId: locationId } } : state,
@@ -145,4 +136,8 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
     set((state) => (state.user ? { user: { ...state.user, favoriteDrink } } : state)),
   setFavoriteShot: (favoriteShot) =>
     set((state) => (state.user ? { user: { ...state.user, favoriteShot } } : state)),
+  setEmail: (email) =>
+    set((state) => (state.user ? { user: { ...state.user, email } } : state)),
+  setPhone: (phone) =>
+    set((state) => (state.user ? { user: { ...state.user, phone } } : state)),
 }));

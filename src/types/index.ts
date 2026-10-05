@@ -6,6 +6,7 @@
  * Type-only by design — runtime values (enums, literals, helpers) live in
  * `src/constants/`.
  */
+export type * from './bartenderBot.types';
 export type * from './common.types';
 export type * from './home.types';
 export type * from './myContacts.types';
