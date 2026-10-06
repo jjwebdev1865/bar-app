@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -19,10 +19,15 @@ import { useContactsStore } from '../../stores/contactsStore';
 import { useGroupsStore } from '../../stores/groupsStore';
 import { useLocationsStore } from '../../stores/locationsStore';
 import type {
+  TBarLocation,
   TChatMessage,
   TChatOption,
   TChatSender,
   TColorTokens,
+  TContact,
+  TDomainFieldId,
+  TDomainId,
+  TGroup,
   TMenuOptionId,
   TReturningComposerConfig,
   TReturningStage,
@@ -30,6 +35,7 @@ import type {
   TWelcomeStepConfig,
   TWelcomeStepId,
 } from '../../types';
+import { formatAddressSummary } from '../../utils/addressFormat';
 import { formatContactDisplayName } from '../../utils/contactFormat';
 import { getRandomLocationCoordinates } from '../../utils/locationFormat';
 import { formatPhoneInput, PHONE_DIGIT_COUNT, phoneDigits } from '../../utils/phoneFormat';
@@ -45,14 +51,94 @@ const BOT_TYPING_DELAY_MS = 600;
 const MENU_OPTIONS: { id: TMenuOptionId; labelKey: TTranslationKey }[] = [
   { id: 'profile', labelKey: 'bartenderBotMenuOptionProfile' },
   { id: 'contact', labelKey: 'bartenderBotMenuOptionContact' },
-  { id: 'location', labelKey: 'bartenderBotMenuOptionLocation' },
   { id: 'group', labelKey: 'bartenderBotMenuOptionGroup' },
+  { id: 'location', labelKey: 'bartenderBotMenuOptionLocation' },
 ];
 
 /** Profile fields offered by the "want to edit anything?" menu, same order as the questionnaire. */
 const PROFILE_FIELD_IDS: TWelcomeStepId[] = ['email', 'phone', 'drink', 'shot'];
 
+/** Each `TDomainId`'s Add/Edit/List submenu, in the order the buttons render. */
+const DOMAIN_ACTIONS: { id: 'add' | 'edit' | 'list' | 'back'; labelKey: TTranslationKey }[] = [
+  { id: 'add', labelKey: 'bartenderBotDomainAdd' },
+  { id: 'edit', labelKey: 'bartenderBotDomainEdit' },
+  { id: 'list', labelKey: 'bartenderBotDomainList' },
+  { id: 'back', labelKey: 'bartenderBotBackToMainMenu' },
+];
+
+/** Bot copy for "there's nothing here yet", one per domain. */
+const DOMAIN_EMPTY_KEYS: Record<TDomainId, TTranslationKey> = {
+  contact: 'bartenderBotNoContactsYet',
+  group: 'bartenderBotNoGroupsYet',
+  location: 'bartenderBotNoLocationsYet',
+};
+
+/**
+ * Fields a domain's Edit flow offers to change — every field the info dump
+ * (`buildItemInfoText`) shows for that domain, so nothing visible there reads
+ * as "not found" when typed back in. Contact's Add flow only ever collects
+ * firstName/lastName, but Edit also opens up the fields Add never asked for.
+ */
+const DOMAIN_EDIT_FIELDS: Record<TDomainId, { id: TDomainFieldId; labelKey: TTranslationKey }[]> = {
+  contact: [
+    { id: 'firstName', labelKey: 'firstName' },
+    { id: 'lastName', labelKey: 'lastName' },
+    { id: 'email', labelKey: 'email' },
+    { id: 'phone', labelKey: 'phone' },
+    { id: 'address', labelKey: 'addressLine1' },
+    { id: 'favoriteBar', labelKey: 'favoriteBar' },
+  ],
+  location: [
+    { id: 'name', labelKey: 'locationName' },
+    { id: 'address', labelKey: 'addressLine1' },
+  ],
+  group: [
+    { id: 'name', labelKey: 'groupName' },
+    { id: 'members', labelKey: 'members' },
+  ],
+};
+
+/**
+ * Matches typed text against a list of options by label — exact first
+ * (case-insensitive), then falling back to a `startsWith` prefix so "Bob"
+ * finds "Bob Smith" when he's the only Bob. `'ambiguous'` when more than one
+ * option's label starts with the typed text and none matched exactly.
+ */
+function matchChatOption(options: TChatOption[], query: string): TChatOption | 'ambiguous' | null {
+  const normalizedQuery = query.trim().toLowerCase();
+  const exact = options.find((option) => option.label.toLowerCase() === normalizedQuery);
+  if (exact) {
+    return exact;
+  }
+
+  const startsWith = options.filter((option) => option.label.toLowerCase().startsWith(normalizedQuery));
+  if (startsWith.length === 1) {
+    return startsWith[0];
+  }
+
+  return startsWith.length > 1 ? 'ambiguous' : null;
+}
+
+/**
+ * Drawer screens stay mounted when navigated away from, so without this the
+ * conversation would still be sitting there — mid-questionnaire or deep in the
+ * menu flow — the next time the floating button opens it. Remounting
+ * `BartenderBotChat` on every focus (via a changing `key`) is what resets it,
+ * rather than threading a reset through every piece of chat state by hand.
+ */
 export default function BartenderBotScreen() {
+  const [sessionKey, setSessionKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setSessionKey((key) => key + 1);
+    }, []),
+  );
+
+  return <BartenderBotChat key={sessionKey} />;
+}
+
+function BartenderBotChat() {
   const { colors, t } = useSettings();
   const router = useRouter();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -70,8 +156,13 @@ export default function BartenderBotScreen() {
   const setFavoriteShot = useAuthStore((state) => state.setFavoriteShot);
   const contacts = useContactsStore((state) => state.contacts);
   const addContact = useContactsStore((state) => state.addContact);
+  const updateContact = useContactsStore((state) => state.updateContact);
+  const locations = useLocationsStore((state) => state.locations);
   const addLocation = useLocationsStore((state) => state.addLocation);
+  const updateLocation = useLocationsStore((state) => state.updateLocation);
+  const groups = useGroupsStore((state) => state.groups);
   const addGroup = useGroupsStore((state) => state.addGroup);
+  const updateGroup = useGroupsStore((state) => state.updateGroup);
 
   const [messages, setMessages] = useState<TChatMessage[]>(() =>
     isWelcome
@@ -101,6 +192,11 @@ export default function BartenderBotScreen() {
   const [locationNameDraft, setLocationNameDraft] = useState('');
   const [groupNameDraft, setGroupNameDraft] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  // Contacts/Groups/Locations submenu — which domain is open, which item is
+  // being edited within it, and which of that item's fields is being changed.
+  const [activeDomain, setActiveDomain] = useState<TDomainId | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingDomainFieldId, setEditingDomainFieldId] = useState<TDomainFieldId | null>(null);
 
   const nextMessageIndex = useRef(0);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -277,7 +373,19 @@ export default function BartenderBotScreen() {
     }, BOT_TYPING_DELAY_MS);
   }
 
+  /** Shows each bubble in order, one typing pause apart, then runs `after`. */
+  function showBotMessagesThen(texts: string[], after: () => void) {
+    if (texts.length === 0) {
+      after();
+      return;
+    }
+
+    const [next, ...rest] = texts;
+    showBotMessageThen(next, () => showBotMessagesThen(rest, after));
+  }
+
   function showMenu() {
+    setActiveDomain(null);
     setReturningStage(null);
     showBotMessageThen(t('bartenderBotMenuPrompt'), () => setReturningStage('menu'));
   }
@@ -359,11 +467,42 @@ export default function BartenderBotScreen() {
 
   function startGroupFlow() {
     if (contacts.length === 0) {
-      showBotMessageThen(t('bartenderBotGroupNeedsContacts'), () => showMenu());
+      showBotMessageThen(t('bartenderBotGroupNeedsContacts'), () => showDomainMenu());
       return;
     }
 
     askFreeTextQuestion('bartenderBotAskGroupName', 'groupName');
+  }
+
+  function startDomainAdd(domain: TDomainId) {
+    if (domain === 'contact') {
+      askFreeTextQuestion('bartenderBotAskContactFirstName', 'contactFirstName');
+    } else if (domain === 'location') {
+      askFreeTextQuestion('bartenderBotAskLocationName', 'locationName');
+    } else {
+      startGroupFlow();
+    }
+  }
+
+  /** One row per existing contact/group/location, labelled the same way each domain already is. */
+  function getDomainItemOptions(domain: TDomainId): TChatOption[] {
+    if (domain === 'contact') {
+      return contacts.map((contact) => ({ id: contact.id, label: formatContactDisplayName(contact) }));
+    }
+    if (domain === 'location') {
+      return locations.map((location) => ({ id: location.id, label: location.name }));
+    }
+    return groups.map((group) => ({ id: group.id, label: group.name }));
+  }
+
+  function showDomainMenu() {
+    setReturningStage(null);
+    showBotMessageThen(t('bartenderBotDomainMenuPrompt'), () => setReturningStage('domainMenu'));
+  }
+
+  function showEmptyDomainMenu(domain: TDomainId) {
+    setReturningStage(null);
+    showBotMessageThen(t(DOMAIN_EMPTY_KEYS[domain]), () => setReturningStage('domainEmptyMenu'));
   }
 
   function handleMenuSelect(optionId: string) {
@@ -377,13 +516,269 @@ export default function BartenderBotScreen() {
 
     if (option.id === 'profile') {
       startProfileFlow();
-    } else if (option.id === 'contact') {
-      askFreeTextQuestion('bartenderBotAskContactFirstName', 'contactFirstName');
-    } else if (option.id === 'location') {
-      askFreeTextQuestion('bartenderBotAskLocationName', 'locationName');
-    } else {
-      startGroupFlow();
+      return;
     }
+
+    setActiveDomain(option.id as TDomainId);
+    showDomainMenu();
+  }
+
+  function handleDomainMenuSelect(actionId: string) {
+    const domain = activeDomain;
+    if (!domain) {
+      return;
+    }
+
+    const action = DOMAIN_ACTIONS.find((candidate) => candidate.id === actionId);
+    if (!action) {
+      return;
+    }
+
+    pushMessage('user', t(action.labelKey));
+    setReturningStage(null);
+
+    if (action.id === 'back') {
+      showMenu();
+      return;
+    }
+
+    if (action.id === 'add') {
+      startDomainAdd(domain);
+      return;
+    }
+
+    const items = getDomainItemOptions(domain);
+    if (items.length === 0) {
+      showEmptyDomainMenu(domain);
+      return;
+    }
+
+    if (action.id === 'list') {
+      const names = items.map((item) => item.label).join('\n');
+      showBotMessageThen(t('bartenderBotListResult', { names }), () => showDomainMenu());
+      return;
+    }
+
+    showBotMessageThen(t('bartenderBotEditPickPrompt'), () => setReturningStage('editPick'));
+  }
+
+  function handleEmptyDomainMenuSelect(optionId: string) {
+    const domain = activeDomain;
+    if (!domain) {
+      return;
+    }
+
+    if (optionId === 'addNow') {
+      pushMessage('user', t('bartenderBotAddNow'));
+      setReturningStage(null);
+      startDomainAdd(domain);
+      return;
+    }
+
+    pushMessage('user', t('bartenderBotBackToMainMenu'));
+    showMenu();
+  }
+
+  /** One "Label: value" line per contact field, including the ones Add never collects. */
+  function buildContactInfoText(contact: TContact): string {
+    const lines = [t('bartenderBotEditInfoPrefix', { name: formatContactDisplayName(contact) })];
+    lines.push(`${t('firstName')}: ${contact.firstName}`);
+    lines.push(`${t('lastName')}: ${contact.lastName}`);
+    lines.push(`${t('email')}: ${contact.email || t('none')}`);
+    lines.push(`${t('phone')}: ${contact.phone || t('none')}`);
+    lines.push(`${t('address')}: ${formatAddressSummary(contact) || t('none')}`);
+    const favoriteBarName = contact.favoriteBarId
+      ? locations.find((location) => location.id === contact.favoriteBarId)?.name
+      : '';
+    lines.push(`${t('favoriteBar')}: ${favoriteBarName || t('none')}`);
+    return lines.join('\n');
+  }
+
+  function buildLocationInfoText(location: TBarLocation): string {
+    const lines = [t('bartenderBotEditInfoPrefix', { name: location.name })];
+    lines.push(`${t('locationName')}: ${location.name}`);
+    lines.push(`${t('address')}: ${formatAddressSummary(location) || t('none')}`);
+    return lines.join('\n');
+  }
+
+  function buildGroupInfoText(group: TGroup): string {
+    const lines = [t('bartenderBotEditInfoPrefix', { name: group.name })];
+    lines.push(`${t('groupName')}: ${group.name}`);
+    const memberNames = group.contacts.map((member) => formatContactDisplayName(member)).join(', ');
+    lines.push(`${t('members')}: ${memberNames || t('none')}`);
+    return lines.join('\n');
+  }
+
+  /**
+   * Looks the item up by id and renders it — fine for an unmodified record,
+   * but never for one this same handler just wrote: `contacts`/`locations`/
+   * `groups` are this render's closed-over store snapshot, and a store write
+   * doesn't rewind time to make this render see it. Callers showing a
+   * just-edited item build its text from the merged object they already have
+   * in hand (`buildContactInfoText`/etc. directly) instead of calling this.
+   */
+  function buildItemInfoText(domain: TDomainId, itemId: string): string {
+    if (domain === 'contact') {
+      const contact = contacts.find((candidate) => candidate.id === itemId);
+      return contact ? buildContactInfoText(contact) : '';
+    }
+    if (domain === 'location') {
+      const location = locations.find((candidate) => candidate.id === itemId);
+      return location ? buildLocationInfoText(location) : '';
+    }
+    const group = groups.find((candidate) => candidate.id === itemId);
+    return group ? buildGroupInfoText(group) : '';
+  }
+
+  function showEditFieldMenu() {
+    setEditingDomainFieldId(null);
+    setReturningStage(null);
+    showBotMessageThen(t('bartenderBotEditFieldPrompt'), () => setReturningStage('editFieldMenu'));
+  }
+
+  /** After a field write lands, show the item as it now stands before asking what's next. */
+  function finishFieldEdit(infoText: string) {
+    showBotMessageThen(t('bartenderBotItemUpdated'), () =>
+      showBotMessageThen(infoText, () => showEditFieldMenu()),
+    );
+  }
+
+  function proceedToEditItem(domain: TDomainId, itemId: string) {
+    setEditingItemId(itemId);
+    setReturningStage(null);
+    showBotMessageThen(buildItemInfoText(domain, itemId), () => showEditFieldMenu());
+  }
+
+  function getEditFieldPromptKey(domain: TDomainId, fieldId: TDomainFieldId): TTranslationKey {
+    if (domain === 'contact') {
+      if (fieldId === 'firstName') {
+        return 'bartenderBotAskContactFirstName';
+      }
+      if (fieldId === 'lastName') {
+        return 'bartenderBotAskContactLastName';
+      }
+      if (fieldId === 'email') {
+        return 'bartenderBotAskEmail';
+      }
+      if (fieldId === 'phone') {
+        return 'bartenderBotAskPhone';
+      }
+      if (fieldId === 'address') {
+        return 'bartenderBotAskLocationAddress';
+      }
+      return 'bartenderBotAskFavoriteBar';
+    }
+    if (domain === 'location') {
+      return fieldId === 'name' ? 'bartenderBotAskLocationName' : 'bartenderBotAskLocationAddress';
+    }
+    return 'bartenderBotAskGroupName';
+  }
+
+  /** What `fieldId` currently holds on the item being edited, or `''` when it's blank/unset. */
+  function getCurrentFieldValue(domain: TDomainId, fieldId: TDomainFieldId): string {
+    if (!editingItemId) {
+      return '';
+    }
+
+    if (domain === 'contact') {
+      const contact = contacts.find((candidate) => candidate.id === editingItemId);
+      if (!contact) {
+        return '';
+      }
+      if (fieldId === 'firstName') {
+        return contact.firstName;
+      }
+      if (fieldId === 'lastName') {
+        return contact.lastName;
+      }
+      if (fieldId === 'email') {
+        return contact.email;
+      }
+      if (fieldId === 'phone') {
+        return contact.phone;
+      }
+      if (fieldId === 'address') {
+        return contact.addressLine1;
+      }
+      // fieldId === 'favoriteBar'
+      return contact.favoriteBarId
+        ? (locations.find((location) => location.id === contact.favoriteBarId)?.name ?? '')
+        : '';
+    }
+
+    if (domain === 'location') {
+      const location = locations.find((candidate) => candidate.id === editingItemId);
+      if (!location) {
+        return '';
+      }
+      return fieldId === 'name' ? location.name : location.addressLine1;
+    }
+
+    const group = groups.find((candidate) => candidate.id === editingItemId);
+    return group && fieldId === 'name' ? group.name : '';
+  }
+
+  function startEditField(domain: TDomainId, fieldId: TDomainFieldId) {
+    setEditingDomainFieldId(fieldId);
+    setReturningStage(null);
+
+    const messages: string[] = [];
+    const currentValue = getCurrentFieldValue(domain, fieldId).trim();
+    if (currentValue) {
+      messages.push(t('bartenderBotCurrentFieldValue', { value: currentValue }));
+    }
+
+    // Listing the bars tied to this account — the user picks by typing one of these names.
+    if (domain === 'contact' && fieldId === 'favoriteBar' && locations.length > 0) {
+      messages.push(
+        t('bartenderBotFavoriteBarOptions', {
+          names: locations.map((location) => location.name).join(', '),
+        }),
+      );
+    }
+
+    messages.push(currentValue ? t('bartenderBotAskEditField') : t(getEditFieldPromptKey(domain, fieldId)));
+
+    showBotMessagesThen(messages, () => {
+      setDraftValue('');
+      setReturningStage('editFieldValue');
+    });
+  }
+
+  function startEditMembers() {
+    const group = groups.find((candidate) => candidate.id === editingItemId);
+    setSelectedMemberIds(group ? group.contacts.map((member) => member.id) : []);
+    setReturningStage(null);
+    showBotMessageThen(t('bartenderBotGroupPickMembers'), () => setReturningStage('editMembersSelect'));
+  }
+
+  function applyEditFieldSelection(domain: TDomainId, fieldId: TDomainFieldId | 'done') {
+    if (fieldId === 'done') {
+      setEditingItemId(null);
+      setEditingDomainFieldId(null);
+      showDomainMenu();
+      return;
+    }
+
+    if (domain === 'group' && fieldId === 'members') {
+      startEditMembers();
+    } else {
+      startEditField(domain, fieldId);
+    }
+  }
+
+  function handleEditMembersDone() {
+    const group = groups.find((candidate) => candidate.id === editingItemId);
+    if (!group || selectedMemberIds.length === 0) {
+      return;
+    }
+
+    const members = contacts.filter((contact) => selectedMemberIds.includes(contact.id));
+    pushMessage('user', members.map((member) => formatContactDisplayName(member)).join(', '));
+    const updated = { ...group, contacts: members };
+    updateGroup(updated);
+    setReturningStage(null);
+    finishFieldEdit(buildGroupInfoText(updated));
   }
 
   function handleProfileEditSelect(optionId: string) {
@@ -435,7 +830,7 @@ export default function BartenderBotScreen() {
     });
     showBotMessageThen(
       t('bartenderBotContactAdded', { name: `${newContactFirstName} ${newContactLastName}` }),
-      () => showMenu(),
+      () => showDomainMenu(),
     );
   }
 
@@ -450,7 +845,7 @@ export default function BartenderBotScreen() {
       zip: '',
       ...getRandomLocationCoordinates(),
     });
-    showBotMessageThen(t('bartenderBotLocationAdded', { name }), () => showMenu());
+    showBotMessageThen(t('bartenderBotLocationAdded', { name }), () => showDomainMenu());
   }
 
   function startGroupMemberSelection() {
@@ -474,7 +869,7 @@ export default function BartenderBotScreen() {
     pushMessage('user', members.map((member) => formatContactDisplayName(member)).join(', '));
     addGroup({ id: `group-${Date.now()}`, name: groupNameDraft, contacts: members });
     setReturningStage(null);
-    showBotMessageThen(t('bartenderBotGroupAdded', { name: groupNameDraft }), () => showMenu());
+    showBotMessageThen(t('bartenderBotGroupAdded', { name: groupNameDraft }), () => showDomainMenu());
   }
 
   function getReturningComposerConfig(): TReturningComposerConfig | null {
@@ -526,6 +921,75 @@ export default function BartenderBotScreen() {
       case 'groupName':
         return {
           fieldLabelKey: 'groupName',
+          autoCapitalize: 'words',
+          isValid: (value) => value.trim().length > 0,
+          skippable: false,
+        };
+      case 'editFieldValue': {
+        if (!activeDomain || !editingDomainFieldId) {
+          return null;
+        }
+
+        if (activeDomain === 'contact' && editingDomainFieldId === 'email') {
+          return {
+            fieldLabelKey: 'email',
+            keyboardType: 'email-address',
+            autoCapitalize: 'none',
+            // Optional on a contact — blank clears it, same as the real form.
+            isValid: (value) => value.trim() === '' || EMAIL_SCHEMA.safeParse(value.trim()).success,
+            skippable: false,
+          };
+        }
+        if (activeDomain === 'contact' && editingDomainFieldId === 'phone') {
+          return {
+            fieldLabelKey: 'phone',
+            keyboardType: 'phone-pad',
+            format: formatPhoneInput,
+            isValid: (value) => value.trim() === '' || phoneDigits(value).length === PHONE_DIGIT_COUNT,
+            skippable: false,
+          };
+        }
+        if (activeDomain === 'contact' && editingDomainFieldId === 'address') {
+          return {
+            fieldLabelKey: 'addressLine1',
+            autoCapitalize: 'words',
+            // Optional on a contact, unlike a location's required addressLine1.
+            isValid: () => true,
+            skippable: false,
+          };
+        }
+        if (activeDomain === 'contact' && editingDomainFieldId === 'favoriteBar') {
+          return {
+            fieldLabelKey: 'favoriteBar',
+            autoCapitalize: 'words',
+            isValid: (value) => value.trim().length > 0,
+            skippable: false,
+          };
+        }
+
+        const field = DOMAIN_EDIT_FIELDS[activeDomain].find(
+          (candidate) => candidate.id === editingDomainFieldId,
+        );
+        if (!field) {
+          return null;
+        }
+        return {
+          fieldLabelKey: field.labelKey,
+          autoCapitalize: 'words',
+          isValid: (value) => value.trim().length > 0,
+          skippable: false,
+        };
+      }
+      case 'editPick':
+        return {
+          fieldLabelKey: 'bartenderBotEditPickFieldLabel',
+          autoCapitalize: 'words',
+          isValid: (value) => value.trim().length > 0,
+          skippable: false,
+        };
+      case 'editFieldMenu':
+        return {
+          fieldLabelKey: 'bartenderBotEditFieldLabel',
           autoCapitalize: 'words',
           isValid: (value) => value.trim().length > 0,
           skippable: false,
@@ -610,6 +1074,169 @@ export default function BartenderBotScreen() {
         setGroupNameDraft(value);
         startGroupMemberSelection();
         return;
+      case 'editFieldValue': {
+        const domain = activeDomain;
+        const fieldId = editingDomainFieldId;
+        const itemId = editingItemId;
+        if (!domain || !fieldId || !itemId) {
+          return;
+        }
+
+        if (domain === 'contact') {
+          const current = contacts.find((candidate) => candidate.id === itemId);
+          if (!current) {
+            showEditFieldMenu();
+            return;
+          }
+
+          if (fieldId === 'firstName' || fieldId === 'lastName') {
+            const updatedFirstName = fieldId === 'firstName' ? value : current.firstName;
+            const updatedLastName = fieldId === 'lastName' ? value : current.lastName;
+            const isDuplicate = contacts.some(
+              (candidate) =>
+                candidate.id !== itemId &&
+                contactNameKey(candidate.firstName, candidate.lastName) ===
+                  contactNameKey(updatedFirstName, updatedLastName),
+            );
+            if (isDuplicate) {
+              showBotMessageThen(
+                t('bartenderBotContactNameTaken', { name: `${updatedFirstName} ${updatedLastName}` }),
+                () => startEditField(domain, fieldId),
+              );
+              return;
+            }
+            const updated = { ...current, firstName: updatedFirstName, lastName: updatedLastName };
+            updateContact(updated);
+            finishFieldEdit(buildContactInfoText(updated));
+            return;
+          }
+          if (fieldId === 'email') {
+            const updated = { ...current, email: value };
+            updateContact(updated);
+            finishFieldEdit(buildContactInfoText(updated));
+            return;
+          }
+          if (fieldId === 'phone') {
+            const updated = { ...current, phone: value };
+            updateContact(updated);
+            finishFieldEdit(buildContactInfoText(updated));
+            return;
+          }
+          if (fieldId === 'address') {
+            const updated = { ...current, addressLine1: value };
+            updateContact(updated);
+            finishFieldEdit(buildContactInfoText(updated));
+            return;
+          }
+          // fieldId === 'favoriteBar'
+          const match = matchChatOption(
+            locations.map((location) => ({ id: location.id, label: location.name })),
+            value,
+          );
+          if (match === 'ambiguous') {
+            showBotMessageThen(t('bartenderBotFavoriteBarAmbiguous'), () =>
+              startEditField(domain, fieldId),
+            );
+            return;
+          }
+          if (!match) {
+            showBotMessageThen(t('bartenderBotFavoriteBarNotFound'), () =>
+              startEditField(domain, fieldId),
+            );
+            return;
+          }
+          const updated = { ...current, favoriteBarId: match.id };
+          updateContact(updated);
+          finishFieldEdit(buildContactInfoText(updated));
+          return;
+        }
+
+        if (domain === 'location') {
+          const current = locations.find((candidate) => candidate.id === itemId);
+          if (!current) {
+            showEditFieldMenu();
+            return;
+          }
+          const updated = {
+            ...current,
+            name: fieldId === 'name' ? value : current.name,
+            addressLine1: fieldId === 'address' ? value : current.addressLine1,
+          };
+          updateLocation(updated);
+          finishFieldEdit(buildLocationInfoText(updated));
+          return;
+        }
+
+        const current = groups.find((candidate) => candidate.id === itemId);
+        if (!current) {
+          showEditFieldMenu();
+          return;
+        }
+        const updated = { ...current, name: fieldId === 'name' ? value : current.name };
+        updateGroup(updated);
+        finishFieldEdit(buildGroupInfoText(updated));
+        return;
+      }
+      case 'editPick': {
+        const domain = activeDomain;
+        if (!domain) {
+          return;
+        }
+
+        const match = matchChatOption(getDomainItemOptions(domain), value);
+
+        if (match === 'ambiguous') {
+          showBotMessageThen(t('bartenderBotEditPickAmbiguous'), () => {
+            setDraftValue('');
+            setReturningStage('editPick');
+          });
+          return;
+        }
+
+        if (!match) {
+          showBotMessageThen(t('bartenderBotEditPickNotFound'), () => {
+            setDraftValue('');
+            setReturningStage('editPick');
+          });
+          return;
+        }
+
+        proceedToEditItem(domain, match.id);
+        return;
+      }
+      case 'editFieldMenu': {
+        const domain = activeDomain;
+        if (!domain) {
+          return;
+        }
+
+        // Literal shortcut called out in the prompt itself, alongside the usual label matching.
+        if (value.trim().toLowerCase() === 'return') {
+          applyEditFieldSelection(domain, 'done');
+          return;
+        }
+
+        const match = matchChatOption(editFieldMenuOptions, value);
+
+        if (match === 'ambiguous') {
+          showBotMessageThen(t('bartenderBotEditFieldAmbiguous'), () => {
+            setDraftValue('');
+            setReturningStage('editFieldMenu');
+          });
+          return;
+        }
+
+        if (!match) {
+          showBotMessageThen(t('bartenderBotEditFieldNotFound'), () => {
+            setDraftValue('');
+            setReturningStage('editFieldMenu');
+          });
+          return;
+        }
+
+        applyEditFieldSelection(domain, match.id as TDomainFieldId | 'done');
+        return;
+      }
       default:
         return;
     }
@@ -627,6 +1254,23 @@ export default function BartenderBotScreen() {
     id: contact.id,
     label: formatContactDisplayName(contact),
   }));
+  const domainMenuOptions: TChatOption[] = DOMAIN_ACTIONS.map((action) => ({
+    id: action.id,
+    label: t(action.labelKey),
+  }));
+  const emptyDomainMenuOptions: TChatOption[] = [
+    { id: 'addNow', label: t('bartenderBotAddNow') },
+    { id: 'backToMain', label: t('bartenderBotBackToMainMenu') },
+  ];
+  const editFieldMenuOptions: TChatOption[] = activeDomain
+    ? [
+        ...DOMAIN_EDIT_FIELDS[activeDomain].map((field) => ({
+          id: field.id,
+          label: t(field.labelKey),
+        })),
+        { id: 'done', label: t('bartenderBotEditDone') },
+      ]
+    : [];
 
   return (
     <SafeAreaView edges={HEADER_SCREEN_EDGES} style={styles.container}>
@@ -696,6 +1340,24 @@ export default function BartenderBotScreen() {
           doneLabel={t('done')}
           isDoneDisabled={selectedMemberIds.length === 0}
           onDone={handleFinishGroup}
+          onToggle={handleToggleMember}
+          options={memberOptions}
+          selectedIds={selectedMemberIds}
+        />
+      ) : returningStage === 'domainMenu' ? (
+        <ChatOptionList colors={colors} onSelect={handleDomainMenuSelect} options={domainMenuOptions} />
+      ) : returningStage === 'domainEmptyMenu' ? (
+        <ChatOptionList
+          colors={colors}
+          onSelect={handleEmptyDomainMenuSelect}
+          options={emptyDomainMenuOptions}
+        />
+      ) : returningStage === 'editMembersSelect' ? (
+        <ChatMultiSelect
+          colors={colors}
+          doneLabel={t('done')}
+          isDoneDisabled={selectedMemberIds.length === 0}
+          onDone={handleEditMembersDone}
           onToggle={handleToggleMember}
           options={memberOptions}
           selectedIds={selectedMemberIds}

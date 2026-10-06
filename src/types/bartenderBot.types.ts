@@ -38,6 +38,20 @@ export type TWelcomeStepConfig = {
 /** The four things the returning-user flow's main menu offers. */
 export type TMenuOptionId = 'profile' | 'contact' | 'location' | 'group';
 
+/** The three list-backed menu options — everything except `'profile'`, which has no Add/Edit/List submenu. */
+export type TDomainId = Exclude<TMenuOptionId, 'profile'>;
+
+/** A field editable through a domain's "what would you like to change?" menu. */
+export type TDomainFieldId =
+  | 'firstName'
+  | 'lastName'
+  | 'name'
+  | 'address'
+  | 'members'
+  | 'email'
+  | 'phone'
+  | 'favoriteBar';
+
 /**
  * Which bottom-docked control the returning-user flow is currently showing,
  * in place of the welcome questionnaire's single `TWelcomeStepId` chain —
@@ -54,7 +68,13 @@ export type TReturningStage =
   | 'locationName'
   | 'locationAddress'
   | 'groupName'
-  | 'groupMembers';
+  | 'groupMembers'
+  | 'domainMenu'
+  | 'domainEmptyMenu'
+  | 'editPick'
+  | 'editFieldMenu'
+  | 'editFieldValue'
+  | 'editMembersSelect';
 
 /** Drives `ChatComposer` for whichever free-text `TReturningStage` is active. */
 export type TReturningComposerConfig = {
