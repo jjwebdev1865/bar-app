@@ -34,3 +34,41 @@ export type TWelcomeStepConfig = {
   /** Next step to advance to, or `null` when this is the last step. */
   next: TWelcomeStepId | null;
 };
+
+/** The four things the returning-user flow's main menu offers. */
+export type TMenuOptionId = 'profile' | 'contact' | 'location' | 'group';
+
+/**
+ * Which bottom-docked control the returning-user flow is currently showing,
+ * in place of the welcome questionnaire's single `TWelcomeStepId` chain —
+ * this flow branches into free-text steps, option menus and a multi-select,
+ * not just one text field at a time.
+ */
+export type TReturningStage =
+  | 'menu'
+  | 'profileQueue'
+  | 'profileEditMenu'
+  | 'profileEditValue'
+  | 'contactFirstName'
+  | 'contactLastName'
+  | 'locationName'
+  | 'locationAddress'
+  | 'groupName'
+  | 'groupMembers';
+
+/** Drives `ChatComposer` for whichever free-text `TReturningStage` is active. */
+export type TReturningComposerConfig = {
+  fieldLabelKey: TTranslationKey;
+  keyboardType?: KeyboardTypeOptions;
+  autoCapitalize?: TextInputProps['autoCapitalize'];
+  format?: (value: string) => string;
+  isValid: (value: string) => boolean;
+  /** Only the profile questionnaire's missing-field queue can be skipped. */
+  skippable: boolean;
+};
+
+/** One tappable row in `ChatOptionList`. */
+export type TChatOption = {
+  id: string;
+  label: string;
+};

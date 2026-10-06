@@ -18,9 +18,9 @@ interface IChatComposerProps {
   value: string;
   onChangeText: (value: string) => void;
   isSubmitDisabled: boolean;
-  onSkip: () => void;
+  onSkip?: () => void;
   onSubmit: () => void;
-  skipLabel: string;
+  skipLabel?: string;
   submitLabel: string;
   colors: TColorTokens;
 }
@@ -58,17 +58,19 @@ export function ChatComposer({
           value={value}
         />
         <View style={styles.buttonRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onSkip}
-            style={({ pressed }) => [
-              styles.secondaryButton,
-              styles.rowButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.secondaryButtonLabel}>{skipLabel}</Text>
-          </Pressable>
+          {onSkip ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={onSkip}
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                styles.rowButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.secondaryButtonLabel}>{skipLabel}</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ disabled: isSubmitDisabled }}

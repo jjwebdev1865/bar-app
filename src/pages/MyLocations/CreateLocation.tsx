@@ -8,6 +8,7 @@ import { useLocationsStore } from '../../stores/locationsStore';
 import { useToastStore } from '../../stores/toastStore';
 import type { TTranslationKey } from '../../types';
 import { EAppRoute } from '../../constants/routes';
+import { getRandomLocationCoordinates } from '../../utils/locationFormat';
 import { formatZipInput } from '../../utils/zipFormat';
 import {
   locationFormSchema,
@@ -48,21 +49,6 @@ const LOCATION_FIELDS: ILocationField[] = [
   },
 ];
 
-// Mock locations cluster around Gotham City — keep random assignments in the same area.
-const GOTHAM_LATITUDE_RANGE: [number, number] = [40.68, 40.79];
-const GOTHAM_LONGITUDE_RANGE: [number, number] = [-74.05, -73.96];
-
-function randomInRange([min, max]: [number, number]) {
-  return Math.random() * (max - min) + min;
-}
-
-function getRandomCoordinates() {
-  return {
-    latitude: randomInRange(GOTHAM_LATITUDE_RANGE),
-    longitude: randomInRange(GOTHAM_LONGITUDE_RANGE),
-  };
-}
-
 export default function CreateLocationScreen() {
   const { colors, t } = useSettings();
   const addLocation = useLocationsStore((state) => state.addLocation);
@@ -89,7 +75,7 @@ export default function CreateLocationScreen() {
       state: values.state,
       zip: values.zip,
       // Coordinates are not part of the form — the create flow assigns them.
-      ...getRandomCoordinates(),
+      ...getRandomLocationCoordinates(),
     });
     showToast('locationCreated');
   }
